@@ -1,6 +1,18 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next"
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/mon-dashboard",
+      "destination": "/mon-dashboard.html"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://infotech-zemri-backend.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/media/:path*",
+      "destination": "https://infotech-zemri-backend.onrender.com/media/:path*"
+    }
+  ]
 }
-

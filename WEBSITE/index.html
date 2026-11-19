@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LOGISZ SECURITY — Équipements CCTV & Vidéosurveillance Professionnelle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #0f172a; }
+    .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; letter-spacing: -0.02em; }
+    .glass-light { background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(16px) saturate(160%); border-bottom: 1px solid rgba(226,232,240,.8); }
+    .card-light { background: #ffffff; border: 1px solid #e2e8f0; transition: all 0.22s ease; }
+    .card-light:hover { border-color: #cbd5e1; box-shadow: 0 12px 30px -10px rgba(15, 23, 42, 0.10); }
+    /* 3D tilt cards */
+    .tilt-wrap { perspective: 1000px; }
+    .tilt { transform-style: preserve-3d; transition: transform .18s ease-out, box-shadow .25s ease; will-change: transform; }
+    .tilt:hover { box-shadow: 0 30px 60px -20px rgba(30, 64, 175, .28); }
+    .tilt .pop { transform: translateZ(40px); }
+    .tilt .pop-sm { transform: translateZ(22px); }
+    .shine { position:absolute; inset:0; pointer-events:none; background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.55), transparent 45%); opacity:0; transition: opacity .25s; mix-blend-mode: soft-light; }
+    .tilt:hover .shine { opacity:1; }
+    /* reveal on scroll */
+    .reveal { opacity: 0; transform: translateY(40px) scale(.98); transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1); }
+    .reveal.in { opacity: 1; transform: none; }
+    /* hero */
+    .hero-bg { background: radial-gradient(1200px 600px at 80% 20%, rgba(59,130,246,.16), transparent 60%), radial-gradient(900px 500px at 10% 90%, rgba(14,165,233,.12), transparent 60%), linear-gradient(180deg,#ffffff, #f1f5f9); }
+    .grid-floor { background-image: linear-gradient(rgba(37,99,235,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,.08) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%); }
+    .text-gradient { background: linear-gradient(90deg,#1d4ed8,#0ea5e9,#1d4ed8); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 6s linear infinite; }
+    @keyframes shimmer { to { background-position: 200% center; } }
+    @keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+    .floaty { animation: floaty 5s ease-in-out infinite; }
+    @keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+    .marquee { animation: marquee 28s linear infinite; }
+    @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.55) } 100% { box-shadow: 0 0 0 18px rgba(34,197,94,0) } }
+    .wa-pulse { animation: pulse-ring 1.8s infinite; }
+    @keyframes rec { 0%,100% { opacity: 1 } 50% { opacity: .2 } }
+    .rec-dot { animation: rec 1.2s infinite; }
+    @keyframes modalIn { from { opacity: 0; transform: perspective(900px) rotateX(12deg) translateY(30px) scale(.96) } to { opacity: 1; transform: none } }
+    @keyframes bump { 0% { transform: scale(1) } 40% { transform: scale(1.45) } 100% { transform: scale(1) } }
+    .bump { display:inline-block; animation: bump .45s ease; }
+    .cube-scene { perspective: 900px; }
+    .cube { transform-style: preserve-3d; animation: spin 18s linear infinite; }
+    @keyframes spin { from { transform: rotateX(-18deg) rotateY(0) } to { transform: rotateX(-18deg) rotateY(360deg) } }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f8fafc; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity:1; transform:none } .marquee,.cube,.floaty { animation: none } }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-white text-slate-900">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+    const API_BASE = "/api/v1";
+
+    const DEFAULT_IMAGES = {
+      "IP Cameras": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=700&q=80",
+      "Wi-Fi Cameras": "https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=700&q=80",
+      "Analog Cameras": "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=700&q=80",
+      "PTZ Cameras": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=700&q=80",
+      "DVR": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=700&q=80",
+      "NVR": "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=700&q=80",
+      "Surveillance Hard Drives": "https://images.unsplash.com/photo-1531492746076-161ca9bcad58?auto=format&fit=crop&w=700&q=80",
+      "Power Supplies": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=700&q=80",
+      "default": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=700&q=80"
+    };
+
+    function getProductImg(p) {
+      if (!p) return DEFAULT_IMAGES["default"];
+      if (p.main_image && p.main_image.trim() !== "") return p.main_image;
+      if (p.images && p.images.length > 0) return p.images[0].image_url;
+      return DEFAULT_IMAGES[p.category_name] || DEFAULT_IMAGES["default"];
+    }
+
+    function fmtMoney(val) {
+      const n = Number(val || 0);
+      return n.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA";
+    }
+
+    function App() {
+      const [tab, setTab] = useState("home"); // home, catalog, kit, cart, account
+      const [token, setToken] = useState(() => localStorage.getItem("cctv_jwt") || "");
+      const [profile, setProfile] = useState(null);
+      const [homeData, setHomeData] = useState(null);
+      const [products, setProducts] = useState([]);
+      const [searchQ, setSearchQ] = useState("");
+      const [selectedCat, setSelectedCat] = useState("all");
+      const [onlyInStock, setOnlyInStock] = useState(false);
+      const [sortBy, setSortBy] = useState("newest");
+      const [selectedBrand, setSelectedBrand] = useState("all");
+      const [priceMin, setPriceMin] = useState("");
+      const [priceMax, setPriceMax] = useState("");
+      const [visibleCount, setVisibleCount] = useState(24);
+      const [compare, setCompare] = useState([]);
+      const [showCompare, setShowCompare] = useState(false);
+      const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem("cctv_favs") || "[]"); } catch { return []; } });
+      const [onlyFavs, setOnlyFavs] = useState(false);
+      const [mobileMenu, setMobileMenu] = useState(false);
+      const [showTop, setShowTop] = useState(false);
+      const [cart, setCart] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("cctv_cart") || "[]"); } catch { return []; }
+      });
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [toast, setToast] = useState(null);
+
+      // Kit Builder state
+      const [kitData, setKitData] = useState(null);
+      const [kitSelection, setKitSelection] = useState({});
+      const [kitEval, setKitEval] = useState(null);
+
+      // Checkout & Tracking state
+      const [checkoutForm, setCheckoutForm] = useState({
+        customer_name: "",
+        customer_phone: "",
+        customer_email: "",
+        company_name: "",
+        wilaya: "Alger",
+        delivery_address: "",
+        delivery_method: "DELIVERY",
+        payment_method: "CASH_ON_DELIVERY",
+        notes: ""
+      });
+      const [lastCreatedOrder, setLastCreatedOrder] = useState(null);
+      const [trackUid, setTrackUid] = useState("");
+      const [trackedOrder, setTrackedOrder] = useState(null);
+
+      // Auth state
+      const [authMode, setAuthMode] = useState("login");
+      const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+      const [regForm, setRegForm] = useState({
+        username: "", email: "", password: "", first_name: "", last_name: "",
+        account_type: "INSTALLER", phone: "", company_name: "", wilaya: "Alger",
+        rc_number: "", nif_number: "", professional_justification: ""
+      });
+
+      const showToast = (msg, type = "info") => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
+      };
+
+      const authHeaders = useMemo(() => {
+        const h = { "Content-Type": "application/json" };
+        if (token) h["Authorization"] = `Bearer ${token}`;
+        return h;
+      }, [token]);
+
+      const loadHomeAndProducts = async () => {
+        try {
+          const [resHome, resProds] = await Promise.all([
+            fetch(${API_BASE}/catalog/home/, { headers: authHeaders }).catch(() => null),
+            fetch(${API_BASE}/products/?limit=600, { headers: authHeaders }).catch(() => null)
+          ]);
+          let gotHome = false, gotProds = false;
+          if (resHome && resHome.ok) { setHomeData(await resHome.json()); gotHome = true; }
+          if (resProds && resProds.ok) { const d = await resProds.json(); setProducts(d.results || d || []); gotProds = true; }
+          if (!gotHome) {
+            try { const fb = await fetch('/catalog_home.json'); if (fb.ok) setHomeData(await fb.json()); } catch(e){}
+          }
+          if (!gotProds) {
+            try { const fb = await fetch('/products.json'); if (fb.ok) { const d = await fb.json(); setProducts(d.results || d || []); } } catch(e){}
+          }
+        } catch (err) {
+          console.error(err);
+          try {
+            const [fbH, fbP] = await Promise.all([fetch('/catalog_home.json'), fetch('/products.json')]);
+            if (fbH.ok) setHomeData(await fbH.json());
+            if (fbP.ok) { const d = await fbP.json(); setProducts(d.results || d || []); }
+          } catch(e2){}
+        }
+      };
+
+      const loadMe = async () => {
+        if (!token) { setProfile(null); return; }
+        try {
+          const res = await fetch(`${API_BASE}/auth/me/`, { headers: authHeaders });
+          if (res.ok) {
+            const d = await res.json();
+            setProfile(d.profile);
+            setCheckoutForm(prev => ({
+              ...prev,
+              customer_name: prev.customer_name || `${d.profile.first_name || ""} ${d.profile.last_name || ""}`.trim() || d.profile.username,
+              customer_phone: prev.customer_phone || d.profile.phone || "",
+              customer_email: prev.customer_email || d.profile.email || "",
+              company_name: prev.company_name || d.profile.company_name || "",
+              wilaya: d.profile.wilaya || prev.wilaya
+            }));
+          } else {
+            setToken("");
+            localStorage.removeItem("cctv_jwt");
+          }
+        } catch (e) {}
+      };
+
+      useEffect(() => {
+        loadHomeAndProducts();
+        loadMe();
+      }, [token]);
+
+      useEffect(() => {
+        localStorage.setItem("cctv_cart", JSON.stringify(cart));
+      }, [cart]);
+
+      // Animation d'apparition au défilement (3D reveal)
+      useEffect(() => {
+        const io = new IntersectionObserver(entries => entries.forEach(e => {
+          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+        }), { threshold: 0.12 });
+        document.querySelectorAll(".reveal:not(.in)").forEach(el => io.observe(el));
+        return () => io.disconnect();
+      });
+
+      const loadKitBuilder = async () => {
+        const res = await fetch(`${API_BASE}/kit-builder/`, { headers: authHeaders });
+        if (res.ok) setKitData(await res.json());
+      };
+
+      useEffect(() => {
+        if (tab === "kit" && !kitData) loadKitBuilder();
+      }, [tab]);
+
+      const addToCart = (product, qty = 1) => {
+        setCart(prev => {
+          const existing = prev.find(item => item.product.id === product.id);
+          if (existing) {
+            return prev.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + qty } : item);
+          }
+          return [...prev, { product, quantity: qty }];
+        });
+        showToast(`« ${product.name} » ajouté au panier (${fmtMoney(product.effective_price)})`, "success");
+      };
+
+      const updateCartQty = (productId, qty) => {
+        if (qty <= 0) setCart(prev => prev.filter(i => i.product.id !== productId));
+        else setCart(prev => prev.map(i => i.product.id === productId ? { ...i, quantity: qty } : i));
+      };
+
+      const cartSubtotal = useMemo(() => {
+        return cart.reduce((acc, item) => acc + Number(item.product.effective_price || 0) * item.quantity, 0);
+      }, [cart]);
+
+      // Marques propres (ignore les codes internes type "1", "B0"...) + fusion DAHUA / Dahua Technology
+      const normBrand = (b) => {
+        const s = String(b || "").trim();
+        if (!s || s.length < 3 || /^[0-9A-Z]{1,2}[0-9]*$/.test(s) || /^\d+$/.test(s)) return "";
+        if (/dahua/i.test(s)) return "Dahua";
+        if (/western/i.test(s)) return "WD";
+        return s;
+      };
+      const brandList = useMemo(() => {
+        const m = {};
+        products.forEach(p => { const b = normBrand(p.brand_name); if (b) m[b] = (m[b] || 0) + 1; });
+        return Object.entries(m).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]);
+      }, [products]);
+
+      const filteredProducts = useMemo(() => {
+        let list = [...products];
+        if (searchQ.trim()) {
+          const words = searchQ.toLowerCase().split(/\s+/).filter(Boolean);
+          list = list.filter(p => {
+            const hay = `${p.name || ""} ${p.reference || ""} ${p.brand_name || ""} ${p.category_name || ""}`.toLowerCase();
+            return words.every(w => hay.includes(w));
+          });
+        }
+        if (selectedCat !== "all") {
+          list = list.filter(p => String(p.category) === String(selectedCat) || p.category_slug === selectedCat || p.category_name === selectedCat);
+        }
+        if (selectedBrand !== "all") list = list.filter(p => normBrand(p.brand_name) === selectedBrand);
+        if (priceMin !== "") list = list.filter(p => Number(p.effective_price) >= Number(priceMin));
+        if (priceMax !== "") list = list.filter(p => Number(p.effective_price) <= Number(priceMax));
+        if (onlyInStock) {
+          list = list.filter(p => p.in_stock && p.available_stock > 0);
+        }
+        if (onlyFavs) list = list.filter(p => favs.includes(p.id));
+        if (sortBy === "price_asc") list.sort((a, b) => a.effective_price - b.effective_price);
+        if (sortBy === "price_desc") list.sort((a, b) => b.effective_price - a.effective_price);
+        if (sortBy === "name") list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        if (sortBy === "stock") list.sort((a, b) => (b.available_stock || 0) - (a.available_stock || 0));
+        return list;
+      }, [products, searchQ, selectedCat, selectedBrand, priceMin, priceMax, onlyInStock, sortBy, onlyFavs, favs]);
+
+      useEffect(() => { setVisibleCount(24); }, [searchQ, selectedCat, selectedBrand, priceMin, priceMax, onlyInStock, sortBy]);
+
+      const resetFilters = () => { setSearchQ(""); setSelectedCat("all"); setSelectedBrand("all"); setPriceMin(""); setPriceMax(""); setOnlyInStock(false); setSortBy("newest"); };
+
+      const toggleCompare = (p) => setCompare(prev => prev.find(x => x.id === p.id) ? prev.filter(x => x.id !== p.id) : (prev.length >= 4 ? (showToast("Maximum 4 produits à comparer", "error"), prev) : [...prev, p]));
+      const toggleFav = (p) => setFavs(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]);
+      useEffect(() => { localStorage.setItem("cctv_favs", JSON.stringify(favs)); }, [favs]);
+      useEffect(() => {
+        const onScroll = () => setShowTop(window.scrollY > 700);
+        window.addEventListener("scroll", onScroll); return () => window.removeEventListener("scroll", onScroll);
+      }, []);
+      const goTab = (t) => { setTab(t); setMobileMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        const res = await fetch(`${API_BASE}/auth/login/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(loginForm)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("cctv_jwt", data.access);
+          setToken(data.access);
+          setProfile(data.profile);
+          showToast(`Bienvenue ${data.profile.username} ! Tarif actif : ${data.profile.effective_tier}`, "success");
+        } else {
+          showToast(data.error || "Identifiants invalides", "error");
+        }
+      };
+
+      const handleRegister = async (e) => {
+        e.preventDefault();
+        const res = await fetch(`${API_BASE}/auth/register/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(regForm)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem("cctv_jwt", data.access);
+          setToken(data.access);
+          setProfile(data.profile);
+          showToast(data.message, "success");
+        } else {
+          showToast(data.error || "Erreur lors de l'inscription", "error");
+        }
+      };
+
+      const handleCheckout = async (e) => {
+        e.preventDefault();
+        if (cart.length === 0) return;
+        const idemKey = "WEB-CHK-" + Date.now();
+        const payload = {
+          ...checkoutForm,
+          idempotency_key: idemKey,
+          items: cart.map(i => ({
+            product_id: i.product.id,
+            reference: i.product.reference,
+            quantity: i.quantity
+          }))
+        };
+        const res = await fetch(`${API_BASE}/orders/checkout/`, {
+          method: "POST",
+          headers: { ...authHeaders, "X-Idempotency-Key": idemKey },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setLastCreatedOrder(data.order);
+          setCart([]);
+          showToast(`Commande ${data.order.order_uid} transmise au logiciel de caisse LOGISZ !`, "success");
+          loadHomeAndProducts();
+        } else {
+          showToast(data.error || "Erreur lors de la validation de la commande", "error");
+        }
+      };
+
+      const evaluateKit = async (newSelection) => {
+        setKitSelection(newSelection);
+        const items = Object.entries(newSelection)
+          .filter(([_, v]) => v && v.qty > 0)
+          .map(([_, v]) => ({ product_id: v.product.id, quantity: v.qty }));
+        if (items.length === 0) { setKitEval(null); return; }
+        const res = await fetch(`${API_BASE}/kit-builder/`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ items })
+        });
+        if (res.ok) setKitEval(await res.json());
+      };
+
+      const appliedTier = profile ? profile.effective_tier : (homeData ? homeData.applied_tier : "PUBLIC");
+      const isAdmin = Boolean(profile && profile.is_admin);
+
+      return (
+        <div className="min-h-screen flex flex-col bg-slate-50/60">
+          {/* TOP ANNOUNCEMENT BAR */}
+          <div className="bg-slate-900 text-white text-xs py-2 px-4">
+            <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold">
+                  ● Stock Synchronisé ({products.length} articles)
+                </span>
+                <a href="tel:0557882719" className="inline-flex items-center gap-1 text-white hover:text-blue-400 font-bold transition">
+                  📞 0557 88 27 19
+                </a>
+                <a href="https://wa.me/213557882719" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 font-semibold transition">
+                  💬 WhatsApp 0557 88 27 19
+                </a>
+                <a href="https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold transition">
+                  🎵 TikTok @infotech.sz
+                </a>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white font-semibold">
+                  Tarif : {appliedTier === "RESELLER" ? "PRO Revendeur (Gros)" : appliedTier === "INSTALLER" ? "PRO Installateur" : "Public"}
+                </span>
+                {isAdmin && (
+                  <a href="/mon-dashboard/" className="px-2.5 py-0.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold">
+                    ⚙ Mon Dashboard Privé
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* NAVBAR */}
+          <header className="sticky top-0 z-40 glass-light">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+              <div onClick={() => goTab("home")} className="flex items-center gap-3 cursor-pointer flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-lg shadow-sm">
+                  LZ
+                </div>
+                <div className="hidden sm:block">
+                  <div className="font-extrabold text-lg tracking-tight text-slate-900">
+                    LOGISZ <span className="text-blue-600">CCTV</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">Vidéosurveillance & Sécurité Professionnelle</div>
+                </div>
+              </div>
+
+              {/* Recherche globale avec suggestions */}
+              <HeaderSearch products={products} onPick={(p) => setSelectedProduct(p)} onSubmit={(q) => { setSearchQ(q); goTab("catalog"); }} />
+
+              <nav className="hidden lg:flex items-center gap-1.5">
+                {[
+                  { id: "home", label: "Accueil" },
+                  { id: "catalog", label: "Catalogue" },
+                  { id: "kit", label: "Kit CCTV" },
+                  { id: "account", label: profile ? profile.username : "Espace Pro" },
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => goTab(item.id)}
+                    className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition ${
+                      tab === item.id ? "bg-slate-900 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+                {isAdmin && (
+                  <a href="/mon-dashboard/" className="px-3 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition" title="Mon Dashboard">⚙</a>
+                )}
+              </nav>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => goTab("cart")}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center gap-2 shadow-sm"
+                >
+                  <span>🛒</span>
+                  <span key={cart.reduce((s, i) => s + i.quantity, 0)} className="px-2 py-0.5 text-xs rounded-full bg-white/20 bump">{cart.reduce((s, i) => s + i.quantity, 0)}</span>
+                </button>
+                <button onClick={() => setMobileMenu(v => !v)} className="lg:hidden w-10 h-10 rounded-xl border border-slate-200 bg-white text-slate-700 text-lg">☰</button>
+              </div>
+            </div>
+            {mobileMenu && (
+              <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-3 grid grid-cols-2 gap-2">
+                {[["home", "🏠 Accueil"], ["catalog", "📦 Catalogue"], ["kit", "🛠 Kit CCTV"], ["account", profile ? "👤 " + profile.username : "👤 Espace Pro"], ["cart", "🛒 Panier"]].map(([id, l]) => (
+                  <button key={id} onClick={() => goTab(id)} className={`py-2.5 rounded-xl text-sm font-semibold ${tab === id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>{l}</button>
+                ))}
+                {isAdmin && <a href="/mon-dashboard/" className="py-2.5 rounded-xl text-sm font-bold bg-blue-50 text-blue-700 text-center">⚙ Dashboard</a>}
+              </div>
+            )}
+          </header>
+
+          {/* TOAST NOTIFICATION */}
+          {toast && (
+            <div className={`fixed bottom-6 right-6 z-50 max-w-md px-5 py-3.5 rounded-2xl shadow-xl border bg-white text-sm font-medium flex items-center gap-3 ${
+              toast.type === "error" ? "border-red-300 text-red-700" : "border-emerald-300 text-slate-800"
+            }`}>
+              <span className={toast.type === "error" ? "text-red-500" : "text-emerald-500"}>●</span>
+              <span>{toast.msg}</span>
+            </div>
+          )}
+
+          {/* MAIN CONTENT */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+            {/* ==================== TAB 1: HOME ==================== */}
+            {tab === "home" && (
+              <div className="space-y-12">
+                {/* HERO SECTION 3D */}
+                <section className="relative overflow-hidden rounded-[2rem] hero-bg border border-slate-200 shadow-[0_40px_80px_-40px_rgba(30,64,175,.35)]">
+                  <div className="absolute inset-0 grid-floor"></div>
+                  <div className="relative grid lg:grid-cols-2 gap-6 items-center p-8 md:p-14 min-h-[560px]">
+                    <div className="space-y-7 z-10">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 border border-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-red-500 rec-dot"></span> REC • Distributeur Dahua &amp; Solutions CCTV
+                      </div>
+                      <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] text-slate-900">
+                        Voyez tout.<br /><span className="text-gradient">Protégez tout.</span>
+                      </h1>
+                      <p className="text-slate-600 text-base md:text-lg leading-relaxed max-w-xl">
+                        Caméras IP, HDCVI, PTZ, enregistreurs XVR/NVR, disques Purple, alarmes et kits complets —
+                        tarifs adaptés aux <strong className="text-slate-900">particuliers</strong>, <strong className="text-blue-600">installateurs</strong> et <strong className="text-emerald-600">revendeurs</strong>.
+                      </p>
+                      <div className="flex flex-wrap gap-3 pt-1">
+                        <button onClick={() => setTab("catalog")} className="group px-7 py-4 rounded-2xl bg-slate-900 hover:bg-blue-700 text-white font-bold shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-0.5">
+                          Explorer le catalogue <span className="inline-block transition group-hover:translate-x-1">→</span>
+                        </button>
+                        <button onClick={() => setTab("kit")} className="px-7 py-4 rounded-2xl bg-white/90 hover:bg-white border border-slate-300 text-slate-800 font-semibold transition-all hover:-translate-y-0.5">
+                          🛠 Configurer un kit
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 max-w-md pt-2">
+                        <Counter to={products.length} label="Articles" />
+                        <Counter to={58} label="Wilayas livrées" />
+                        <Counter to={24} suffix="/7" label="Surveillance" />
+                      </div>
+                    </div>
+                    <div className="relative h-[380px] md:h-[500px]">
+                      <Hero3D />
+                      <div className="absolute top-6 right-4 px-3 py-2 rounded-xl bg-white/85 backdrop-blur border border-slate-200 text-xs font-semibold shadow floaty">
+                        <span className="text-emerald-600">●</span> Vision nocturne 40m
+                      </div>
+                      <div className="absolute bottom-10 left-2 px-3 py-2 rounded-xl bg-white/85 backdrop-blur border border-slate-200 text-xs font-semibold shadow floaty" style={{ animationDelay: "1.5s" }}>
+                        🔍 Détection humain / véhicule IA
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* BRANDS MARQUEE */}
+                <section className="reveal overflow-hidden rounded-2xl border border-slate-200 bg-white py-5">
+                  <div className="flex w-max marquee gap-14 px-6 text-2xl font-display font-bold text-slate-300 select-none">
+                    {[...Array(2)].flatMap((_, k) => ["DAHUA", "IMOU", "HIKVISION", "WD PURPLE", "AJAX", "ZKTECO", "TP-LINK", "TENDA", "EZVIZ", "RUIJIE"].map(b => (
+                      <span key={k + b} className="hover:text-blue-600 transition whitespace-nowrap">{b}</span>
+                    )))}
+                  </div>
+                </section>
+
+                {/* WHY US - 3D cube */}
+                <section className="reveal grid md:grid-cols-2 gap-10 items-center">
+                  <div className="cube-scene flex justify-center py-6">
+                    <div className="cube relative w-44 h-44">
+                      {[
+                        { t: "rotateY(0deg) translateZ(88px)", l: "📹 4K", s: "Caméras" },
+                        { t: "rotateY(90deg) translateZ(88px)", l: "💾 XVR", s: "Enregistreurs" },
+                        { t: "rotateY(180deg) translateZ(88px)", l: "🚨 Alarme", s: "Ajax / Dahua" },
+                        { t: "rotateY(-90deg) translateZ(88px)", l: "🌐 Réseau", s: "PoE / Wi-Fi" },
+                        { t: "rotateX(90deg) translateZ(88px)", l: "🛡", s: "" },
+                        { t: "rotateX(-90deg) translateZ(88px)", l: "★", s: "" },
+                      ].map((f, i) => (
+                        <div key={i} className="absolute inset-0 rounded-2xl border border-blue-200 bg-gradient-to-br from-white to-blue-50 shadow-xl flex flex-col items-center justify-center" style={{ transform: f.t, backfaceVisibility: "hidden" }}>
+                          <div className="text-2xl font-display font-bold text-slate-900">{f.l}</div>
+                          <div className="text-xs text-blue-600 font-semibold mt-1">{f.s}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-5">
+                    <h2 className="font-display text-3xl md:text-4xl font-bold text-slate-900">Une installation complète, <span className="text-blue-600">sans compromis</span>.</h2>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {[
+                        ["✅", "Garantie officielle", "Produits d'origine avec garantie constructeur."],
+                        ["🚚", "Livraison 58 wilayas", "Ou retrait gratuit au magasin."],
+                        ["🧑‍🔧", "Conseil installateur", "Nous dimensionnons votre système."],
+                        ["💰", "Prix pro", "Tarifs installateur & revendeur après validation."],
+                      ].map(([i, t, d]) => (
+                        <div key={t} className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:shadow-lg transition">
+                          <div className="text-xl">{i}</div>
+                          <div className="font-bold text-slate-900 mt-1">{t}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">{d}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* CATEGORIES GRID */}
+                {homeData && homeData.categories && (
+                  <section className="reveal space-y-4">
+                    <div>
+                      <h2 className="text-2xl font-extrabold text-slate-900">Catégories Vidéosurveillance</h2>
+                      <p className="text-sm text-slate-500">Sélectionnez une catégorie pour explorer nos équipements</p>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                      {homeData.categories.map(cat => (
+                        <div
+                          key={cat.id}
+                          onClick={() => { setSelectedCat(cat.slug); setTab("catalog"); }}
+                          className="card-light p-4 rounded-2xl cursor-pointer flex flex-col justify-between"
+                        >
+                          <div className="font-bold text-sm text-slate-900">{cat.name}</div>
+                          <div className="text-xs text-blue-600 mt-2 font-semibold">{cat.product_count} produit(s) →</div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* FEATURED PRODUCTS */}
+                <section className="reveal space-y-5">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h2 className="text-2xl font-extrabold text-slate-900">Produits Vedettes</h2>
+                      <p className="text-sm text-slate-500">Tarifs affichés pour votre profil ({appliedTier})</p>
+                    </div>
+                    <button onClick={() => setTab("catalog")} className="text-sm text-blue-600 hover:underline font-semibold">
+                      Tout voir ({products.length}) →
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[...products].sort((a, b) => (hasRealPhoto(b) ? 1 : 0) - (hasRealPhoto(a) ? 1 : 0)).slice(0, 8).map(p => (
+                      <ProductCardItem
+                        key={p.id}
+                        p={p}
+                        onSelect={() => setSelectedProduct(p)}
+                        onAdd={() => addToCart(p, 1)}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* NOTRE MAGASIN : Google Maps + photos */}
+                <StoreSection />
+              </div>
+            )}
+
+            {/* ==================== TAB 2: CATALOG ==================== */}
+            {tab === "catalog" && (
+              <div className="grid lg:grid-cols-[260px_1fr] gap-6 items-start">
+                {/* FILTRES */}
+                <aside className="card-light p-5 rounded-3xl space-y-5 lg:sticky lg:top-24">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-display font-bold text-slate-900">Filtres</h3>
+                    <button onClick={resetFilters} className="text-xs text-blue-600 hover:underline font-semibold">Réinitialiser</button>
+                  </div>
+                  <input
+                    type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                    placeholder="Nom, référence, marque..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-blue-600"
+                  />
+                  <div>
+                    <div className="text-xs font-bold uppercase text-slate-500 mb-2">Catégorie</div>
+                    <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                      <button onClick={() => setSelectedCat("all")} className={`w-full text-left px-3 py-1.5 rounded-lg text-sm ${selectedCat === "all" ? "bg-slate-900 text-white font-semibold" : "hover:bg-slate-100 text-slate-700"}`}>Toutes</button>
+                      {homeData && homeData.categories && homeData.categories.filter(c => c.product_count > 0).map(c => (
+                        <button key={c.id} onClick={() => setSelectedCat(c.slug)} className={`w-full text-left px-3 py-1.5 rounded-lg text-sm flex justify-between ${selectedCat === c.slug ? "bg-slate-900 text-white font-semibold" : "hover:bg-slate-100 text-slate-700"}`}>
+                          <span className="truncate">{c.name}</span><span className="opacity-60 text-xs">{c.product_count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {brandList.length > 0 && (
+                    <div>
+                      <div className="text-xs font-bold uppercase text-slate-500 mb-2">Marque</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {brandList.slice(0, 14).map(([b, n]) => (
+                          <button key={b} onClick={() => setSelectedBrand(selectedBrand === b ? "all" : b)} className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${selectedBrand === b ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-700 border-slate-200 hover:border-blue-300"}`}>
+                            {b} <span className="opacity-60">{n}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-xs font-bold uppercase text-slate-500 mb-2">Prix (DA)</div>
+                    <div className="flex gap-2">
+                      <input type="number" min="0" value={priceMin} onChange={e => setPriceMin(e.target.value)} placeholder="Min" className="w-1/2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm" />
+                      <input type="number" min="0" value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="Max" className="w-1/2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm" />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {[[0, 5000], [5000, 15000], [15000, 50000], [50000, ""]].map(([a, b]) => (
+                        <button key={a} onClick={() => { setPriceMin(String(a)); setPriceMax(String(b)); }} className="px-2 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-600">
+                          {b === "" ? `> ${a / 1000}k` : `${a / 1000}k–${b / 1000}k`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <input type="checkbox" checked={onlyInStock} onChange={e => setOnlyInStock(e.target.checked)} /> En stock uniquement
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <input type="checkbox" checked={onlyFavs} onChange={e => setOnlyFavs(e.target.checked)} /> ♥ Mes favoris ({favs.length})
+                  </label>
+                </aside>
+
+                <div className="space-y-5">
+                  <div className="flex flex-wrap justify-between items-center gap-3">
+                    <div className="text-sm text-slate-500">
+                      <strong className="text-slate-900 text-lg">{filteredProducts.length}</strong> article(s)
+                      {selectedBrand !== "all" && <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{selectedBrand} ✕</span>}
+                    </div>
+                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800">
+                      <option value="newest">Tri : Plus récents</option>
+                      <option value="price_asc">Prix : Croissant</option>
+                      <option value="price_desc">Prix : Décroissant</option>
+                      <option value="name">Nom : A → Z</option>
+                      <option value="stock">Stock disponible</option>
+                    </select>
+                  </div>
+
+                  {filteredProducts.length === 0 ? (
+                    <div className="card-light rounded-3xl p-12 text-center space-y-3">
+                      <div className="text-4xl">🔍</div>
+                      <div className="font-bold text-slate-900">Aucun article ne correspond.</div>
+                      <button onClick={resetFilters} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">Effacer les filtres</button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                      {filteredProducts.slice(0, visibleCount).map(p => (
+                        <ProductCardItem
+                          key={p.id}
+                          p={p}
+                          onSelect={() => setSelectedProduct(p)}
+                          onAdd={() => addToCart(p, 1)}
+                          isFav={favs.includes(p.id)} onFav={() => toggleFav(p)}
+                          inCompare={!!compare.find(x => x.id === p.id)} onCompare={() => toggleCompare(p)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {visibleCount < filteredProducts.length && (
+                    <div className="text-center pt-2">
+                      <button onClick={() => setVisibleCount(v => v + 24)} className="px-8 py-3.5 rounded-2xl bg-white border border-slate-300 hover:border-blue-400 hover:text-blue-700 text-slate-800 font-bold text-sm transition">
+                        Afficher plus ({filteredProducts.length - visibleCount} restants)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== TAB 3: CCTV KIT BUILDER ==================== */}
+            {tab === "kit" && (
+              <div className="space-y-6">
+                <div className="card-light p-6 rounded-2xl">
+                  <h2 className="text-2xl font-extrabold text-slate-900">🛠 Configurateur de Kit CCTV</h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Composez votre pack surveillance complet avec vérification automatique de compatibilité.
+                  </p>
+                </div>
+
+                {kitData ? (
+                  <div className="grid lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-5">
+                      {[
+                        { key: "cameras", title: "1. Caméras de Surveillance", list: kitData.cameras || [] },
+                        { key: "recorders", title: "2. Enregistreur DVR / XVR / NVR", list: kitData.recorders || [] },
+                        { key: "hdds", title: "3. Disque Dur Surveillance", list: kitData.hdds || [] },
+                        { key: "psus", title: "4. Alimentation 12V", list: kitData.psus || [] },
+                        { key: "accessories", title: "5. Connecteurs & Accessoires", list: [...(kitData.connectors || []), ...(kitData.accessories || [])] },
+                      ].map(section => (
+                        <div key={section.key} className="card-light p-5 rounded-2xl space-y-3">
+                          <h3 className="font-bold text-slate-900 text-base">{section.title}</h3>
+                          <div className="grid sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
+                            {section.list.slice(0, 12).map(prod => {
+                              const currentQty = kitSelection[prod.id]?.qty || 0;
+                              return (
+                                <div key={prod.id} className={`p-3 rounded-xl border ${currentQty > 0 ? "border-blue-500 bg-blue-50/50" : "border-slate-200 bg-slate-50/60"} flex justify-between items-center gap-2`}>
+                                  <div>
+                                    <div className="text-xs font-bold text-slate-900">{prod.name}</div>
+                                    <div className="text-[11px] text-slate-500">Réf: {prod.reference} • {fmtMoney(prod.effective_price)}</div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <button onClick={() => evaluateKit({ ...kitSelection, [prod.id]: { product: prod, qty: Math.max(0, currentQty - 1) } })} className="w-7 h-7 rounded bg-white border border-slate-300 text-slate-800 font-bold">-</button>
+                                    <span className="w-6 text-center text-xs font-bold">{currentQty}</span>
+                                    <button onClick={() => evaluateKit({ ...kitSelection, [prod.id]: { product: prod, qty: currentQty + 1 } })} className="w-7 h-7 rounded bg-blue-600 text-white font-bold">+</button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="card-light p-6 rounded-2xl h-fit sticky top-24 space-y-4">
+                      <h3 className="text-lg font-extrabold text-slate-900">Résumé du Kit</h3>
+                      {!kitEval ? (
+                        <p className="text-sm text-slate-500">Sélectionnez vos équipements à gauche.</p>
+                      ) : (
+                        <>
+                          <div className={`p-3 rounded-xl text-xs font-semibold ${kitEval.is_compatible ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                            {kitEval.is_compatible ? "✓ Configuration 100% Compatible" : "⚠ Capacité canaux dépassée"}
+                          </div>
+                          <div className="space-y-1.5 text-xs">
+                            {kitEval.items.map(it => (
+                              <div key={it.product_id} className="flex justify-between text-slate-600">
+                                <span>{it.quantity}x {it.name}</span>
+                                <span className="font-semibold text-slate-900">{fmtMoney(it.line_total)}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {kitEval.warnings && kitEval.warnings.map((w, i) => (
+                            <div key={i} className="text-xs text-red-700 bg-red-50 p-2.5 rounded-lg">⚠ {w}</div>
+                          ))}
+                          {kitEval.recommendations && kitEval.recommendations.map((r, i) => (
+                            <div key={i} className="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-lg">💡 {r}</div>
+                          ))}
+                          <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                            <span className="text-sm text-slate-500">Total ({kitEval.applied_tier})</span>
+                            <span className="text-xl font-extrabold text-blue-600">{fmtMoney(kitEval.package_total)}</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              Object.values(kitSelection).forEach(v => { if (v && v.qty > 0) addToCart(v.product, v.qty); });
+                              setTab("cart");
+                            }}
+                            className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm"
+                          >
+                            Ajouter le Kit au Panier →
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-slate-500">Chargement...</div>
+                )}
+              </div>
+            )}
+
+            {/* ==================== TAB 4: CART & CHECKOUT ==================== */}
+            {tab === "cart" && (
+              <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="card-light p-6 rounded-2xl space-y-4">
+                    <h2 className="text-2xl font-extrabold text-slate-900">🛒 Votre Panier</h2>
+                    {cart.length === 0 ? (
+                      <div className="py-8 text-center space-y-3">
+                        <p className="text-slate-500">Votre panier est vide.</p>
+                        <button onClick={() => setTab("catalog")} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">
+                          Parcourir le catalogue
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {cart.map(item => (
+                          <div key={item.product.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                              <div className="font-bold text-slate-900">{item.product.name}</div>
+                              <div className="text-xs text-slate-500">Réf: {item.product.reference} • {fmtMoney(item.product.effective_price)}</div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => updateCartQty(item.product.id, item.quantity - 1)} className="w-8 h-8 rounded bg-white border border-slate-300 font-bold">-</button>
+                              <span className="font-bold text-sm w-8 text-center">{item.quantity}</span>
+                              <button onClick={() => updateCartQty(item.product.id, item.quantity + 1)} className="w-8 h-8 rounded bg-white border border-slate-300 font-bold">+</button>
+                              <div className="font-extrabold text-blue-600 min-w-[110px] text-right">
+                                {fmtMoney(item.product.effective_price * item.quantity)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {lastCreatedOrder && (
+                    <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+                      <div className="text-lg font-extrabold text-emerald-800">✓ Commande enregistrée : {lastCreatedOrder.order_uid}</div>
+                      <p className="text-sm text-emerald-700">Transmise immédiatement à la caisse LOGISZ.</p>
+                    </div>
+                  )}
+
+                  <div className="card-light p-6 rounded-2xl space-y-4">
+                    <h3 className="text-lg font-bold text-slate-900">🔍 Suivre une Commande</h3>
+                    <div className="flex gap-2">
+                      <input type="text" value={trackUid} onChange={e => setTrackUid(e.target.value)} placeholder="Ex: WEB-20261114-CD085" className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm" />
+                      <button
+                        onClick={async () => {
+                          if (!trackUid.trim()) return;
+                          const r = await fetch(`${API_BASE}/orders/track/${trackUid.trim()}/`);
+                          if (r.ok) { const d = await r.json(); setTrackedOrder(d.order); }
+                          else showToast("Commande introuvable", "error");
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm"
+                      >
+                        Rechercher
+                      </button>
+                    </div>
+                    {trackedOrder && (
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm space-y-1">
+                        <div className="font-bold text-slate-900">Commande {trackedOrder.order_uid} — {trackedOrder.customer_name}</div>
+                        <div className="text-blue-600 font-semibold">Statut : {trackedOrder.status}</div>
+                        <div className="text-slate-600">Total TTC : {fmtMoney(trackedOrder.total_amount)}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <form onSubmit={handleCheckout} className="card-light p-6 rounded-2xl space-y-4 h-fit">
+                  <h3 className="text-xl font-extrabold text-slate-900">Finaliser la Commande</h3>
+                  <input required placeholder="Nom complet *" value={checkoutForm.customer_name} onChange={e => setCheckoutForm({ ...checkoutForm, customer_name: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <input required placeholder="Téléphone *" value={checkoutForm.customer_phone} onChange={e => setCheckoutForm({ ...checkoutForm, customer_phone: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <input placeholder="Wilaya" value={checkoutForm.wilaya} onChange={e => setCheckoutForm({ ...checkoutForm, wilaya: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <input placeholder="Adresse de livraison" value={checkoutForm.delivery_address} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_address: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <select value={checkoutForm.delivery_method} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_method: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
+                    <option value="DELIVERY">Livraison à domicile</option>
+                    <option value="PICKUP">Retrait au magasin (Gratuit)</option>
+                  </select>
+                  <select value={checkoutForm.payment_method} onChange={e => setCheckoutForm({ ...checkoutForm, payment_method: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
+                    <option value="CASH_ON_DELIVERY">Paiement à la livraison</option>
+                    <option value="PAY_AT_STORE">Paiement au comptoir</option>
+                  </select>
+                  <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                    <span className="text-sm text-slate-600">Total Articles :</span>
+                    <span className="text-xl font-extrabold text-blue-600">{fmtMoney(cartSubtotal)}</span>
+                  </div>
+                  <button type="submit" disabled={cart.length === 0} className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-sm">
+                    ✓ Confirmer la Commande
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* ==================== TAB 5: ACCOUNT & PRO TIERS ==================== */}
+            {tab === "account" && (
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="card-light p-6 rounded-2xl space-y-5">
+                  {profile ? (
+                    <div className="space-y-4">
+                      <h2 className="text-2xl font-extrabold text-slate-900">Mon Compte : {profile.username}</h2>
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-sm">
+                        <div>Catégorie : <strong>{profile.requested_type}</strong></div>
+                        <div>Statut : <strong className="text-blue-600">{profile.approval_status}</strong></div>
+                        <div>Tarif Actif : <strong className="text-emerald-600">{profile.effective_tier}</strong></div>
+                      </div>
+                      <div className="flex gap-3">
+                        {isAdmin && (
+                          <a href="/mon-dashboard/" className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">
+                            ⚙ Ouvrir Mon Dashboard Privé
+                          </a>
+                        )}
+                        <button onClick={() => { localStorage.removeItem("cctv_jwt"); setToken(""); setProfile(null); }} className="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-bold">
+                          Se déconnecter
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <button onClick={() => setAuthMode("login")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm ${authMode === "login" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>Connexion</button>
+                        <button onClick={() => setAuthMode("register")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm ${authMode === "register" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>Demander un Compte PRO</button>
+                      </div>
+                      {authMode === "login" ? (
+                        <form onSubmit={handleLogin} className="space-y-4">
+                          <input required placeholder="Nom d'utilisateur" value={loginForm.username} onChange={e => setLoginForm({ ...loginForm, username: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                          <input required type="password" placeholder="Mot de passe" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                          <button type="submit" className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-sm">Se connecter</button>
+                        </form>
+                      ) : (
+                        <form onSubmit={handleRegister} className="space-y-3">
+                          <select value={regForm.account_type} onChange={e => setRegForm({ ...regForm, account_type: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold bg-white">
+                            <option value="INSTALLER">Compte PRO Installateur</option>
+                            <option value="RESELLER">Compte PRO Revendeur / Grossiste</option>
+                            <option value="PUBLIC">Compte Client Standard</option>
+                          </select>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input required placeholder="Nom d'utilisateur *" value={regForm.username} onChange={e => setRegForm({ ...regForm, username: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                            <input required type="password" placeholder="Mot de passe *" value={regForm.password} onChange={e => setRegForm({ ...regForm, password: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input required placeholder="Téléphone *" value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                            <input placeholder="Entreprise" value={regForm.company_name} onChange={e => setRegForm({ ...regForm, company_name: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                          </div>
+                          <button type="submit" className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm">Soumettre la demande</button>
+                        </form>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="card-light p-6 rounded-2xl space-y-4">
+                  <h3 className="text-xl font-bold text-slate-900">Niveaux Tarifaires</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                      <div className="font-bold text-slate-900">1. Client Public</div>
+                      <p className="text-xs text-slate-500 mt-1">Accès libre et commande immédiate sans inscription.</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200">
+                      <div className="font-bold text-blue-800">2. Installateur Professionnel</div>
+                      <p className="text-xs text-blue-700 mt-1">Tarifs préférentiels activés après approbation administrateur.</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                      <div className="font-bold text-emerald-800">3. Revendeur / Grossiste</div>
+                      <p className="text-xs text-emerald-700 mt-1">Prix de gros synchronisés depuis LOGISZ après validation.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* PRODUCT DETAIL MODAL */}
+          {selectedProduct && (
+            <ProductModal p={selectedProduct} tier={appliedTier} products={products} whatsapp={homeData && homeData.whatsapp}
+              onPick={(q) => setSelectedProduct(q)}
+              onClose={() => setSelectedProduct(null)} onAdd={() => { addToCart(selectedProduct, 1); setSelectedProduct(null); }} />
+          )}
+
+          {/* BARRE DE COMPARAISON */}
+          {compare.length > 0 && (
+            <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 max-w-[95vw]">
+              <div className="flex -space-x-2">
+                {compare.map(c => <img key={c.id} src={getProductImg(c)} alt="" className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white object-contain" />)}
+              </div>
+              <span className="text-sm font-semibold hidden sm:inline">{compare.length} produit(s) à comparer</span>
+              <button onClick={() => setShowCompare(true)} disabled={compare.length < 2} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-bold">Comparer</button>
+              <button onClick={() => setCompare([])} className="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+          )}
+          {showCompare && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setShowCompare(false)}>
+              <div className="bg-white rounded-3xl p-6 max-w-5xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()} style={{ animation: "modalIn .35s cubic-bezier(.2,.8,.2,1)" }}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-display text-2xl font-bold">Comparateur</h3>
+                  <button onClick={() => setShowCompare(false)} className="w-9 h-9 rounded-full bg-slate-100 font-bold">✕</button>
+                </div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {[
+                      ["", c => <img src={getProductImg(c)} alt="" className="h-28 mx-auto object-contain" />],
+                      ["Produit", c => <span className="font-bold">{c.name}</span>],
+                      ["Référence", c => <span className="font-mono text-xs">{c.reference}</span>],
+                      ["Marque", c => c.brand_name || "—"],
+                      ["Catégorie", c => c.category_name || "—"],
+                      ["Prix", c => <span className="font-extrabold text-blue-600">{fmtMoney(c.effective_price)}</span>],
+                      ["Stock", c => c.in_stock ? <span className="text-emerald-600 font-semibold">{c.available_stock} dispo</span> : <span className="text-red-600">Rupture</span>],
+                      ["Garantie", c => c.warranty_months ? `${c.warranty_months} mois` : "—"],
+                      ["", c => <button onClick={() => addToCart(c, 1)} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">+ Panier</button>],
+                    ].map(([label, fn], i) => (
+                      <tr key={i} className={i % 2 ? "bg-slate-50" : ""}>
+                        <td className="p-3 font-semibold text-slate-500 w-28">{label}</td>
+                        {compare.map(c => <td key={c.id} className="p-3 text-center align-middle">{fn(c)}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* RETOUR EN HAUT */}
+          {showTop && (
+            <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="fixed bottom-24 right-6 z-40 w-11 h-11 rounded-full bg-white border border-slate-200 shadow-lg text-slate-700 hover:text-blue-600 text-lg">↑</button>
+          )}
+
+          {/* WHATSAPP & TIKTOK FLOTTANTS */}
+          <div className="fixed bottom-6 left-6 z-40 flex flex-col gap-3">
+            <a href="https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc" target="_blank" rel="noreferrer"
+               className="w-12 h-12 rounded-full bg-slate-950 hover:bg-slate-800 text-white border border-white/15 flex items-center justify-center shadow-xl transition hover:scale-110" title="TikTok @infotech.sz">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+            </a>
+            <a href="https://wa.me/213557882719" target="_blank" rel="noreferrer"
+               className="w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-xl wa-pulse" title="WhatsApp 0557 88 27 19">
+              <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4C2.7 15.6 2.2 13.8 2.2 12 2.2 6.6 6.6 2.2 12 2.2S21.8 6.6 21.8 12 17.4 21.8 12 21.8zM12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.8 1 3.8 1.5 5.8 1.5 6.6 0 12-5.4 12-12S18.6 0 12 0z"/></svg>
+            </a>
+          </div>
+
+          {/* FOOTER */}
+          <footer className="mt-16 bg-slate-950 text-slate-400">
+            <div className="max-w-7xl mx-auto px-4 py-12 grid md:grid-cols-4 gap-8 text-sm">
+              <div className="md:col-span-2 space-y-3">
+                <div className="font-display text-2xl font-bold text-white">LOGISZ <span className="text-blue-500">CCTV</span> — INFOTECH ZEMRI</div>
+                <p className="max-w-md">Vidéosurveillance, alarmes, réseau et informatique. Stock synchronisé en direct avec notre caisse — ce que vous voyez est disponible.</p>
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <a href="https://wa.me/213557882719" target="_blank" rel="noreferrer" className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center gap-1.5">
+                    💬 WhatsApp : 0557 88 27 19
+                  </a>
+                  <a href="https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc" target="_blank" rel="noreferrer" className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold inline-flex items-center gap-1.5">
+                    🎵 TikTok @infotech.sz
+                  </a>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-white font-semibold">Boutique</div>
+                <button onClick={() => { setTab("catalog"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="block hover:text-white">Catalogue</button>
+                <button onClick={() => { setTab("kit"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="block hover:text-white">Configurateur de kit</button>
+                <button onClick={() => { setTab("account"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="block hover:text-white">Espace pro</button>
+              </div>
+              <div className="space-y-2">
+                <div className="text-white font-semibold">Magasin & Contact</div>
+                <a href="tel:0557882719" className="block text-white font-bold hover:text-blue-400">📞 0557 88 27 19 (Principal)</a>
+                <a href="tel:0791476304" className="block hover:text-white">📞 0791 47 63 04</a>
+                <a href="https://wa.me/213557882719" target="_blank" rel="noreferrer" className="block text-emerald-400 hover:text-emerald-300 font-semibold">💬 WhatsApp : 0557 88 27 19</a>
+                <a href="https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc" target="_blank" rel="noreferrer" className="block hover:text-white font-semibold">🎵 TikTok : @infotech.sz</a>
+                <a href="https://share.google/RJzeDOo33739eINyd" target="_blank" rel="noreferrer" className="block hover:text-white">📍 INFOTECH ZEMRI — Google Maps</a>
+              </div>
+            </div>
+            <div className="border-t border-white/10 py-4 text-center text-xs">© {new Date().getFullYear()} LOGISZ CCTV — INFOTECH ZEMRI • Synchronisé avec votre logiciel de caisse</div>
+          </footer>
+        </div>
+      );
+    }
+
+    function hasRealPhoto(p) {
+      return Boolean(p && p.images && p.images.some(i => String(i.image_url || "").startsWith("/media/")));
+    }
+
+    /* ---------- Carte produit avec effet 3D (tilt + reflet) ---------- */
+    function ProductCardItem({ p, onSelect, onAdd, isFav, onFav, inCompare, onCompare }) {
+      const ref = React.useRef(null);
+      const onMove = (e) => {
+        const el = ref.current; if (!el) return;
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+        el.style.transform = `rotateY(${(x - 0.5) * 14}deg) rotateX(${(0.5 - y) * 14}deg) translateZ(0)`;
+        el.style.setProperty("--mx", `${x * 100}%`); el.style.setProperty("--my", `${y * 100}%`);
+      };
+      const onLeave = () => { if (ref.current) ref.current.style.transform = ""; };
+      return (
+        <div className="tilt-wrap reveal">
+          <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} className="tilt relative bg-white border border-slate-200 rounded-3xl overflow-hidden flex flex-col justify-between h-full">
+            <div className="shine"></div>
+            <div onClick={onSelect} className="cursor-pointer">
+              <div className="relative h-52 bg-gradient-to-b from-slate-50 to-white overflow-hidden flex items-center justify-center">
+                <img src={getProductImg(p)} alt={p.name} loading="lazy" className="pop max-h-[85%] max-w-[85%] object-contain drop-shadow-xl transition duration-500" />
+                <span className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${p.in_stock ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                  {p.in_stock ? `En stock (${p.available_stock})` : "Rupture"}
+                </span>
+                {p.brand_name && <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider">{p.brand_name}</span>}
+                {onFav && (
+                  <button onClick={(e) => { e.stopPropagation(); onFav(); }} title="Favori"
+                    className={`absolute bottom-3 right-3 w-9 h-9 rounded-full border shadow-sm flex items-center justify-center text-base transition hover:scale-110 ${isFav ? "bg-rose-500 border-rose-500 text-white" : "bg-white/90 border-slate-200 text-slate-400"}`}>♥</button>
+                )}
+                {onCompare && (
+                  <button onClick={(e) => { e.stopPropagation(); onCompare(); }} title="Comparer"
+                    className={`absolute bottom-3 left-3 px-2.5 h-8 rounded-full border shadow-sm text-[11px] font-bold transition ${inCompare ? "bg-blue-600 border-blue-600 text-white" : "bg-white/90 border-slate-200 text-slate-600"}`}>⇄ {inCompare ? "Comparé" : "Comparer"}</button>
+                )}
+              </div>
+              <div className="p-4 space-y-1 pop-sm">
+                <div className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">{p.category_name}</div>
+                <div className="font-bold text-slate-900 text-sm line-clamp-2 min-h-[2.5rem]">{p.name}</div>
+                <div className="text-[11px] text-slate-400 font-mono">Réf. {p.reference}</div>
+              </div>
+            </div>
+            <div className="px-4 pb-4 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 pop-sm">
+              <div>
+                <div className="text-[10px] text-slate-400 uppercase">Prix ({p.applied_tier})</div>
+                <div className="text-lg font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
+              </div>
+              <button onClick={onAdd} className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition hover:scale-105">
+                + Panier
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ---------- Fiche produit : galerie + zoom 3D ---------- */
+    function ProductModal({ p, tier, onClose, onAdd, products = [], whatsapp, onPick }) {
+      const imgs = (p.images && p.images.length ? p.images.map(i => i.image_url) : [getProductImg(p)]);
+      const [idx, setIdx] = useState(0);
+      const [zoom, setZoom] = useState({ on: false, x: 50, y: 50 });
+      useEffect(() => { setIdx(0); }, [p.id]);
+      useEffect(() => { const k = (e) => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
+      const related = products.filter(x => x.id !== p.id && x.category_name === p.category_name).slice(0, 4);
+      const waNum = String(whatsapp || "").replace(/[^0-9]/g, "");
+      const waMsg = encodeURIComponent(`Bonjour, je suis intéressé par : ${p.name} (Réf. ${p.reference}) — ${fmtMoney(p.effective_price)}. Est-il disponible ?`);
+      return (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
+          <div className="bg-white max-w-4xl w-full rounded-3xl p-6 grid md:grid-cols-2 gap-6 shadow-2xl max-h-[92vh] overflow-y-auto" style={{ animation: "modalIn .35s cubic-bezier(.2,.8,.2,1)" }} onClick={e => e.stopPropagation()}>
+            <div className="space-y-3">
+              <div className="relative h-80 rounded-2xl bg-gradient-to-b from-slate-50 to-white border border-slate-200 overflow-hidden cursor-zoom-in"
+                   onMouseMove={e => { const r = e.currentTarget.getBoundingClientRect(); setZoom({ on: true, x: (e.clientX - r.left) / r.width * 100, y: (e.clientY - r.top) / r.height * 100 }); }}
+                   onMouseLeave={() => setZoom({ on: false, x: 50, y: 50 })}>
+                <img src={imgs[idx]} alt={p.name} className="w-full h-full object-contain p-4 transition-transform duration-200"
+                     style={{ transform: zoom.on ? "scale(2.1)" : "scale(1)", transformOrigin: `${zoom.x}% ${zoom.y}%` }} />
+              </div>
+              {imgs.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto">
+                  {imgs.map((u, i) => (
+                    <button key={i} onClick={() => setIdx(i)} className={`w-16 h-16 rounded-xl border-2 overflow-hidden flex-shrink-0 ${i === idx ? "border-blue-600" : "border-slate-200"}`}>
+                      <img src={u} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <span className="text-xs text-blue-600 font-bold uppercase">{p.brand_name ? p.brand_name + " • " : ""}{p.category_name}</span>
+                  <h3 className="font-display text-2xl font-bold text-slate-900 mt-1">{p.name}</h3>
+                  <div className="text-xs text-slate-400 font-mono mt-1">Réf. {p.reference}</div>
+                </div>
+                <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">{p.short_description || p.description || "Contactez-nous pour la fiche technique complète."}</p>
+              {p.warranty_months > 0 && <div className="text-xs font-semibold text-slate-700">🛡 Garantie {p.warranty_months} mois</div>}
+              <div className="mt-auto p-4 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                <div>
+                  <div className="text-xs text-slate-500">Prix ({tier})</div>
+                  <div className="text-3xl font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
+                  <div className={`text-xs font-medium ${p.in_stock ? "text-emerald-600" : "text-red-600"}`}>{p.in_stock ? `${p.available_stock} en stock` : "Rupture de stock"}</div>
+                </div>
+                <button onClick={onAdd} className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-sm transition hover:scale-105">+ Ajouter au panier</button>
+              </div>
+              {waNum && (
+                <a href={`https://wa.me/${waNum}?text=${waMsg}`} target="_blank" rel="noreferrer" className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm text-center transition">
+                  💬 Commander / Demander via WhatsApp
+                </a>
+              )}
+              {related.length > 0 && (
+                <div className="pt-2">
+                  <div className="text-xs font-bold uppercase text-slate-500 mb-2">Produits similaires</div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {related.map(r => (
+                      <button key={r.id} onClick={() => onPick && onPick(r)} className="group rounded-xl border border-slate-200 hover:border-blue-400 p-1.5 bg-white text-left">
+                        <img src={getProductImg(r)} alt="" className="w-full h-14 object-contain group-hover:scale-105 transition" />
+                        <div className="text-[10px] font-semibold text-slate-700 line-clamp-1 mt-1">{r.name}</div>
+                        <div className="text-[10px] text-blue-600 font-bold">{fmtMoney(r.effective_price)}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ---------- Recherche dans l'en-tête avec suggestions instantanées ---------- */
+    function HeaderSearch({ products, onPick, onSubmit }) {
+      const [q, setQ] = useState("");
+      const [open, setOpen] = useState(false);
+      const hits = useMemo(() => {
+        const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+        if (!words.length) return [];
+        return products.filter(p => {
+          const hay = `${p.name || ""} ${p.reference || ""} ${p.brand_name || ""}`.toLowerCase();
+          return words.every(w => hay.includes(w));
+        }).slice(0, 6);
+      }, [q, products]);
+      return (
+        <form className="relative flex-1 max-w-md hidden md:block" onSubmit={e => { e.preventDefault(); if (q.trim()) { onSubmit(q.trim()); setOpen(false); } }}>
+          <input value={q} onChange={e => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 180)}
+            placeholder="🔍  Rechercher une caméra, un XVR, une référence..."
+            className="w-full px-4 py-2.5 rounded-2xl bg-slate-100/80 border border-transparent focus:bg-white focus:border-blue-500 text-sm outline-none transition" />
+          {open && hits.length > 0 && (
+            <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden z-50">
+              {hits.map(p => (
+                <button type="button" key={p.id} onMouseDown={() => { onPick(p); setQ(""); }} className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 text-left">
+                  <img src={getProductImg(p)} alt="" className="w-10 h-10 object-contain rounded-lg bg-slate-50" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-slate-900 truncate">{p.name}</div>
+                    <div className="text-[11px] text-slate-400 font-mono">{p.reference}</div>
+                  </div>
+                  <div className="text-xs font-bold text-blue-600 whitespace-nowrap">{fmtMoney(p.effective_price)}</div>
+                </button>
+              ))}
+              <button type="submit" className="w-full px-3 py-2 text-xs font-semibold text-blue-600 bg-slate-50 hover:bg-slate-100">Voir tous les résultats pour « {q} » →</button>
+            </div>
+          )}
+        </form>
+      );
+    }
+
+    /* ---------- Compteur animé ---------- */
+    function Counter({ to, label, suffix = "" }) {
+      const [v, setV] = useState(0);
+      useEffect(() => {
+        let raf, start;
+        const step = (t) => { start = start || t; const k = Math.min(1, (t - start) / 1400); setV(Math.round(to * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(step); };
+        raf = requestAnimationFrame(step); return () => cancelAnimationFrame(raf);
+      }, [to]);
+      return (
+        <div className="p-3 rounded-2xl bg-white/80 backdrop-blur border border-slate-200 text-center">
+          <div className="font-display text-2xl font-bold text-slate-900">{v}{suffix}</div>
+          <div className="text-[11px] text-slate-500">{label}</div>
+        </div>
+      );
+    }
+
+    /* ---------- Section magasin : Google Maps + photos ---------- */
+    function StoreSection() {
+      const [data, setData] = useState(null);
+      const [big, setBig] = useState(null);
+      useEffect(() => { fetch(`${API_BASE}/store/photos/`).then(r => r.ok ? r.json() : null).then(setData).catch(() => {}); }, []);
+      const s = (data && data.store) || {
+        name: "INFOTECH ZEMRI",
+        maps_url: "https://share.google/RJzeDOo33739eINyd",
+        maps_query: "INFOTECH ZEMRI",
+        phone: "0557 88 27 19 / 0791 47 63 04",
+        tiktok_url: "https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc"
+      };
+      const tiktokUrl = s.tiktok_url || "https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc";
+      const photos = (data && data.photos) || [];
+      return (
+        <section className="reveal space-y-5">
+          <div className="flex flex-wrap justify-between items-end gap-3">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-600">Venez nous voir</div>
+              <h2 className="font-display text-3xl font-bold text-slate-900">Notre magasin — {s.name}</h2>
+              {s.address && <p className="text-sm text-slate-500 mt-1">📍 {s.address}</p>}
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              <a href="https://wa.me/213557882719" target="_blank" rel="noreferrer" className="px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 transition hover:-translate-y-0.5">
+                💬 WhatsApp : 0557 88 27 19
+              </a>
+              <a href={tiktokUrl} target="_blank" rel="noreferrer" className="px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-lg transition hover:-translate-y-0.5">
+                🎵 TikTok @infotech.sz
+              </a>
+              <a href={s.maps_url} target="_blank" rel="noreferrer" className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5">
+                🧭 Itinéraire Google Maps
+              </a>
+            </div>
+          </div>
+          <div className="grid lg:grid-cols-5 gap-5">
+            <div className="lg:col-span-3 rounded-3xl overflow-hidden border border-slate-200 shadow-xl h-[380px] bg-slate-100">
+              <iframe title="Carte magasin" className="w-full h-full" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(s.maps_query)}&z=17&output=embed`}></iframe>
+            </div>
+            <div className="lg:col-span-2 grid grid-cols-2 gap-3 content-start">
+              {photos.length ? photos.slice(0, 6).map((u, i) => (
+                <button key={u} onClick={() => setBig(u)} className={`tilt-wrap ${i === 0 ? "col-span-2 h-48" : "h-28"}`}>
+                  <img src={u} alt="Magasin" className="w-full h-full object-cover rounded-2xl border border-slate-200 hover:scale-[1.03] transition shadow" />
+                </button>
+              )) : (
+                <div className="col-span-2 h-full min-h-[180px] rounded-3xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-center p-6 text-slate-500 text-sm">
+                  <div className="text-3xl mb-2">🏬</div>
+                  Les photos du magasin apparaîtront ici.<br />
+                  <span className="text-xs">(Ajoutez-les depuis « Mon Dashboard » → Photos du magasin)</span>
+                </div>
+              )}
+              <div className="col-span-2 p-4 rounded-2xl bg-slate-900 text-white text-sm space-y-2">
+                {s.hours && <div>🕘 {s.hours}</div>}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span>📞</span>
+                  <a href="tel:0557882719" className="font-extrabold text-emerald-400 underline">0557 88 27 19</a>
+                  <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">Principal & WhatsApp</span>
+                  <span className="text-slate-400">•</span>
+                  <a href="tel:0791476304" className="underline text-slate-200">0791 47 63 04</a>
+                </div>
+                <div>
+                  🎵 TikTok : <a href={tiktokUrl} target="_blank" rel="noreferrer" className="underline font-bold text-sky-400 hover:text-sky-300">@infotech.sz</a>
+                </div>
+                <div>🚗 Retrait gratuit de vos commandes au magasin</div>
+              </div>
+            </div>
+          </div>
+          {big && (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6" onClick={() => setBig(null)}>
+              <img src={big} alt="" className="max-h-[88vh] max-w-full rounded-2xl shadow-2xl" />
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    /* ---------- Scène 3D (Three.js) : caméra de surveillance qui suit la souris ---------- */
+    function Hero3D() {
+      const mount = React.useRef(null);
+      useEffect(() => {
+        const el = mount.current;
+        if (!el || !window.THREE) return;
+        const T = window.THREE;
+        const W = () => el.clientWidth, H = () => el.clientHeight;
+        const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(W(), H());
+        renderer.shadowMap.enabled = true;
+        el.appendChild(renderer.domElement);
+        const scene = new T.Scene();
+        const cam = new T.PerspectiveCamera(38, W() / H(), 0.1, 100);
+        cam.position.set(0, 1.2, 9);
+
+        scene.add(new T.HemisphereLight(0xffffff, 0xcbd5e1, 0.9));
+        const key = new T.DirectionalLight(0xffffff, 1.1); key.position.set(4, 6, 5); key.castShadow = true; scene.add(key);
+        const rim = new T.PointLight(0x3b82f6, 2.2, 20); rim.position.set(-4, 2, -2); scene.add(rim);
+
+        const white = new T.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.25, roughness: 0.35 });
+        const dark = new T.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.25 });
+        const glass = new T.MeshPhysicalMaterial({ color: 0x1e3a8a, metalness: 0.1, roughness: 0.05, transmission: 0.2, clearcoat: 1, opacity: 0.95, transparent: true });
+
+        // ---- Caméra bullet ----
+        const rig = new T.Group(); scene.add(rig);
+        const wall = new T.Mesh(new T.CylinderGeometry(0.55, 0.55, 0.18, 48), white); wall.rotation.x = Math.PI / 2; wall.position.set(0, 1.6, -1.6); rig.add(wall);
+        const arm = new T.Mesh(new T.CylinderGeometry(0.12, 0.12, 1.3, 24), white); arm.rotation.x = Math.PI / 2; arm.position.set(0, 1.6, -0.95); rig.add(arm);
+        const joint = new T.Mesh(new T.SphereGeometry(0.22, 32, 32), white); joint.position.set(0, 1.6, -0.3); rig.add(joint);
+        const head = new T.Group(); head.position.set(0, 1.6, -0.3); rig.add(head);
+        const body = new T.Mesh(new T.CylinderGeometry(0.62, 0.62, 2.6, 64), white); body.rotation.x = Math.PI / 2; body.position.set(0, -0.25, 1.1); head.add(body);
+        const visor = new T.Mesh(new T.CylinderGeometry(0.72, 0.72, 2.0, 64, 1, true, Math.PI * 1.15, Math.PI * 0.7), white);
+        visor.material = white.clone(); visor.material.side = T.DoubleSide; visor.rotation.x = Math.PI / 2; visor.rotation.y = Math.PI; visor.position.set(0, -0.2, 1.6); head.add(visor);
+        const face = new T.Mesh(new T.CircleGeometry(0.6, 64), dark); face.position.set(0, -0.25, 2.41); head.add(face);
+        const lens = new T.Mesh(new T.SphereGeometry(0.26, 48, 48), glass); lens.scale.z = 0.45; lens.position.set(0, -0.25, 2.43); head.add(lens);
+        const ring = new T.Mesh(new T.TorusGeometry(0.33, 0.035, 16, 64), new T.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x2563eb, emissiveIntensity: 1.6 })); ring.position.set(0, -0.25, 2.44); head.add(ring);
+        for (let i = 0; i < 6; i++) { // LEDs IR
+          const a = (i / 6) * Math.PI * 2;
+          const led = new T.Mesh(new T.SphereGeometry(0.045, 16, 16), new T.MeshStandardMaterial({ color: 0x7f1d1d, emissive: 0xef4444, emissiveIntensity: 0.9 }));
+          led.position.set(Math.cos(a) * 0.48, -0.25 + Math.sin(a) * 0.48, 2.42); head.add(led);
+        }
+        const logo = new T.Mesh(new T.BoxGeometry(0.5, 0.06, 0.01), new T.MeshStandardMaterial({ color: 0x1d4ed8 })); logo.position.set(0, 0.38, 1.6); logo.rotation.x = -0.15; head.add(logo);
+        // cône de vision
+        const cone = new T.Mesh(new T.ConeGeometry(2.2, 7, 48, 1, true), new T.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.08, side: T.DoubleSide, depthWrite: false }));
+        cone.rotation.x = -Math.PI / 2; cone.position.set(0, -0.25, 5.9); head.add(cone);
+        rig.position.set(0.3, -0.6, 0); rig.rotation.y = -0.5;
+
+        // ---- Caméra dôme flottante ----
+        const dome = new T.Group(); dome.position.set(-2.4, -1.4, 0.5); scene.add(dome);
+        const dbase = new T.Mesh(new T.CylinderGeometry(0.75, 0.8, 0.25, 64), white); dome.add(dbase);
+        const dglass = new T.Mesh(new T.SphereGeometry(0.6, 64, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), glass); dglass.position.y = -0.12; dome.add(dglass);
+        const deye = new T.Mesh(new T.SphereGeometry(0.22, 32, 32), dark); deye.position.set(0, -0.35, 0.25); dome.add(deye);
+        dome.rotation.x = Math.PI; dome.scale.setScalar(0.85);
+
+        // ---- Particules ----
+        const pg = new T.BufferGeometry(); const N = 380; const pos = new Float32Array(N * 3);
+        for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - 0.5) * 16; pos[i * 3 + 1] = (Math.random() - 0.5) * 9; pos[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2; }
+        pg.setAttribute("position", new T.BufferAttribute(pos, 3));
+        const pts = new T.Points(pg, new T.PointsMaterial({ color: 0x3b82f6, size: 0.04, transparent: true, opacity: 0.55 }));
+        scene.add(pts);
+        // sol ombre
+        const ground = new T.Mesh(new T.PlaneGeometry(30, 30), new T.ShadowMaterial({ opacity: 0.12 })); ground.rotation.x = -Math.PI / 2; ground.position.y = -2.6; ground.receiveShadow = true; scene.add(ground);
+        [body, visor, joint, arm, dbase].forEach(m => m.castShadow = true);
+
+        let mx = 0, my = 0;
+        const onMove = (e) => { mx = (e.clientX / window.innerWidth) * 2 - 1; my = (e.clientY / window.innerHeight) * 2 - 1; };
+        window.addEventListener("mousemove", onMove);
+        const onResize = () => { renderer.setSize(W(), H()); cam.aspect = W() / H(); cam.updateProjectionMatrix(); };
+        window.addEventListener("resize", onResize);
+
+        let raf; const clock = new T.Clock();
+        const loop = () => {
+          const t = clock.getElapsedTime();
+          const auto = Math.sin(t * 0.6) * 0.25;
+          head.rotation.y += ((mx * 0.9 + auto) - head.rotation.y) * 0.06;
+          head.rotation.x += ((my * 0.35) - head.rotation.x) * 0.06;
+          rig.position.y = -0.6 + Math.sin(t * 1.2) * 0.08;
+          dome.position.y = -1.4 + Math.sin(t * 1.5 + 1) * 0.12; dome.rotation.y = t * 0.5;
+          ring.material.emissiveIntensity = 1.2 + Math.sin(t * 3) * 0.6;
+          cone.material.opacity = 0.06 + (Math.sin(t * 2) + 1) * 0.03;
+          pts.rotation.y = t * 0.03;
+          renderer.render(scene, cam);
+          raf = requestAnimationFrame(loop);
+        };
+        loop();
+        return () => { cancelAnimationFrame(raf); window.removeEventListener("mousemove", onMove); window.removeEventListener("resize", onResize); renderer.dispose(); el.innerHTML = ""; };
+      }, []);
+      return <div ref={mount} className="absolute inset-0" />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+  
+</body>
+</html>
