@@ -16,7 +16,7 @@ services:
       - key: ALLOWED_HOSTS
         value: "*"
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://neondb_owner:npg_ZiAY1FmeMhX0@ep-blue-shadow-bdeom8hp-pooler.c-8.us-east-2.aws.neon.tech/logisz?sslmode=require&channel_binding=require
       - key: DESKTOP_SYNC_API_KEY
         value: LOGISZ-DESKTOP-SYNC-SECRET-KEY-2026
       - key: CORS_ALLOWED_ORIGINS
