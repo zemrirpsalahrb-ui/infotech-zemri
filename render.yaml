@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: infotech-zemri-backend
+    runtime: python
+    rootDir: BACKEND
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    startCommand: gunicorn cctv_backend.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: DATABASE_URL
+        sync: false
+      - key: DESKTOP_SYNC_API_KEY
+        value: LOGISZ-DESKTOP-SYNC-SECRET-KEY-2026
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://infotech-zemri.vercel.app
+      - key: BUSINESS_WHATSAPP
+        value: "+213557882719"
+      - key: STORE_NAME
+        value: INFOTECH ZEMRI
+      - key: STORE_ADDRESS
+        value: 4 Boulevard Didouche Mourad, Oran, Algérie
+      - key: STORE_PHONE
+        value: 0557 88 27 19 / 0791 47 63 04
+      - key: STORE_MAPS_URL
+        value: https://share.google/RJzeDOo33739eINyd
+      - key: STORE_TIKTOK_URL
+        value: https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc
