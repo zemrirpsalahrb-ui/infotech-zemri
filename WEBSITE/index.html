@@ -15,22 +15,36 @@
       --text-main: #0f172a;
       --text-muted: #64748b;
     }
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
     body {
       font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
       background-color: var(--bg-canvas);
       color: var(--text-main);
       transition: background-color 0.3s ease, color 0.3s ease;
       overflow-x: hidden;
+      touch-action: manipulation;
+      -webkit-overflow-scrolling: touch;
     }
     .font-mono-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
-      .safe-area-bottom { padding-bottom: calc(0.4rem + env(safe-area-inset-bottom)); }
+      .safe-area-bottom { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
     }
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
       input, select, textarea { font-size: 16px !important; }
-      .tilt { transform: none !important; }
+      .tilt { transform: none !important; transition: none !important; }
+      .tilt:hover { transform: none !important; box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.08) !important; }
+      .tilt .pop, .tilt .pop-sm { transform: none !important; }
+      .shine { display: none !important; }
+      .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
     }
     [dir="rtl"], [dir="rtl"] body { font-family: 'Cairo', 'Tajawal', sans-serif; text-align: right; }
     [dir="rtl"] .font-display { font-family: 'Cairo', 'Tajawal', sans-serif; letter-spacing: 0; }
@@ -96,6 +110,16 @@
       background-color: #131c31 !important;
       border-color: #263554 !important;
       color: #f8fafc !important;
+    }
+    body.dark-theme nav.fixed.bottom-0 {
+      background-color: rgba(15, 23, 42, 0.96) !important;
+      border-top-color: #1e293b !important;
+    }
+    body.dark-theme nav.fixed.bottom-0 button {
+      color: #94a3b8;
+    }
+    body.dark-theme nav.fixed.bottom-0 button.text-blue-600 {
+      color: #38bdf8 !important;
     }
 
     /* 3D tilt cards */
@@ -1437,7 +1461,7 @@ if (typeof window !== "undefined") {
                         Tarifs synchronisés en temps réel ({appliedTier}) • Commandez en 1 clic avec livraison NOEST 69 Wilayas
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1.5 -mx-1 px-1 sm:mx-0 sm:px-0 max-w-full">
                       {[
                         { id: "all", label: `🔥 Tous (${products.length})` },
                         { id: "camera", label: "📹 Caméras" },
@@ -1452,7 +1476,7 @@ if (typeof window !== "undefined") {
                           key={f.id}
                           type="button"
                           onClick={() => { setHomeFilter(f.id); setHomeLimit(16); }}
-                          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition shadow-sm border ${
+                          className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold transition shadow-sm border whitespace-nowrap flex-shrink-0 ${
                             homeFilter === f.id
                               ? "bg-blue-600 text-white border-blue-600 shadow-blue-600/25"
                               : "bg-slate-50 border-slate-200 hover:border-blue-500 text-slate-800 hover:text-blue-600"
@@ -1464,7 +1488,7 @@ if (typeof window !== "undefined") {
                       <button
                         type="button"
                         onClick={() => { setSearchQ(""); setSelectedCat("all"); goTab("catalog"); }}
-                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition shadow-md"
+                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition shadow-md whitespace-nowrap flex-shrink-0"
                       >
                         Catalogue Complet ({products.length}) →
                       </button>
@@ -2624,6 +2648,7 @@ if (typeof window !== "undefined") {
     function ProductCardItem({ p, onSelect, onAdd, onDirectOrder, showToast, isFav, onFav, inCompare, onCompare }) {
       const ref = React.useRef(null);
       const onMove = (e) => {
+        if (typeof window !== "undefined" && window.innerWidth < 768) return;
         const el = ref.current; if (!el) return;
         const r = el.getBoundingClientRect();
         const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
@@ -3845,11 +3870,20 @@ if (typeof window !== "undefined") {
         const W = () => el.clientWidth || 750;
         const H = () => el.clientHeight || 470;
 
-        const renderer = new T.WebGLRenderer({ antialias: true, alpha: false });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+
+        const renderer = new T.WebGLRenderer({
+          antialias: !isMobile,
+          alpha: false,
+          powerPreference: "high-performance",
+          precision: isMobile ? "mediump" : "highp"
+        });
+        renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
         renderer.setSize(W(), H());
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = T.PCFSoftShadowMap;
+        renderer.shadowMap.enabled = !isMobile;
+        if (!isMobile) {
+          renderer.shadowMap.type = T.PCFSoftShadowMap;
+        }
         renderer.setClearColor(0x0b152c, 1);
         el.innerHTML = "";
         el.appendChild(renderer.domElement);
@@ -3866,9 +3900,13 @@ if (typeof window !== "undefined") {
 
         const sun = new T.DirectionalLight(0xe0f2fe, 0.95);
         sun.position.set(15, 22, 14);
-        sun.castShadow = true;
-        sun.shadow.mapSize.width = 1024;
-        sun.shadow.mapSize.height = 1024;
+        if (!isMobile) {
+          sun.castShadow = true;
+          sun.shadow.mapSize.width = 1024;
+          sun.shadow.mapSize.height = 1024;
+        } else {
+          sun.castShadow = false;
+        }
         scene.add(sun);
 
         // Lumières intérieures chaudes de la villa
@@ -4181,33 +4219,74 @@ if (typeof window !== "undefined") {
         // Caméra PTZ 360° (Angle supérieur droit)
         const camPtz = make3DCam(5.2, 6.22, 2.8, 0.25, 0xa855f7);
 
-        // Contrôle Rotation Souris / Doigt
+        // Contrôle Rotation Souris / Doigt Mobile Fluide (Sans bloquer le scroll)
         let isDragging = false;
+        let is3DTouch = false;
+        let isScrollTouch = false;
         let prevX = 0, prevY = 0;
+        let startX = 0, startY = 0;
+
         const onDown = (e) => {
-          isDragging = true;
-          stateRef.current.viewOrbit = true;
-          setViewOrbit(true);
           const pt = e.touches ? e.touches[0] : e;
           prevX = pt.clientX;
           prevY = pt.clientY;
+          startX = pt.clientX;
+          startY = pt.clientY;
+          isScrollTouch = false;
+          is3DTouch = false;
+          if (!e.touches) {
+            isDragging = true;
+            stateRef.current.viewOrbit = true;
+            setViewOrbit(true);
+          }
         };
+
         const onMove = (e) => {
-          if (!isDragging) return;
           const pt = e.touches ? e.touches[0] : e;
-          stateRef.current.userRotY -= (pt.clientX - prevX) * 0.007;
-          stateRef.current.userRotX = Math.max(-0.35, Math.min(0.65, stateRef.current.userRotX + (pt.clientY - prevY) * 0.005));
+          const dx = pt.clientX - prevX;
+          const dy = pt.clientY - prevY;
+
+          if (e.touches) {
+            if (!is3DTouch && !isScrollTouch) {
+              const totalDx = Math.abs(pt.clientX - startX);
+              const totalDy = Math.abs(pt.clientY - startY);
+              // Si le geste de l'utilisateur est vertical, on laisse défiler la page naturellement !
+              if (totalDy > totalDx && totalDy > 7) {
+                isScrollTouch = true;
+                return;
+              } else if (totalDx > 7) {
+                // Si le geste est horizontal, l'utilisateur tourne la villa en 3D
+                is3DTouch = true;
+                stateRef.current.viewOrbit = true;
+                setViewOrbit(true);
+              }
+            }
+            if (isScrollTouch) return;
+            if (is3DTouch) {
+              stateRef.current.userRotY -= dx * 0.007;
+              stateRef.current.userRotX = Math.max(-0.35, Math.min(0.65, stateRef.current.userRotX + dy * 0.005));
+            }
+          } else if (isDragging) {
+            stateRef.current.userRotY -= dx * 0.007;
+            stateRef.current.userRotX = Math.max(-0.35, Math.min(0.65, stateRef.current.userRotX + dy * 0.005));
+          }
+
           prevX = pt.clientX;
           prevY = pt.clientY;
         };
-        const onUp = () => { isDragging = false; };
+
+        const onUp = () => {
+          isDragging = false;
+          is3DTouch = false;
+          isScrollTouch = false;
+        };
 
         el.addEventListener("mousedown", onDown);
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
         el.addEventListener("touchstart", onDown, { passive: true });
         window.addEventListener("touchmove", onMove, { passive: true });
-        window.addEventListener("touchend", onUp);
+        window.addEventListener("touchend", onUp, { passive: true });
 
         const onResize = () => {
           if (!el) return;
@@ -4227,11 +4306,28 @@ if (typeof window !== "undefined") {
           power_poe:{ cam: [-7.5, 3.2, 10.2], look: [-4.2, 1.5, 2.5] }
         };
 
-        let raf;
+        let raf = null;
+        let isElementVisible = true;
         const clock = new T.Clock();
         const curLook = new T.Vector3(0, 2.2, 1.5);
 
+        // Optimisation Mobile majeure : pause le rendu 3D quand l'élément est hors de l'écran
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            isElementVisible = entry.isIntersecting;
+            if (isElementVisible && !raf) {
+              clock.start();
+              raf = requestAnimationFrame(animate);
+            }
+          });
+        }, { threshold: 0.02 });
+        io.observe(el);
+
         const animate = () => {
+          if (!isElementVisible) {
+            raf = null;
+            return;
+          }
           const t = clock.getElapsedTime();
           const st = stateRef.current;
 
@@ -4294,7 +4390,8 @@ if (typeof window !== "undefined") {
         animate();
 
         return () => {
-          cancelAnimationFrame(raf);
+          if (raf) cancelAnimationFrame(raf);
+          io.disconnect();
           el.removeEventListener("mousedown", onDown);
           window.removeEventListener("mousemove", onMove);
           window.removeEventListener("mouseup", onUp);
@@ -4309,28 +4406,28 @@ if (typeof window !== "undefined") {
       return (
         <section className="rounded-[2.25rem] bg-slate-950 text-white border border-blue-500/30 shadow-[0_30px_80px_-25px_rgba(37,99,235,0.45)] overflow-hidden">
           {/* En-tête de la Villa 3D Interactive */}
-          <div className="px-6 sm:px-8 py-5 border-b border-white/10 bg-slate-900/75 flex flex-wrap items-center justify-between gap-4">
+          <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-white/10 bg-slate-900/75 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                 <span>Villa 3D Réaliste Temps Réel • Cliquez sur Caméras, Alarme ou Digicode</span>
               </div>
-              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-1.5">
+              <h2 className="font-display text-xl sm:text-3xl font-extrabold text-white mt-1.5">
                 Villa 3D Interactive &amp; <span className="text-gradient-hero">Articles en Direct</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Cliquez sur un équipement de la villa 3D : la caméra 3D zoome dessus et affiche immédiatement les <strong>articles disponibles en stock</strong>.
+                Cliquez sur un équipement : la caméra 3D zoome dessus et affiche les <strong>articles en stock</strong>.
               </p>
             </div>
 
-            {/* Boutons 3D directs : Caméras, Alarme, Digicode, PTZ, XVR, Switch PoE */}
-            <div className="flex flex-wrap gap-1.5">
+            {/* Boutons 3D directs défilables au doigt sur mobile */}
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 max-w-full -mx-1 px-1 sm:mx-0 sm:px-0">
               {Object.values(zones).map(z => (
                 <button
                   key={z.id}
                   type="button"
                   onClick={() => selectZone(z.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border ${
+                  className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 ${
                     activeZone === z.id && !viewOrbit
                       ? "bg-gradient-to-r from-blue-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-blue-600/30 scale-105"
                       : "bg-white/5 hover:bg-white/15 border-white/10 text-slate-300"
@@ -4343,39 +4440,43 @@ if (typeof window !== "undefined") {
               <button
                 type="button"
                 onClick={() => setViewOrbit(v => !v)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border ${
+                className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 ${
                   viewOrbit
                     ? "bg-emerald-600 border-emerald-300 text-white shadow-lg"
                     : "bg-white/10 hover:bg-white/20 border-white/20 text-cyan-300"
                 }`}
               >
                 <span>🚁</span>
-                <span>Vue Villa 3D 360°</span>
+                <span>Vue 360°</span>
               </button>
             </div>
           </div>
 
           {/* GRILLE PRINCIPALE : VILLA 3D À GAUCHE (7 cols) + ARTICLES EN DIRECT À DROITE (5 cols) */}
-          <div className="grid lg:grid-cols-12 gap-6 p-5 sm:p-8 items-start">
+          <div className="grid lg:grid-cols-12 gap-5 sm:gap-6 p-4 sm:p-8 items-start">
             {/* SCÈNE 3D WEBGL DE LA VILLA */}
             <div className="lg:col-span-7 space-y-3">
-              <div className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-[#0b152c] h-[370px] sm:h-[480px] shadow-2xl cursor-grab active:cursor-grabbing select-none">
+              <div
+                style={{ touchAction: "pan-y" }}
+                className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-[#0b152c] h-[290px] sm:h-[480px] shadow-2xl cursor-grab active:cursor-grabbing select-none"
+              >
                 <div ref={mountRef} className="absolute inset-0 w-full h-full" />
 
                 {/* Boutons flottants cliquables posés sur la scène 3D */}
                 <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-20 pointer-events-none">
-                  <div className="px-3.5 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/30 text-xs font-extrabold text-white flex items-center gap-2">
+                  <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/30 text-[11px] sm:text-xs font-extrabold text-white flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Focus 3D : <strong className="text-sky-300">{viewOrbit ? "Rotation Libre 360°" : curZone.shortLabel}</strong></span>
+                    <span>Focus : <strong className="text-sky-300">{viewOrbit ? "Rotation Libre 360°" : curZone.shortLabel}</strong></span>
                   </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 text-[11px] text-slate-300 font-semibold">
-                    🖱️ Glissez pour tourner la Villa en 3D
+                  <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] text-slate-300 font-semibold">
+                    <span className="hidden sm:inline">🖱️ Glissez pour tourner la Villa en 3D</span>
+                    <span className="sm:hidden text-cyan-300 font-bold">👆 Glissez ↔ pivoter • ↕ défiler</span>
                   </div>
                 </div>
 
                 {/* Barre de sélection rapide en bas de la Villa 3D */}
-                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap justify-center sm:justify-between items-center gap-1.5 z-20">
-                  <div className="flex flex-wrap gap-1.5 bg-slate-950/85 backdrop-blur-md p-1.5 rounded-2xl border border-white/15">
+                <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-center sm:justify-between items-center gap-1.5 z-20">
+                  <div className="flex gap-1 bg-slate-950/90 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 overflow-x-auto no-scrollbar max-w-full">
                     {[
                       { id: "cameras", icon: "📹", label: "Caméras" },
                       { id: "alarm", icon: "🚨", label: "Alarme" },
@@ -4388,7 +4489,7 @@ if (typeof window !== "undefined") {
                         key={b.id}
                         type="button"
                         onClick={() => selectZone(b.id)}
-                        className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1 ${
+                        className={`px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition flex items-center gap-1 whitespace-nowrap flex-shrink-0 ${
                           activeZone === b.id && !viewOrbit
                             ? "bg-blue-600 text-white shadow"
                             : "text-slate-300 hover:bg-white/10 hover:text-white"
@@ -4797,26 +4898,35 @@ if (typeof window !== "undefined") {
       );
     }
 
-    /* ---------- Scène 3D (Three.js) : caméra de surveillance qui suit la souris ---------- */
+    /* ---------- Scène 3D (Three.js) : caméra de surveillance qui suit la souris (Optimisée Mobile) ---------- */
     function Hero3D() {
       const mount = React.useRef(null);
       useEffect(() => {
         const el = mount.current;
         if (!el || !window.THREE) return;
         const T = window.THREE;
-        const W = () => el.clientWidth, H = () => el.clientHeight;
-        const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        const W = () => el.clientWidth || 320, H = () => el.clientHeight || 320;
+        const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+
+        const renderer = new T.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance", precision: isMobile ? "mediump" : "highp" });
+        renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5));
         renderer.setSize(W(), H());
-        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.enabled = !isMobile;
+        el.innerHTML = "";
         el.appendChild(renderer.domElement);
+
         const scene = new T.Scene();
         const cam = new T.PerspectiveCamera(38, W() / H(), 0.1, 100);
         cam.position.set(0, 1.2, 9);
 
         scene.add(new T.HemisphereLight(0xffffff, 0xcbd5e1, 0.9));
-        const key = new T.DirectionalLight(0xffffff, 1.1); key.position.set(4, 6, 5); key.castShadow = true; scene.add(key);
-        const rim = new T.PointLight(0x3b82f6, 2.2, 20); rim.position.set(-4, 2, -2); scene.add(rim);
+        const key = new T.DirectionalLight(0xffffff, 1.1);
+        key.position.set(4, 6, 5);
+        if (!isMobile) key.castShadow = true;
+        scene.add(key);
+        const rim = new T.PointLight(0x3b82f6, 2.2, 20);
+        rim.position.set(-4, 2, -2);
+        scene.add(rim);
 
         const white = new T.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.25, roughness: 0.35 });
         const dark = new T.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6, roughness: 0.25 });
@@ -4824,52 +4934,78 @@ if (typeof window !== "undefined") {
 
         // ---- Caméra bullet ----
         const rig = new T.Group(); scene.add(rig);
-        const wall = new T.Mesh(new T.CylinderGeometry(0.55, 0.55, 0.18, 48), white); wall.rotation.x = Math.PI / 2; wall.position.set(0, 1.6, -1.6); rig.add(wall);
-        const arm = new T.Mesh(new T.CylinderGeometry(0.12, 0.12, 1.3, 24), white); arm.rotation.x = Math.PI / 2; arm.position.set(0, 1.6, -0.95); rig.add(arm);
-        const joint = new T.Mesh(new T.SphereGeometry(0.22, 32, 32), white); joint.position.set(0, 1.6, -0.3); rig.add(joint);
+        const wall = new T.Mesh(new T.CylinderGeometry(0.55, 0.55, 0.18, 32), white); wall.rotation.x = Math.PI / 2; wall.position.set(0, 1.6, -1.6); rig.add(wall);
+        const arm = new T.Mesh(new T.CylinderGeometry(0.12, 0.12, 1.3, 20), white); arm.rotation.x = Math.PI / 2; arm.position.set(0, 1.6, -0.95); rig.add(arm);
+        const joint = new T.Mesh(new T.SphereGeometry(0.22, 24, 24), white); joint.position.set(0, 1.6, -0.3); rig.add(joint);
         const head = new T.Group(); head.position.set(0, 1.6, -0.3); rig.add(head);
-        const body = new T.Mesh(new T.CylinderGeometry(0.62, 0.62, 2.6, 64), white); body.rotation.x = Math.PI / 2; body.position.set(0, -0.25, 1.1); head.add(body);
-        const visor = new T.Mesh(new T.CylinderGeometry(0.72, 0.72, 2.0, 64, 1, true, Math.PI * 1.15, Math.PI * 0.7), white);
+        const body = new T.Mesh(new T.CylinderGeometry(0.62, 0.62, 2.6, 36), white); body.rotation.x = Math.PI / 2; body.position.set(0, -0.25, 1.1); head.add(body);
+        const visor = new T.Mesh(new T.CylinderGeometry(0.72, 0.72, 2.0, 36, 1, true, Math.PI * 1.15, Math.PI * 0.7), white);
         visor.material = white.clone(); visor.material.side = T.DoubleSide; visor.rotation.x = Math.PI / 2; visor.rotation.y = Math.PI; visor.position.set(0, -0.2, 1.6); head.add(visor);
-        const face = new T.Mesh(new T.CircleGeometry(0.6, 64), dark); face.position.set(0, -0.25, 2.41); head.add(face);
-        const lens = new T.Mesh(new T.SphereGeometry(0.26, 48, 48), glass); lens.scale.z = 0.45; lens.position.set(0, -0.25, 2.43); head.add(lens);
-        const ring = new T.Mesh(new T.TorusGeometry(0.33, 0.035, 16, 64), new T.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x2563eb, emissiveIntensity: 1.6 })); ring.position.set(0, -0.25, 2.44); head.add(ring);
+        const face = new T.Mesh(new T.CircleGeometry(0.6, 36), dark); face.position.set(0, -0.25, 2.41); head.add(face);
+        const lens = new T.Mesh(new T.SphereGeometry(0.26, 32, 32), glass); lens.scale.z = 0.45; lens.position.set(0, -0.25, 2.43); head.add(lens);
+        const ring = new T.Mesh(new T.TorusGeometry(0.33, 0.035, 16, 36), new T.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x2563eb, emissiveIntensity: 1.6 })); ring.position.set(0, -0.25, 2.44); head.add(ring);
         for (let i = 0; i < 6; i++) { // LEDs IR
           const a = (i / 6) * Math.PI * 2;
-          const led = new T.Mesh(new T.SphereGeometry(0.045, 16, 16), new T.MeshStandardMaterial({ color: 0x7f1d1d, emissive: 0xef4444, emissiveIntensity: 0.9 }));
+          const led = new T.Mesh(new T.SphereGeometry(0.045, 12, 12), new T.MeshStandardMaterial({ color: 0x7f1d1d, emissive: 0xef4444, emissiveIntensity: 0.9 }));
           led.position.set(Math.cos(a) * 0.48, -0.25 + Math.sin(a) * 0.48, 2.42); head.add(led);
         }
         const logo = new T.Mesh(new T.BoxGeometry(0.5, 0.06, 0.01), new T.MeshStandardMaterial({ color: 0x1d4ed8 })); logo.position.set(0, 0.38, 1.6); logo.rotation.x = -0.15; head.add(logo);
         // cône de vision
-        const cone = new T.Mesh(new T.ConeGeometry(2.2, 7, 48, 1, true), new T.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.08, side: T.DoubleSide, depthWrite: false }));
+        const cone = new T.Mesh(new T.ConeGeometry(2.2, 7, 32, 1, true), new T.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.08, side: T.DoubleSide, depthWrite: false }));
         cone.rotation.x = -Math.PI / 2; cone.position.set(0, -0.25, 5.9); head.add(cone);
         rig.position.set(0.3, -0.6, 0); rig.rotation.y = -0.5;
 
         // ---- Caméra dôme flottante ----
         const dome = new T.Group(); dome.position.set(-2.4, -1.4, 0.5); scene.add(dome);
-        const dbase = new T.Mesh(new T.CylinderGeometry(0.75, 0.8, 0.25, 64), white); dome.add(dbase);
-        const dglass = new T.Mesh(new T.SphereGeometry(0.6, 64, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), glass); dglass.position.y = -0.12; dome.add(dglass);
-        const deye = new T.Mesh(new T.SphereGeometry(0.22, 32, 32), dark); deye.position.set(0, -0.35, 0.25); dome.add(deye);
+        const dbase = new T.Mesh(new T.CylinderGeometry(0.75, 0.8, 0.25, 36), white); dome.add(dbase);
+        const dglass = new T.Mesh(new T.SphereGeometry(0.6, 36, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), glass); dglass.position.y = -0.12; dome.add(dglass);
+        const deye = new T.Mesh(new T.SphereGeometry(0.22, 24, 24), dark); deye.position.set(0, -0.35, 0.25); dome.add(deye);
         dome.rotation.x = Math.PI; dome.scale.setScalar(0.85);
 
-        // ---- Particules ----
-        const pg = new T.BufferGeometry(); const N = 380; const pos = new Float32Array(N * 3);
+        // ---- Particules (allégées sur mobile) ----
+        const N = isMobile ? 80 : 320;
+        const pg = new T.BufferGeometry(); const pos = new Float32Array(N * 3);
         for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - 0.5) * 16; pos[i * 3 + 1] = (Math.random() - 0.5) * 9; pos[i * 3 + 2] = (Math.random() - 0.5) * 8 - 2; }
         pg.setAttribute("position", new T.BufferAttribute(pos, 3));
         const pts = new T.Points(pg, new T.PointsMaterial({ color: 0x3b82f6, size: 0.04, transparent: true, opacity: 0.55 }));
         scene.add(pts);
-        // sol ombre
-        const ground = new T.Mesh(new T.PlaneGeometry(30, 30), new T.ShadowMaterial({ opacity: 0.12 })); ground.rotation.x = -Math.PI / 2; ground.position.y = -2.6; ground.receiveShadow = true; scene.add(ground);
-        [body, visor, joint, arm, dbase].forEach(m => m.castShadow = true);
 
         let mx = 0, my = 0;
-        const onMove = (e) => { mx = (e.clientX / window.innerWidth) * 2 - 1; my = (e.clientY / window.innerHeight) * 2 - 1; };
+        const onMove = (e) => {
+          if (isMobile) return;
+          mx = (e.clientX / window.innerWidth) * 2 - 1;
+          my = (e.clientY / window.innerHeight) * 2 - 1;
+        };
         window.addEventListener("mousemove", onMove);
-        const onResize = () => { renderer.setSize(W(), H()); cam.aspect = W() / H(); cam.updateProjectionMatrix(); };
+        const onResize = () => {
+          if (!el) return;
+          renderer.setSize(W(), H());
+          cam.aspect = W() / H();
+          cam.updateProjectionMatrix();
+        };
         window.addEventListener("resize", onResize);
 
-        let raf; const clock = new T.Clock();
+        let raf = null;
+        let isHeroVisible = true;
+        const clock = new T.Clock();
+
+        // Optimisation Mobile : arrêt du rendu quand la caméra Hero est hors de vue
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            isHeroVisible = entry.isIntersecting;
+            if (isHeroVisible && !raf) {
+              clock.start();
+              raf = requestAnimationFrame(loop);
+            }
+          });
+        }, { threshold: 0.02 });
+        io.observe(el);
+
         const loop = () => {
+          if (!isHeroVisible) {
+            raf = null;
+            return;
+          }
           const t = clock.getElapsedTime();
           const auto = Math.sin(t * 0.6) * 0.25;
           head.rotation.y += ((mx * 0.9 + auto) - head.rotation.y) * 0.06;
@@ -4883,7 +5019,18 @@ if (typeof window !== "undefined") {
           raf = requestAnimationFrame(loop);
         };
         loop();
-        return () => { cancelAnimationFrame(raf); window.removeEventListener("mousemove", onMove); window.removeEventListener("resize", onResize); renderer.dispose(); el.innerHTML = ""; };
+
+        return () => {
+          if (raf) cancelAnimationFrame(raf);
+          io.disconnect();
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("resize", onResize);
+          renderer.dispose();
+          el.innerHTML = "";
+        };
+      }, []);
+      return <div ref={mount} className="absolute inset-0" />;
+    }
       }, []);
       return <div ref={mount} className="absolute inset-0" />;
     }
