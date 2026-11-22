@@ -713,6 +713,9 @@ class CheckoutOrderView(APIView):
 
         if delivery_method == "PICKUP":
             shipping_fee = Decimal("0.00")
+        elif subtotal > Decimal("100000.00"):
+            # Règle commerciale : si la valeur totale des produits dépasse 100 000 DA, les frais de livraison sont doublés
+            shipping_fee = (shipping_fee * Decimal("2.00")).quantize(Decimal("0.01"))
 
         order.subtotal = subtotal
         order.shipping_fee = shipping_fee

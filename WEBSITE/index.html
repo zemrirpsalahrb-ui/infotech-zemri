@@ -702,14 +702,20 @@ if (typeof window !== "undefined") {
 
       const shippingFee = useMemo(() => {
         if (deliveryType === "PICKUP") return 0;
+        let fee = 500;
         if (!activeWilayaObj) {
-          return deliveryType === "STOPDESK" ? 250 : 500;
+          fee = deliveryType === "STOPDESK" ? 250 : 500;
+        } else if (deliveryType === "STOPDESK") {
+          fee = Number(activeWilayaObj.desk_fee) || 250;
+        } else {
+          fee = Number(activeWilayaObj.home_fee) || 500;
         }
-        if (deliveryType === "STOPDESK") {
-          return Number(activeWilayaObj.desk_fee) || 250;
+        // Règle : quand la valeur du total de produit est supérieure à 100 000 DA, la livraison double
+        if (cartSubtotal > 100000) {
+          fee = fee * 2;
         }
-        return Number(activeWilayaObj.home_fee) || 500;
-      }, [deliveryType, activeWilayaObj]);
+        return fee;
+      }, [deliveryType, activeWilayaObj, cartSubtotal]);
 
       const cartTotal = useMemo(() => {
         return (Number(cartSubtotal) || 0) + (Number(shippingFee) || 0);
@@ -1637,7 +1643,9 @@ if (typeof window !== "undefined") {
                       >
                         <span className="text-sm">🏠 Domicile</span>
                         <span className="text-[11px] text-slate-500 mt-0.5">À votre porte</span>
-                        <span className="text-xs font-extrabold text-blue-600 mt-1">{activeWilayaObj ? fmtMoney(activeWilayaObj.home_fee) : "500.00 DA"}</span>
+                        <span className="text-xs font-extrabold text-blue-600 mt-1">
+                          {fmtMoney((activeWilayaObj ? Number(activeWilayaObj.home_fee) : 500) * (cartSubtotal > 100000 ? 2 : 1))}
+                        </span>
                       </button>
 
                       <button
@@ -1647,7 +1655,9 @@ if (typeof window !== "undefined") {
                       >
                         <span className="text-sm">🏢 Stop Desk</span>
                         <span className="text-[11px] text-slate-500 mt-0.5">Point Relais NOEST</span>
-                        <span className="text-xs font-extrabold text-emerald-600 mt-1">{activeWilayaObj ? fmtMoney(activeWilayaObj.desk_fee) : "250.00 DA"}</span>
+                        <span className="text-xs font-extrabold text-emerald-600 mt-1">
+                          {fmtMoney((activeWilayaObj ? Number(activeWilayaObj.desk_fee) : 250) * (cartSubtotal > 100000 ? 2 : 1))}
+                        </span>
                       </button>
 
                       <button
@@ -1777,6 +1787,12 @@ if (typeof window !== "undefined") {
                         {shippingFee === 0 ? "0.00 DA (Gratuit)" : `+ ${fmtMoney(shippingFee)}`}
                       </span>
                     </div>
+                    {cartSubtotal > 100000 && deliveryType !== "PICKUP" && (
+                      <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex items-center gap-2 font-medium">
+                        <span className="text-base">🛡️</span>
+                        <span>Total &gt; 100 000 DA : Frais de livraison doublés (assurance & transport sécurisé haute valeur).</span>
+                      </div>
+                    )}
                     <div className="border-t border-dashed border-slate-300 pt-2 flex justify-between items-center">
                       <div>
                         <div className="text-xs text-slate-700 uppercase font-extrabold">Total à payer à la livraison :</div>
