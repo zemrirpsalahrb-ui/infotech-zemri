@@ -3675,10 +3675,11 @@ if (typeof window !== "undefined") {
     }
 
 
-    /* ---------- VILLA SÉCURISÉE INTERACTIVE : Cliquez sur Caméras, Alarme, Digicode... et cherchez ---------- */
+    /* ---------- VILLA SÉCURISÉE INTERACTIVE PHOTORÉALISTE : Cliquez sur Caméras, Alarme, Digicode... et cherchez ---------- */
     function InteractiveVillaExplorer({ products = [], onSelectProduct, onAddToCart, onDirectOrder, onOpenCatalogZone }) {
       const [activeZone, setActiveZone] = useState("digicode"); // "cameras" | "alarm" | "digicode" | "wifi_ptz" | "xvr_hdd" | "power_poe"
       const [zoneSearch, setZoneSearch] = useState("");
+      const [zoomOnDevice, setZoomOnDevice] = useState(false);
 
       const zones = {
         cameras: {
@@ -3686,10 +3687,12 @@ if (typeof window !== "undefined") {
           icon: "📹",
           shortLabel: "Caméras Façade & Parking",
           title: "Caméras de Surveillance (IP, HDCVI, 4K & ColorVu)",
-          badge: "Façade • Jardin • Parking",
+          badge: "Sous-Toit Façade & Garage",
           color: "#38bdf8",
+          x: 22.1,
+          y: 31.2,
           bgBadge: "bg-sky-500/20 text-sky-300 border-sky-400/40",
-          desc: "Surveillez les abords de la villa, la rue et le garage jour et nuit en haute définition avec vision nocturne infrarouge 40m ou couleur 24h/24.",
+          desc: "Caméra installée sous la corniche gauche de la villa : surveille l'allée, le véhicule garé et l'accès garage jour et nuit en 4K / ColorVu.",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3699,12 +3702,14 @@ if (typeof window !== "undefined") {
         alarm: {
           id: "alarm",
           icon: "🚨",
-          shortLabel: "Alarme & Détecteurs",
-          title: "Système d'Alarme Sans Fil, Sirènes & Détecteurs (Dahua / Ajax)",
-          badge: "Anti-Intrusion • Portes & Fenêtres",
+          shortLabel: "Alarme & Sirène",
+          title: "Système d'Alarme Sans Fil, Sirène Flash & Détecteurs (Dahua / Ajax)",
+          badge: "Façade Haute • Anti-Intrusion",
           color: "#ef4444",
+          x: 63.3,
+          y: 28.5,
           bgBadge: "bg-red-500/20 text-red-300 border-red-400/40",
-          desc: "Protégez votre maison contre toute intrusion : centrale d'alarme sans fil, détecteurs de mouvement Ajax/Dahua, contacts de porte et sirène flash 110dB.",
+          desc: "Sirène flash extérieure installée en façade haute + détecteurs sans fil sur portes et baies vitrées pour stopper toute tentative d'intrusion.",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3714,12 +3719,14 @@ if (typeof window !== "undefined") {
         digicode: {
           id: "digicode",
           icon: "🔢",
-          shortLabel: "Digicode & Contrôle d'Accès",
+          shortLabel: "Digicode & Accès Portail",
           title: "Digicode, Clavier à Code, Bluetooth, Badge & Pointeuse",
-          badge: "Porte d'Entrée & Portail Villa",
+          badge: "Pilier Portail d'Entrée",
           color: "#10b981",
+          x: 90.8,
+          y: 67.5,
           bgBadge: "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
-          desc: "Sécurisez l'ouverture de votre portail et porte d'entrée par code secret, badge RFID, empreinte digitale, reconnaissance faciale ou smartphone Bluetooth.",
+          desc: "Digicode rétroéclairé encastré sur le pilier en béton du portail d'entrée : ouverture par code PIN, badge RFID, empreinte ou Bluetooth.",
           matchFn: (p) => {
             const hay = `${p.name || ""} ${p.reference || ""} ${p.category_name || ""}`.toLowerCase();
             return /digi\s*code|digicode|ep7612|epa10k|bleuthot|pointeuse|zk|interphone|visiophone|clavier|serrure|badge/i.test(hay);
@@ -3728,12 +3735,14 @@ if (typeof window !== "undefined") {
         wifi_ptz: {
           id: "wifi_ptz",
           icon: "📡",
-          shortLabel: "Caméras Wi-Fi & PTZ 360°",
+          shortLabel: "Caméra PTZ 360° & Wi-Fi",
           title: "Caméras Motorisées PTZ 360° & Wi-Fi Connectées",
-          badge: "Toit • Terrasse • Suivi Auto IA",
+          badge: "Angle Toiture Supérieur",
           color: "#a855f7",
+          x: 77.8,
+          y: 18.2,
           bgBadge: "bg-purple-500/20 text-purple-300 border-purple-400/40",
-          desc: "Caméras rotatives 360° pilotables depuis votre téléphone avec suivi automatique des personnes, audio bidirectionnel et sirène intégrée.",
+          desc: "Dôme motorisé 360° sous l'angle supérieur du toit : couvre l'entrée principale, le jardin et la terrasse avec suivi automatique IA.",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3743,12 +3752,14 @@ if (typeof window !== "undefined") {
         xvr_hdd: {
           id: "xvr_hdd",
           icon: "💾",
-          shortLabel: "Enregistreur XVR/NVR & Disque",
+          shortLabel: "Enregistreur XVR & Disque",
           title: "Enregistreurs XVR / NVR IA & Disques Durs Surveillance 24/7",
-          badge: "Cœur Sécurité Intérieur",
+          badge: "Salon • Centrale Vidéo",
           color: "#f59e0b",
+          x: 60.5,
+          y: 62.5,
           bgBadge: "bg-amber-500/20 text-amber-300 border-amber-400/40",
-          desc: "Stockez vos enregistrements vidéo en continu (7 à 60 jours) avec accès à distance en direct sur votre smartphone où que vous soyez.",
+          desc: "Enregistreur XVR/NVR relié à l'écran du salon avec disque dur de surveillance enregistrant toutes les caméras 24h/24 + application mobile.",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3762,8 +3773,10 @@ if (typeof window !== "undefined") {
           title: "Alimentations 12V, Switchs PoE, Onduleurs & Câblage",
           badge: "Garage & Coffret Technique",
           color: "#3b82f6",
+          x: 25.5,
+          y: 60.5,
           bgBadge: "bg-blue-500/20 text-blue-300 border-blue-400/40",
-          desc: "Alimentez et reliez toutes vos caméras, alarmes et digicodes avec nos switchs PoE, alimentations stabilisées et bobines de câble coaxial/RJ45.",
+          desc: "Coffret technique dans le garage : switch PoE, boîte d'alimentation 12V stabilisée et câblage reliant tous les équipements de la villa.",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3772,7 +3785,7 @@ if (typeof window !== "undefined") {
         }
       };
 
-      const curZone = zones[activeZone] || zones.cameras;
+      const curZone = zones[activeZone] || zones.digicode;
 
       const matchedProducts = useMemo(() => {
         let list = products.filter(curZone.matchFn);
@@ -3783,7 +3796,6 @@ if (typeof window !== "undefined") {
             return words.every(w => hay.includes(w));
           });
         }
-        // Trier : photos réelles et articles en stock en premier
         return [...list].sort((a, b) => ((b.in_stock ? 2 : 0) + (hasRealPhoto(b) ? 1 : 0)) - ((a.in_stock ? 2 : 0) + (hasRealPhoto(a) ? 1 : 0)));
       }, [products, activeZone, zoneSearch]);
 
@@ -3792,30 +3804,30 @@ if (typeof window !== "undefined") {
         setZoneSearch("");
       };
 
-      // Coordonnées des Hotspots cliquables sur la Villa (%)
+      // Coordonnées exactes calées sur les vrais équipements visibles sur la photo de la villa
       const hotspots = [
-        { id: "cameras", x: "23%", y: "34%", icon: "📹", label: "Caméras Façade", pulse: "bg-sky-500", border: "border-sky-300" },
-        { id: "wifi_ptz", x: "77%", y: "26%", icon: "📡", label: "Caméra PTZ / Wi-Fi", pulse: "bg-purple-500", border: "border-purple-300" },
-        { id: "alarm", x: "50%", y: "24%", icon: "🚨", label: "Alarme & Sirène", pulse: "bg-red-500", border: "border-red-300" },
-        { id: "digicode", x: "61%", y: "68%", icon: "🔢", label: "Digicode & Accès", pulse: "bg-emerald-500", border: "border-emerald-300" },
-        { id: "xvr_hdd", x: "38%", y: "58%", icon: "💾", label: "XVR & Disque Dur", pulse: "bg-amber-500", border: "border-amber-300" },
-        { id: "power_poe", x: "19%", y: "72%", icon: "⚡", label: "Alim & Switch PoE", pulse: "bg-blue-500", border: "border-blue-300" }
+        { id: "cameras", x: "22.1%", y: "31.2%", icon: "📹", label: "Caméra Façade", pulse: "bg-sky-500", border: "border-sky-300" },
+        { id: "alarm", x: "63.3%", y: "28.5%", icon: "🚨", label: "Sirène Alarme", pulse: "bg-red-500", border: "border-red-300" },
+        { id: "wifi_ptz", x: "77.8%", y: "18.2%", icon: "📡", label: "Dôme PTZ 360°", pulse: "bg-purple-500", border: "border-purple-300" },
+        { id: "digicode", x: "90.8%", y: "67.5%", icon: "🔢", label: "Digicode Portail", pulse: "bg-emerald-500", border: "border-emerald-300" },
+        { id: "xvr_hdd", x: "60.5%", y: "62.5%", icon: "💾", label: "XVR & Disque Dur", pulse: "bg-amber-500", border: "border-amber-300" },
+        { id: "power_poe", x: "25.5%", y: "60.5%", icon: "⚡", label: "Garage Switch PoE", pulse: "bg-blue-500", border: "border-blue-300" }
       ];
 
       return (
         <section className="reveal rounded-[2.25rem] bg-slate-950 text-white border border-blue-500/30 shadow-[0_30px_80px_-25px_rgba(37,99,235,0.45)] overflow-hidden">
-          {/* En-tête de la Villa Interactive */}
+          {/* En-tête de la Villa Photoréaliste */}
           <div className="px-6 sm:px-8 py-5 border-b border-white/10 bg-slate-900/70 flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                <span>Maison & Villa Intelligente • Cliquez sur un équipement pour chercher</span>
+                <span>Villa Photoréaliste Interactive • Cliquez sur un équipement réel</span>
               </div>
               <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-1.5">
-                Explorez notre <span className="text-gradient-hero">Villa Sécurisée Interactive</span>
+                Villa Sécurisée : <span className="text-gradient-hero">Caméras, Alarme & Digicode</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Cliquez directement sur une <strong>Caméra</strong>, l'<strong>Alarme</strong> ou le <strong>Digicode</strong> sur la villa pour voir et chercher les équipements disponibles en stock.
+                Cliquez sur les équipements installés sur la villa (<strong>Digicode sur le pilier</strong>, <strong>Sirène d'alarme en façade</strong>, <strong>Caméras sous-toit</strong>) pour chercher votre matériel.
               </p>
             </div>
 
@@ -3840,165 +3852,138 @@ if (typeof window !== "undefined") {
           </div>
 
           <div className="grid lg:grid-cols-12 gap-6 p-5 sm:p-8 items-start">
-            {/* COLONNE GAUCHE (7 cols) : Plan Architectural Interactif de la Villa avec Points Cliquables */}
-            <div className="lg:col-span-7 space-y-4">
-              <div className="relative rounded-3xl overflow-hidden border-2 border-blue-500/30 bg-gradient-to-b from-[#060d1f] via-[#0b1736] to-[#081226] h-[360px] sm:h-[460px] shadow-2xl select-none">
-                {/* Grille architecturale de fond */}
-                <div className="absolute inset-0 cyber-grid opacity-60 pointer-events-none"></div>
-
-                {/* Illustration SVG Architecturale Haute Précision de la Villa Moderne */}
-                <svg viewBox="0 0 800 500" className="w-full h-full object-cover" preserveAspectRatio="xMidYMid slice">
-                  <defs>
-                    <linearGradient id="skyGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#09152e" />
-                      <stop offset="100%" stopColor="#0f2347" />
-                    </linearGradient>
-                    <linearGradient id="wallLight" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#1e293b" />
-                      <stop offset="100%" stopColor="#0f172a" />
-                    </linearGradient>
-                    <linearGradient id="winGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
-                      <stop offset="100%" stopColor="#0284c7" stopOpacity="0.15" />
-                    </linearGradient>
-                    <radialGradient id="coneCam" cx="0.5" cy="0" r="1">
-                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
-                      <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
-                    </radialGradient>
-                    <radialGradient id="conePtz" cx="0.5" cy="0" r="1">
-                      <stop offset="0%" stopColor="#a855f7" stopOpacity="0.45" />
-                      <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
-                    </radialGradient>
-                  </defs>
-
-                  {/* Sol & Pelouse Cyber */}
-                  <rect x="0" y="395" width="800" height="105" fill="#060c1a" />
-                  <line x1="0" y1="395" x2="800" y2="395" stroke="#38bdf8" strokeWidth="2" strokeOpacity="0.4" />
-
-                  {/* Allée & Portail */}
-                  <polygon points="430,395 560,395 650,500 390,500" fill="#0f172a" stroke="#334155" strokeWidth="1.5" />
-
-                  {/* Mur de clôture extérieur */}
-                  <rect x="50" y="335" width="700" height="60" rx="4" fill="#0b1324" stroke="#1e3a8a" strokeWidth="1.5" />
-                  {/* Barreaudage clôture */}
-                  <line x1="70" y1="335" x2="730" y2="335" stroke="#38bdf8" strokeWidth="2" strokeOpacity="0.5" />
-
-                  {/* Corps Principal de la Villa - Rez-de-chaussée */}
-                  <rect x="110" y="235" width="580" height="160" fill="url(#wallLight)" stroke="#475569" strokeWidth="2" />
-
-                  {/* Garage (Gauche) */}
-                  <rect x="130" y="265" width="145" height="130" rx="4" fill="#090f1d" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.6" />
-                  <line x1="130" y1="295" x2="275" y2="295" stroke="#1e293b" strokeWidth="2" />
-                  <line x1="130" y1="325" x2="275" y2="325" stroke="#1e293b" strokeWidth="2" />
-                  <line x1="130" y1="355" x2="275" y2="355" stroke="#1e293b" strokeWidth="2" />
-                  <text x="202" y="382" textAnchor="middle" fill="#64748b" fontSize="11" fontWeight="bold">GARAGE &amp; COFFRET POE</text>
-
-                  {/* Salon Vitré Central (XVR / NVR) */}
-                  <rect x="300" y="260" width="150" height="115" rx="6" fill="url(#winGlow)" stroke="#38bdf8" strokeWidth="2" />
-                  {/* Écran Monitoring visible dans le salon */}
-                  <rect x="345" y="295" width="60" height="38" rx="4" fill="#020617" stroke="#f59e0b" strokeWidth="2" />
-                  <text x="375" y="318" textAnchor="middle" fill="#fbbf24" fontSize="10" fontWeight="bold">XVR 4K</text>
-
-                  {/* Porte d'Entrée Blindée + Digicode Lumineux (Droite) */}
-                  <rect x="495" y="265" width="75" height="130" rx="4" fill="#1e293b" stroke="#10b981" strokeWidth="2.5" />
-                  <circle cx="555" cy="330" r="4" fill="#10b981" />
-                  {/* Boîtier Digicode & Visiophone sur le pilier d'entrée */}
-                  <rect x="580" y="305" width="24" height="36" rx="4" fill="#064e3b" stroke="#34d399" strokeWidth="2" />
-                  <circle cx="592" cy="316" r="3" fill="#34d399" />
-                  <rect x="585" y="324" width="14" height="12" fill="#10b981" fillOpacity="0.5" />
-
-                  {/* Étage Supérieur de la Villa */}
-                  <rect x="170" y="110" width="470" height="125" fill="url(#wallLight)" stroke="#64748b" strokeWidth="2" />
-                  {/* Toiture Moderne Débordante */}
-                  <polygon points="145,110 665,110 645,88 165,88" fill="#1e293b" stroke="#38bdf8" strokeWidth="2" />
-
-                  {/* Grandes Baies Vitrées Étage + Balcon */}
-                  <rect x="210" y="135" width="160" height="80" rx="6" fill="url(#winGlow)" stroke="#38bdf8" strokeWidth="2" />
-                  <rect x="430" y="135" width="170" height="80" rx="6" fill="url(#winGlow)" stroke="#38bdf8" strokeWidth="2" />
-                  {/* Garde-corps Balcon en verre */}
-                  <rect x="190" y="205" width="430" height="26" fill="#38bdf8" fillOpacity="0.12" stroke="#38bdf8" strokeWidth="1.5" />
-
-                  {/* Faisceaux Laser des Caméras sur la Villa */}
-                  <polygon
-                    points="185,170 55,390 315,390"
-                    fill="url(#coneCam)"
-                    opacity={activeZone === "cameras" ? "0.95" : "0.45"}
-                  />
-                  <polygon
-                    points="615,130 470,390 775,390"
-                    fill="url(#conePtz)"
-                    opacity={activeZone === "wifi_ptz" ? "0.95" : "0.45"}
+            {/* COLONNE GAUCHE (7 cols) : Photographie Architecturale Réaliste 8K de la Villa + Hotspots */}
+            <div className="lg:col-span-7 space-y-3">
+              <div className="relative rounded-3xl overflow-hidden border-2 border-blue-500/35 bg-slate-900 h-[360px] sm:h-[490px] shadow-2xl select-none group">
+                {/* Conteneur Image avec option Zoom sur l'équipement */}
+                <div
+                  className="w-full h-full relative transition-transform duration-700 ease-out"
+                  style={{
+                    transform: zoomOnDevice ? "scale(1.85)" : "scale(1)",
+                    transformOrigin: `${curZone.x}% ${curZone.y}%`
+                  }}
+                >
+                  <img
+                    src="/media/store/smart_villa_security.jpg"
+                    onError={(e) => {
+                      if (!e.currentTarget.dataset.triedRel) {
+                        e.currentTarget.dataset.triedRel = "1";
+                        e.currentTarget.src = "media/store/smart_villa_security.jpg";
+                      } else if (!e.currentTarget.dataset.triedRemote) {
+                        e.currentTarget.dataset.triedRemote = "1";
+                        e.currentTarget.src = "https://infotech-zemri-backend.onrender.com/media/store/smart_villa_security.jpg";
+                      }
+                    }}
+                    alt="Villa Moderne Sécurisée INFOTECH ZEMRI"
+                    className="w-full h-full object-cover"
                   />
 
-                  {/* Onde Radio Alarme Centrale (au sommet de la façade) */}
-                  <circle
-                    cx="400"
-                    cy="120"
-                    r={activeZone === "alarm" ? "65" : "35"}
-                    fill="none"
-                    stroke="#ef4444"
-                    strokeWidth="2"
-                    strokeDasharray="6,4"
-                    opacity={activeZone === "alarm" ? "0.95" : "0.4"}
-                  />
+                  {/* Légère surcouche lumineuse et faisceaux de détection SVG calés sur la vraie photo */}
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
+                    <defs>
+                      <radialGradient id="realConeSky" cx="0.5" cy="0" r="1">
+                        <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.50" />
+                        <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+                      </radialGradient>
+                      <radialGradient id="realConePurple" cx="0.5" cy="0" r="1">
+                        <stop offset="0%" stopColor="#a855f7" stopOpacity="0.50" />
+                        <stop offset="100%" stopColor="#a855f7" stopOpacity="0.0" />
+                      </radialGradient>
+                    </defs>
 
-                  {/* Lignes de connexion réseau entre équipements */}
-                  <path
-                    d="M 185 170 L 375 315 L 400 120 M 375 315 L 592 325 M 375 315 L 615 130 M 375 315 L 160 350"
-                    stroke="#38bdf8"
-                    strokeWidth="1.5"
-                    strokeDasharray="4,4"
-                    strokeOpacity="0.45"
-                    fill="none"
-                  />
-                </svg>
+                    {/* Cône lumineux de la caméra gauche sur la voiture et le garage */}
+                    <polygon
+                      points="22.1,31.2 4,76 42,76"
+                      fill="url(#realConeSky)"
+                      opacity={activeZone === "cameras" ? "0.95" : "0.35"}
+                    />
 
-                {/* HOTSPOTS CLIQUABLES SUR LA VILLA */}
-                {hotspots.map((h) => {
-                  const isSelected = activeZone === h.id;
-                  return (
-                    <button
-                      key={h.id}
-                      type="button"
-                      onClick={() => selectZone(h.id)}
-                      style={{ left: h.x, top: h.y }}
-                      className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 group flex flex-col items-center transition duration-300 ${
-                        isSelected ? "scale-110 z-30" : "hover:scale-110"
-                      }`}
-                    >
-                      <span className="relative flex items-center justify-center">
-                        <span className={`animate-ping absolute inline-flex h-12 w-12 rounded-full opacity-60 ${h.pulse}`}></span>
-                        <span
-                          className={`relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-lg sm:text-xl shadow-xl border-2 transition ${
-                            isSelected
-                              ? `${h.pulse} ${h.border} text-white ring-4 ring-white/30`
-                              : "bg-slate-900/90 border-white/40 text-white hover:border-cyan-300"
-                          }`}
-                        >
-                          {h.icon}
-                        </span>
-                      </span>
-                      <span
-                        className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold whitespace-nowrap shadow-lg border transition ${
-                          isSelected
-                            ? "bg-white text-slate-950 border-white"
-                            : "bg-slate-950/90 text-slate-200 border-white/20 group-hover:bg-blue-600 group-hover:text-white"
+                    {/* Cône lumineux du dôme PTZ supérieur droit */}
+                    <polygon
+                      points="77.8,18.2 56,75 96,75"
+                      fill="url(#realConePurple)"
+                      opacity={activeZone === "wifi_ptz" ? "0.95" : "0.35"}
+                    />
+
+                    {/* Onde d'alarme autour de la sirène extérieure en façade */}
+                    {activeZone === "alarm" && (
+                      <>
+                        <circle cx="63.3" cy="28.5" r="9" fill="none" stroke="#ef4444" strokeWidth="0.45" strokeDasharray="1.5,1" />
+                        <circle cx="63.3" cy="28.5" r="15" fill="none" stroke="#ef4444" strokeWidth="0.3" strokeDasharray="1.5,1" opacity="0.7" />
+                      </>
+                    )}
+
+                    {/* Halo de sécurité autour du Digicode sur le pilier en béton */}
+                    {activeZone === "digicode" && (
+                      <circle cx="90.8" cy="67.5" r="7.5" fill="none" stroke="#10b981" strokeWidth="0.5" strokeDasharray="1.5,1" />
+                    )}
+
+                    {/* Lignes réseau fines reliant le XVR du salon aux équipements de la villa */}
+                    <line x1="60.5" y1="62.5" x2={curZone.x} y2={curZone.y} stroke={curZone.color} strokeWidth="0.45" strokeDasharray="1.2,1.2" opacity="0.85" />
+                  </svg>
+
+                  {/* HOTSPOTS CLIQUABLES POSÉS SUR LES VRAIS ÉQUIPEMENTS DE LA PHOTO */}
+                  {hotspots.map((h) => {
+                    const isSelected = activeZone === h.id;
+                    return (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => selectZone(h.id)}
+                        style={{ left: h.x, top: h.y }}
+                        className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 group/pin flex flex-col items-center transition duration-300 ${
+                          isSelected ? "scale-110 z-30" : "hover:scale-110"
                         }`}
                       >
-                        {h.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span className="relative flex items-center justify-center">
+                          <span className={`animate-ping absolute inline-flex h-11 w-11 rounded-full opacity-75 ${h.pulse}`}></span>
+                          <span
+                            className={`relative w-9 h-9 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-base sm:text-lg shadow-[0_0_25px_rgba(0,0,0,0.8)] border-2 transition ${
+                              isSelected
+                                ? `${h.pulse} ${h.border} text-white ring-4 ring-white/40`
+                                : "bg-slate-950/90 border-white/60 text-white hover:border-cyan-300"
+                            }`}
+                          >
+                            {h.icon}
+                          </span>
+                        </span>
+                        <span
+                          className={`mt-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold whitespace-nowrap shadow-xl border transition ${
+                            isSelected
+                              ? "bg-white text-slate-950 border-white"
+                              : "bg-slate-950/90 text-white border-white/30 group-hover/pin:bg-blue-600"
+                          }`}
+                        >
+                          {h.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-                {/* Légende en bas du plan de la Villa */}
-                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 pointer-events-none">
+                {/* Barre HUD Supérieure sur la Photo de la Villa */}
+                <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-30 pointer-events-none">
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/20 text-xs font-extrabold text-white flex items-center gap-2 shadow-lg">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Zone ciblée : <strong className="text-sky-300">{curZone.shortLabel}</strong></span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setZoomOnDevice(z => !z)}
+                    className="pointer-events-auto px-3.5 py-1.5 rounded-xl bg-slate-950/85 hover:bg-blue-600 backdrop-blur-md border border-white/25 text-xs font-extrabold text-white shadow-lg transition flex items-center gap-1.5"
+                  >
+                    <span>{zoomOnDevice ? "🏠 Vue Villa Complète" : "🔍 Zoomer sur l'équipement"}</span>
+                  </button>
+                </div>
+
+                {/* Légende en bas de la photo */}
+                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-30 pointer-events-none">
                   <div className="px-3.5 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 text-xs font-bold text-cyan-300 flex items-center gap-2">
                     <span>👆</span>
-                    <span>Cliquez sur une icône de la villa pour afficher & chercher ses produits</span>
+                    <span>Cliquez sur la Caméra, la Sirène ou le Digicode sur la photo</span>
                   </div>
                   <div className="px-3 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 font-mono-num text-xs text-emerald-400 font-bold">
-                    {matchedProducts.length} article(s) trouvés
+                    {matchedProducts.length} article(s) en stock
                   </div>
                 </div>
               </div>
@@ -4042,7 +4027,7 @@ if (typeof window !== "undefined") {
               </div>
 
               {/* Liste des produits correspondants en stock */}
-              <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-[270px] overflow-y-auto pr-1">
                 {matchedProducts.length === 0 ? (
                   <div className="p-6 rounded-2xl bg-slate-950/60 border border-white/10 text-center space-y-2">
                     <div className="text-2xl">{curZone.icon}</div>
