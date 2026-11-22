@@ -976,7 +976,12 @@ if (typeof window !== "undefined") {
         if (searchQ.trim()) {
           const words = searchQ.toLowerCase().split(/\s+/).filter(Boolean);
           list = list.filter(p => {
-            const hay = `${p.name || ""} ${p.reference || ""} ${p.brand_name || ""} ${p.category_name || ""}`.toLowerCase();
+            const rawHay = `${p.name || ""} ${p.reference || ""} ${p.brand_name || ""} ${p.category_name || ""}`.toLowerCase();
+            const extraSynonyms =
+              (/digi\s*code|ep7612|epa10k|pointeuse/i.test(rawHay) ? " digicode controle acces clavier porte " : "") +
+              (/alarm|ajax|ara14|ara24|arc3000|ard|detecteur/i.test(rawHay) ? " alarme sirene detecteur mouvement intrusion " : "") +
+              (/camera|ipc|hac|hfw|hdw|t1a|b1a/i.test(rawHay) ? " camera cameras surveillance " : "");
+            const hay = rawHay + extraSynonyms;
             return words.every(w => hay.includes(w));
           });
         }
@@ -1621,10 +1626,13 @@ if (typeof window !== "undefined") {
                   </div>
                 </section>
 
-                {/* SIMULATEUR INTERACTIF 4K IA COLORVU / IR / PTZ */}
-                <LiveCCTVSimulator
-                  onFilterCatalog={(q) => { setSearchQ(q); goTab("catalog"); }}
-                  showToast={showToast}
+                {/* VILLA SÉCURISÉE INTERACTIVE : CAMÉRAS, ALARME, DIGICODE */}
+                <InteractiveVillaExplorer
+                  products={products}
+                  onSelectProduct={(p) => setSelectedProduct(p)}
+                  onAddToCart={(p) => addToCart(p, 1)}
+                  onDirectOrder={(p) => { addToCart(p, 1); goTab("cart"); }}
+                  onOpenCatalogZone={(q) => { setSelectedCat("all"); setSelectedBrand("all"); setSearchQ(q); goTab("catalog"); }}
                 />
 
                 {/* CALCULATEUR INTELLIGENT DE STOCKAGE WD PURPLE & PROJET CCTV */}
@@ -3666,245 +3674,445 @@ if (typeof window !== "undefined") {
       );
     }
 
-    /* ---------- Simulateur Interactif Salle de Contrôle 4K IA (ColorVu / IR / PTZ / TiOC) ---------- */
-    function LiveCCTVSimulator({ onFilterCatalog, showToast }) {
-      const [mode, setMode] = useState("colorvu"); // "day4k", "colorvu", "ir", "tioc"
-      const [zoom, setZoom] = useState(1);
-      const [pan, setPan] = useState({ x: 0, y: 0 });
-      const [sirenOn, setSirenOn] = useState(false);
-      const [clockStr, setClockStr] = useState("");
 
-      useEffect(() => {
-        const updateClock = () => {
-          const d = new Date();
-          setClockStr(d.toLocaleDateString("fr-DZ") + " " + d.toLocaleTimeString("fr-DZ"));
-        };
-        updateClock();
-        const t = setInterval(updateClock, 1000);
-        return () => clearInterval(t);
-      }, []);
+    /* ---------- VILLA SÉCURISÉE INTERACTIVE : Cliquez sur Caméras, Alarme, Digicode... et cherchez ---------- */
+    function InteractiveVillaExplorer({ products = [], onSelectProduct, onAddToCart, onDirectOrder, onOpenCatalogZone }) {
+      const [activeZone, setActiveZone] = useState("digicode"); // "cameras" | "alarm" | "digicode" | "wifi_ptz" | "xvr_hdd" | "power_poe"
+      const [zoneSearch, setZoneSearch] = useState("");
 
-      const modes = {
-        day4k: {
-          title: "☀️ Jour 4K Ultra HD",
-          badge: "3840×2160 • 60 FPS • WDR 120dB",
-          desc: "Clarté cristalline de jour avec lecture de plaques et reconnaissance humaine IA.",
-          filter: "brightness(1.05) contrast(1.08) saturate(1.15)",
-          overlay: "rgba(14, 165, 233, 0.04)",
-          query: "4MP"
+      const zones = {
+        cameras: {
+          id: "cameras",
+          icon: "📹",
+          shortLabel: "Caméras Façade & Parking",
+          title: "Caméras de Surveillance (IP, HDCVI, 4K & ColorVu)",
+          badge: "Façade • Jardin • Parking",
+          color: "#38bdf8",
+          bgBadge: "bg-sky-500/20 text-sky-300 border-sky-400/40",
+          desc: "Surveillez les abords de la villa, la rue et le garage jour et nuit en haute définition avec vision nocturne infrarouge 40m ou couleur 24h/24.",
+          matchFn: (p) => {
+            const cat = String(p.category_name || "").toLowerCase();
+            const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
+            return cat.includes("camera") || /cam|ipc|hac|hfw|hdw|t1a|b1a|1200|1400|1500|2241|2441|bullet|dome/i.test(hay);
+          }
         },
-        colorvu: {
-          title: "🌈 Nuit ColorVu Full-Color",
-          badge: "Ouverture F1.0 • Couleur 24h/24",
-          desc: "Vision nocturne en couleur réelle même dans l'obscurité grâce au capteur haute sensibilité et LED chaude.",
-          filter: "brightness(0.95) contrast(1.18) saturate(1.35) hue-rotate(-5deg)",
-          overlay: "rgba(245, 158, 11, 0.08)",
-          query: "camera"
+        alarm: {
+          id: "alarm",
+          icon: "🚨",
+          shortLabel: "Alarme & Détecteurs",
+          title: "Système d'Alarme Sans Fil, Sirènes & Détecteurs (Dahua / Ajax)",
+          badge: "Anti-Intrusion • Portes & Fenêtres",
+          color: "#ef4444",
+          bgBadge: "bg-red-500/20 text-red-300 border-red-400/40",
+          desc: "Protégez votre maison contre toute intrusion : centrale d'alarme sans fil, détecteurs de mouvement Ajax/Dahua, contacts de porte et sirène flash 110dB.",
+          matchFn: (p) => {
+            const cat = String(p.category_name || "").toLowerCase();
+            const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
+            return (cat.includes("alarm") && !/digi\s*code/i.test(hay)) || /alarm|ajax|detecteur|clavier|ara14|ara24|arc3000|ard22|ard32|ard82|sirene|etiger/i.test(hay);
+          }
         },
-        ir: {
-          title: "🌑 Nuit Infrarouge Smart IR 40m",
-          badge: "IR LED 850nm • Portée 40-80m",
-          desc: "Vision infrarouge monochrome haute précision pour une surveillance discrète à longue distance.",
-          filter: "grayscale(100%) contrast(1.35) brightness(0.92)",
-          overlay: "rgba(16, 185, 129, 0.08)",
-          query: "camera"
+        digicode: {
+          id: "digicode",
+          icon: "🔢",
+          shortLabel: "Digicode & Contrôle d'Accès",
+          title: "Digicode, Clavier à Code, Bluetooth, Badge & Pointeuse",
+          badge: "Porte d'Entrée & Portail Villa",
+          color: "#10b981",
+          bgBadge: "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
+          desc: "Sécurisez l'ouverture de votre portail et porte d'entrée par code secret, badge RFID, empreinte digitale, reconnaissance faciale ou smartphone Bluetooth.",
+          matchFn: (p) => {
+            const hay = `${p.name || ""} ${p.reference || ""} ${p.category_name || ""}`.toLowerCase();
+            return /digi\s*code|digicode|ep7612|epa10k|bleuthot|pointeuse|zk|interphone|visiophone|clavier|serrure|badge/i.test(hay);
+          }
         },
-        tioc: {
-          title: "🚨 Dissuasion Active IA (TiOC 3-en-1)",
-          badge: "Franchissement Ligne IA • Sirène 110dB + Flash",
-          desc: "Détecte automatiquement les intrus, déclenche un flash rouge/bleu et une alarme sonore + notification mobile.",
-          filter: "brightness(0.92) contrast(1.22) saturate(1.25)",
-          overlay: "rgba(239, 68, 68, 0.12)",
-          query: "alarme"
+        wifi_ptz: {
+          id: "wifi_ptz",
+          icon: "📡",
+          shortLabel: "Caméras Wi-Fi & PTZ 360°",
+          title: "Caméras Motorisées PTZ 360° & Wi-Fi Connectées",
+          badge: "Toit • Terrasse • Suivi Auto IA",
+          color: "#a855f7",
+          bgBadge: "bg-purple-500/20 text-purple-300 border-purple-400/40",
+          desc: "Caméras rotatives 360° pilotables depuis votre téléphone avec suivi automatique des personnes, audio bidirectionnel et sirène intégrée.",
+          matchFn: (p) => {
+            const cat = String(p.category_name || "").toLowerCase();
+            const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
+            return cat.includes("wi-fi") || cat.includes("ptz") || cat.includes("ip camera") || /wifi|wi-fi|ptz|imou|ezviz|sd4|sd5|cruiser|ranger/i.test(hay);
+          }
+        },
+        xvr_hdd: {
+          id: "xvr_hdd",
+          icon: "💾",
+          shortLabel: "Enregistreur XVR/NVR & Disque",
+          title: "Enregistreurs XVR / NVR IA & Disques Durs Surveillance 24/7",
+          badge: "Cœur Sécurité Intérieur",
+          color: "#f59e0b",
+          bgBadge: "bg-amber-500/20 text-amber-300 border-amber-400/40",
+          desc: "Stockez vos enregistrements vidéo en continu (7 à 60 jours) avec accès à distance en direct sur votre smartphone où que vous soyez.",
+          matchFn: (p) => {
+            const cat = String(p.category_name || "").toLowerCase();
+            const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
+            return cat.includes("dvr") || cat.includes("nvr") || cat.includes("hard drive") || /xvr|nvr|dvr|disque|hdd|purple|1tb|2tb|4tb|500gb|1to|2to|4to/i.test(hay);
+          }
+        },
+        power_poe: {
+          id: "power_poe",
+          icon: "⚡",
+          shortLabel: "Switch PoE, Alim & Câbles",
+          title: "Alimentations 12V, Switchs PoE, Onduleurs & Câblage",
+          badge: "Garage & Coffret Technique",
+          color: "#3b82f6",
+          bgBadge: "bg-blue-500/20 text-blue-300 border-blue-400/40",
+          desc: "Alimentez et reliez toutes vos caméras, alarmes et digicodes avec nos switchs PoE, alimentations stabilisées et bobines de câble coaxial/RJ45.",
+          matchFn: (p) => {
+            const cat = String(p.category_name || "").toLowerCase();
+            const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
+            return cat.includes("power") || cat.includes("cable") || cat.includes("connector") || /switch|poe|supply|alim|bnc|cat6|coax|onduleur|ups/i.test(hay);
+          }
         }
       };
 
-      const cur = modes[mode] || modes.colorvu;
+      const curZone = zones[activeZone] || zones.cameras;
+
+      const matchedProducts = useMemo(() => {
+        let list = products.filter(curZone.matchFn);
+        if (zoneSearch.trim()) {
+          const words = zoneSearch.toLowerCase().split(/\s+/).filter(Boolean);
+          list = list.filter(p => {
+            const hay = `${p.name || ""} ${p.reference || ""} ${p.brand_name || ""} ${p.category_name || ""}`.toLowerCase().replace(/digi\s+code/g, "digicode digi code");
+            return words.every(w => hay.includes(w));
+          });
+        }
+        // Trier : photos réelles et articles en stock en premier
+        return [...list].sort((a, b) => ((b.in_stock ? 2 : 0) + (hasRealPhoto(b) ? 1 : 0)) - ((a.in_stock ? 2 : 0) + (hasRealPhoto(a) ? 1 : 0)));
+      }, [products, activeZone, zoneSearch]);
+
+      const selectZone = (zid) => {
+        setActiveZone(zid);
+        setZoneSearch("");
+      };
+
+      // Coordonnées des Hotspots cliquables sur la Villa (%)
+      const hotspots = [
+        { id: "cameras", x: "23%", y: "34%", icon: "📹", label: "Caméras Façade", pulse: "bg-sky-500", border: "border-sky-300" },
+        { id: "wifi_ptz", x: "77%", y: "26%", icon: "📡", label: "Caméra PTZ / Wi-Fi", pulse: "bg-purple-500", border: "border-purple-300" },
+        { id: "alarm", x: "50%", y: "24%", icon: "🚨", label: "Alarme & Sirène", pulse: "bg-red-500", border: "border-red-300" },
+        { id: "digicode", x: "61%", y: "68%", icon: "🔢", label: "Digicode & Accès", pulse: "bg-emerald-500", border: "border-emerald-300" },
+        { id: "xvr_hdd", x: "38%", y: "58%", icon: "💾", label: "XVR & Disque Dur", pulse: "bg-amber-500", border: "border-amber-300" },
+        { id: "power_poe", x: "19%", y: "72%", icon: "⚡", label: "Alim & Switch PoE", pulse: "bg-blue-500", border: "border-blue-300" }
+      ];
 
       return (
         <section className="reveal rounded-[2.25rem] bg-slate-950 text-white border border-blue-500/30 shadow-[0_30px_80px_-25px_rgba(37,99,235,0.45)] overflow-hidden">
-          {/* Header Bar */}
-          <div className="px-6 sm:px-8 py-5 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 bg-slate-900/60">
+          {/* En-tête de la Villa Interactive */}
+          <div className="px-6 sm:px-8 py-5 border-b border-white/10 bg-slate-900/70 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-cyan-400">
-                <span className="w-2 h-2 rounded-full bg-red-500 rec-dot"></span>
-                <span>Simulateur Interactif En Direct • Technologie Dahua & Hikvision</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Maison & Villa Intelligente • Cliquez sur un équipement pour chercher</span>
               </div>
-              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-1">
-                Testez la Vision <span className="text-gradient-hero">4K IA & ColorVu</span> en Temps Réel
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-1.5">
+                Explorez notre <span className="text-gradient-hero">Villa Sécurisée Interactive</span>
               </h2>
+              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                Cliquez directement sur une <strong>Caméra</strong>, l'<strong>Alarme</strong> ou le <strong>Digicode</strong> sur la villa pour voir et chercher les équipements disponibles en stock.
+              </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(modes).map(([k, m]) => (
+
+            {/* Boutons rapides des équipements de la villa */}
+            <div className="flex flex-wrap gap-1.5">
+              {Object.values(zones).map(z => (
                 <button
-                  key={k}
-                  onClick={() => { setMode(k); if (k === "tioc") setSirenOn(true); else setSirenOn(false); }}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 ${
-                    mode === k
-                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/30 scale-105"
-                      : "bg-white/10 hover:bg-white/20 text-slate-300"
+                  key={z.id}
+                  type="button"
+                  onClick={() => selectZone(z.id)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border ${
+                    activeZone === z.id
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-blue-600/30 scale-105"
+                      : "bg-white/5 hover:bg-white/15 border-white/10 text-slate-300"
                   }`}
                 >
-                  {m.title}
+                  <span>{z.icon}</span>
+                  <span>{z.shortLabel}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-6 p-6 sm:p-8 items-center">
-            {/* Live Simulated Monitor */}
-            <div className="lg:col-span-8 relative rounded-3xl overflow-hidden border-2 border-slate-800 bg-black h-[320px] sm:h-[420px] select-none shadow-2xl group">
-              {/* Simulated Street / Showroom Surveillance Feed */}
-              <div
-                className="w-full h-full transition-all duration-300 relative"
-                style={{
-                  transform: `scale(${zoom}) translate(${pan.x}%, ${pan.y}%)`,
-                  filter: cur.filter
-                }}
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1400&q=85"
-                  alt="Simulation CCTV"
-                  className="w-full h-full object-cover opacity-90"
-                />
-                <div className="absolute inset-0" style={{ backgroundColor: cur.overlay }}></div>
+          <div className="grid lg:grid-cols-12 gap-6 p-5 sm:p-8 items-start">
+            {/* COLONNE GAUCHE (7 cols) : Plan Architectural Interactif de la Villa avec Points Cliquables */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="relative rounded-3xl overflow-hidden border-2 border-blue-500/30 bg-gradient-to-b from-[#060d1f] via-[#0b1736] to-[#081226] h-[360px] sm:h-[460px] shadow-2xl select-none">
+                {/* Grille architecturale de fond */}
+                <div className="absolute inset-0 cyber-grid opacity-60 pointer-events-none"></div>
 
-                {/* AI Bounding Box 1: Vehicle / Target */}
-                <div className="absolute top-[28%] left-[18%] w-36 sm:w-48 h-24 sm:h-28 border-2 border-emerald-400 rounded-lg bg-emerald-500/10 backdrop-blur-[1px] p-1.5 flex flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-mono-num text-[9px] font-black">
-                      🚗 VÉHICULE 99.2%
-                    </span>
-                    <span className="text-[9px] font-mono-num text-emerald-300 font-bold">ID #048</span>
-                  </div>
-                  <div className="text-[9px] font-mono-num text-white bg-slate-950/80 px-1.5 py-0.5 rounded w-fit">
-                    VITESSE: 18 KM/H • AUTORISÉ
-                  </div>
-                </div>
+                {/* Illustration SVG Architecturale Haute Précision de la Villa Moderne */}
+                <svg viewBox="0 0 800 500" className="w-full h-full object-cover" preserveAspectRatio="xMidYMid slice">
+                  <defs>
+                    <linearGradient id="skyGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#09152e" />
+                      <stop offset="100%" stopColor="#0f2347" />
+                    </linearGradient>
+                    <linearGradient id="wallLight" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#1e293b" />
+                      <stop offset="100%" stopColor="#0f172a" />
+                    </linearGradient>
+                    <linearGradient id="winGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#0284c7" stopOpacity="0.15" />
+                    </linearGradient>
+                    <radialGradient id="coneCam" cx="0.5" cy="0" r="1">
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+                    </radialGradient>
+                    <radialGradient id="conePtz" cx="0.5" cy="0" r="1">
+                      <stop offset="0%" stopColor="#a855f7" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
+                    </radialGradient>
+                  </defs>
 
-                {/* AI Bounding Box 2: Human Intrusion Detection */}
-                <div className={`absolute bottom-[18%] right-[22%] w-28 sm:w-36 h-36 sm:h-44 border-2 ${mode === "tioc" || sirenOn ? "border-red-500 bg-red-500/20 animate-pulse" : "border-cyan-400 bg-cyan-500/10"} rounded-lg p-1.5 flex flex-col justify-between`}>
-                  <span className={`px-1.5 py-0.5 rounded ${mode === "tioc" || sirenOn ? "bg-red-600 text-white" : "bg-cyan-400 text-slate-950"} font-mono-num text-[9px] font-black w-fit`}>
-                    {mode === "tioc" || sirenOn ? "⚠ INTRUSION IA 98.7%" : "🚶 HUMAIN 98.7%"}
-                  </span>
-                  <div className="text-[9px] font-mono-num text-white bg-slate-950/80 px-1.5 py-0.5 rounded">
-                    ZONE PÉRIMÉTRIQUE A
-                  </div>
-                </div>
+                  {/* Sol & Pelouse Cyber */}
+                  <rect x="0" y="395" width="800" height="105" fill="#060c1a" />
+                  <line x1="0" y1="395" x2="800" y2="395" stroke="#38bdf8" strokeWidth="2" strokeOpacity="0.4" />
 
-                {/* Tripwire Perimeter Line */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <line x1="10" y1="78" x2="90" y2="62" stroke={mode === "tioc" || sirenOn ? "#ef4444" : "#38bdf8"} strokeWidth="0.6" strokeDasharray="2,1" />
+                  {/* Allée & Portail */}
+                  <polygon points="430,395 560,395 650,500 390,500" fill="#0f172a" stroke="#334155" strokeWidth="1.5" />
+
+                  {/* Mur de clôture extérieur */}
+                  <rect x="50" y="335" width="700" height="60" rx="4" fill="#0b1324" stroke="#1e3a8a" strokeWidth="1.5" />
+                  {/* Barreaudage clôture */}
+                  <line x1="70" y1="335" x2="730" y2="335" stroke="#38bdf8" strokeWidth="2" strokeOpacity="0.5" />
+
+                  {/* Corps Principal de la Villa - Rez-de-chaussée */}
+                  <rect x="110" y="235" width="580" height="160" fill="url(#wallLight)" stroke="#475569" strokeWidth="2" />
+
+                  {/* Garage (Gauche) */}
+                  <rect x="130" y="265" width="145" height="130" rx="4" fill="#090f1d" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.6" />
+                  <line x1="130" y1="295" x2="275" y2="295" stroke="#1e293b" strokeWidth="2" />
+                  <line x1="130" y1="325" x2="275" y2="325" stroke="#1e293b" strokeWidth="2" />
+                  <line x1="130" y1="355" x2="275" y2="355" stroke="#1e293b" strokeWidth="2" />
+                  <text x="202" y="382" textAnchor="middle" fill="#64748b" fontSize="11" fontWeight="bold">GARAGE &amp; COFFRET POE</text>
+
+                  {/* Salon Vitré Central (XVR / NVR) */}
+                  <rect x="300" y="260" width="150" height="115" rx="6" fill="url(#winGlow)" stroke="#38bdf8" strokeWidth="2" />
+                  {/* Écran Monitoring visible dans le salon */}
+                  <rect x="345" y="295" width="60" height="38" rx="4" fill="#020617" stroke="#f59e0b" strokeWidth="2" />
+                  <text x="375" y="318" textAnchor="middle" fill="#fbbf24" fontSize="10" fontWeight="bold">XVR 4K</text>
+
+                  {/* Porte d'Entrée Blindée + Digicode Lumineux (Droite) */}
+                  <rect x="495" y="265" width="75" height="130" rx="4" fill="#1e293b" stroke="#10b981" strokeWidth="2.5" />
+                  <circle cx="555" cy="330" r="4" fill="#10b981" />
+                  {/* Boîtier Digicode & Visiophone sur le pilier d'entrée */}
+                  <rect x="580" y="305" width="24" height="36" rx="4" fill="#064e3b" stroke="#34d399" strokeWidth="2" />
+                  <circle cx="592" cy="316" r="3" fill="#34d399" />
+                  <rect x="585" y="324" width="14" height="12" fill="#10b981" fillOpacity="0.5" />
+
+                  {/* Étage Supérieur de la Villa */}
+                  <rect x="170" y="110" width="470" height="125" fill="url(#wallLight)" stroke="#64748b" strokeWidth="2" />
+                  {/* Toiture Moderne Débordante */}
+                  <polygon points="145,110 665,110 645,88 165,88" fill="#1e293b" stroke="#38bdf8" strokeWidth="2" />
+
+                  {/* Grandes Baies Vitrées Étage + Balcon */}
+                  <rect x="210" y="135" width="160" height="80" rx="6" fill="url(#winGlow)" stroke="#38bdf8" strokeWidth="2" />
+                  <rect x="430" y="135" width="170" height="80" rx="6" fill="url(#winGlow)" stroke="#38bdf8" strokeWidth="2" />
+                  {/* Garde-corps Balcon en verre */}
+                  <rect x="190" y="205" width="430" height="26" fill="#38bdf8" fillOpacity="0.12" stroke="#38bdf8" strokeWidth="1.5" />
+
+                  {/* Faisceaux Laser des Caméras sur la Villa */}
+                  <polygon
+                    points="185,170 55,390 315,390"
+                    fill="url(#coneCam)"
+                    opacity={activeZone === "cameras" ? "0.95" : "0.45"}
+                  />
+                  <polygon
+                    points="615,130 470,390 775,390"
+                    fill="url(#conePtz)"
+                    opacity={activeZone === "wifi_ptz" ? "0.95" : "0.45"}
+                  />
+
+                  {/* Onde Radio Alarme Centrale (au sommet de la façade) */}
+                  <circle
+                    cx="400"
+                    cy="120"
+                    r={activeZone === "alarm" ? "65" : "35"}
+                    fill="none"
+                    stroke="#ef4444"
+                    strokeWidth="2"
+                    strokeDasharray="6,4"
+                    opacity={activeZone === "alarm" ? "0.95" : "0.4"}
+                  />
+
+                  {/* Lignes de connexion réseau entre équipements */}
+                  <path
+                    d="M 185 170 L 375 315 L 400 120 M 375 315 L 592 325 M 375 315 L 615 130 M 375 315 L 160 350"
+                    stroke="#38bdf8"
+                    strokeWidth="1.5"
+                    strokeDasharray="4,4"
+                    strokeOpacity="0.45"
+                    fill="none"
+                  />
                 </svg>
-              </div>
 
-              {/* Active Deterrence Red/Blue Police Strobe Overlay */}
-              {(mode === "tioc" || sirenOn) && (
-                <div className="absolute inset-0 pointer-events-none animate-pulse bg-gradient-to-r from-red-600/25 via-transparent to-blue-600/25"></div>
-              )}
+                {/* HOTSPOTS CLIQUABLES SUR LA VILLA */}
+                {hotspots.map((h) => {
+                  const isSelected = activeZone === h.id;
+                  return (
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => selectZone(h.id)}
+                      style={{ left: h.x, top: h.y }}
+                      className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 group flex flex-col items-center transition duration-300 ${
+                        isSelected ? "scale-110 z-30" : "hover:scale-110"
+                      }`}
+                    >
+                      <span className="relative flex items-center justify-center">
+                        <span className={`animate-ping absolute inline-flex h-12 w-12 rounded-full opacity-60 ${h.pulse}`}></span>
+                        <span
+                          className={`relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-lg sm:text-xl shadow-xl border-2 transition ${
+                            isSelected
+                              ? `${h.pulse} ${h.border} text-white ring-4 ring-white/30`
+                              : "bg-slate-900/90 border-white/40 text-white hover:border-cyan-300"
+                          }`}
+                        >
+                          {h.icon}
+                        </span>
+                      </span>
+                      <span
+                        className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold whitespace-nowrap shadow-lg border transition ${
+                          isSelected
+                            ? "bg-white text-slate-950 border-white"
+                            : "bg-slate-950/90 text-slate-200 border-white/20 group-hover:bg-blue-600 group-hover:text-white"
+                        }`}
+                      >
+                        {h.label}
+                      </span>
+                    </button>
+                  );
+                })}
 
-              {/* Top OSD Camera Telemetry Overlay */}
-              <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 pointer-events-none">
-                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-[11px] text-emerald-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 rec-dot"></span>
-                  <span>CAM-01 • INFOTECH ZEMRI 4K</span>
-                  <span className="text-slate-400">|</span>
-                  <span className="text-sky-300">{cur.badge}</span>
-                </div>
-                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-[11px] text-slate-200">
-                  {clockStr || "LIVE FEED"}
-                </div>
-              </div>
-
-              {/* Bottom OSD Crosshair & Zoom Indicator */}
-              <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center pointer-events-none">
-                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-xs text-cyan-300 font-bold">
-                  🔍 ZOOM OPTIQUE : {zoom.toFixed(1)}x • PTZ ({pan.x}, {pan.y})
-                </div>
-                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-[11px] text-amber-300 font-bold">
-                  AI CODEC H.265+ • 4096 Kbps
+                {/* Légende en bas du plan de la Villa */}
+                <div className="absolute bottom-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 pointer-events-none">
+                  <div className="px-3.5 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 text-xs font-bold text-cyan-300 flex items-center gap-2">
+                    <span>👆</span>
+                    <span>Cliquez sur une icône de la villa pour afficher & chercher ses produits</span>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 font-mono-num text-xs text-emerald-400 font-bold">
+                    {matchedProducts.length} article(s) trouvés
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right Control Deck */}
-            <div className="lg:col-span-4 space-y-5 bg-slate-900/90 p-5 sm:p-6 rounded-3xl border border-white/10">
-              <div>
-                <span className="px-2.5 py-1 rounded-full bg-blue-500/20 text-sky-300 text-[11px] font-extrabold uppercase">
-                  {cur.badge}
-                </span>
-                <h3 className="font-display text-xl font-extrabold text-white mt-2">{cur.title}</h3>
-                <p className="text-xs text-slate-300 mt-1 leading-relaxed">{cur.desc}</p>
+            {/* COLONNE DROITE (5 cols) : Recherche & Produits de l'équipement cliqué sur la Villa */}
+            <div className="lg:col-span-5 bg-slate-900/95 p-5 sm:p-6 rounded-3xl border border-white/15 space-y-4 shadow-2xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase border ${curZone.bgBadge}`}>
+                    <span>{curZone.icon}</span>
+                    <span>{curZone.badge}</span>
+                  </span>
+                  <h3 className="font-display text-lg sm:text-xl font-extrabold text-white mt-2 leading-snug">
+                    {curZone.title}
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                    {curZone.desc}
+                  </p>
+                </div>
               </div>
 
-              {/* Optical Zoom Slider */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-300">🔍 Zoom Optique Motorisé</span>
-                  <span className="font-mono-num text-sky-400">{zoom.toFixed(1)}x</span>
-                </div>
+              {/* Barre de recherche instantanée dans la zone sélectionnée */}
+              <div className="relative">
                 <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.1"
-                  value={zoom}
-                  onChange={e => setZoom(Number(e.target.value))}
-                  className="w-full accent-blue-500 cursor-pointer"
+                  type="text"
+                  value={zoneSearch}
+                  onChange={e => setZoneSearch(e.target.value)}
+                  placeholder={`🔍 Chercher dans ${curZone.shortLabel} (réf, modèle, marque)...`}
+                  className="w-full pl-4 pr-9 py-2.5 rounded-2xl bg-slate-950 border border-white/20 focus:border-cyan-400 text-xs sm:text-sm text-white placeholder:text-slate-400 outline-none transition"
                 />
-                <div className="flex justify-between text-[10px] text-slate-400 font-mono-num">
-                  <button onClick={() => setZoom(1)} className="hover:text-white">1x (Grand Angle 110°)</button>
-                  <button onClick={() => setZoom(2)} className="hover:text-white">2x (Détail)</button>
-                  <button onClick={() => setZoom(3)} className="hover:text-white">3x (Plaque / Visage)</button>
-                </div>
+                {zoneSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setZoneSearch("")}
+                    className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-white font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
-              {/* PTZ Joypad & Active Siren Toggle */}
-              <div className="grid grid-cols-2 gap-3 items-center pt-1">
-                <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-2 rounded-2xl border border-white/10 text-center">
-                  <div></div>
-                  <button onClick={() => setPan(p => ({ ...p, y: Math.min(20, p.y + 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">▲</button>
-                  <div></div>
-                  <button onClick={() => setPan(p => ({ ...p, x: Math.min(20, p.x + 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">◄</button>
-                  <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} title="Réinitialiser PTZ" className="p-2 rounded-xl bg-blue-600/30 hover:bg-blue-600 text-[10px] font-extrabold text-sky-300">🎯</button>
-                  <button onClick={() => setPan(p => ({ ...p, x: Math.max(-20, p.x - 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">►</button>
-                  <div></div>
-                  <button onClick={() => setPan(p => ({ ...p, y: Math.max(-20, p.y - 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">▼</button>
-                  <div></div>
-                </div>
+              {/* Liste des produits correspondants en stock */}
+              <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                {matchedProducts.length === 0 ? (
+                  <div className="p-6 rounded-2xl bg-slate-950/60 border border-white/10 text-center space-y-2">
+                    <div className="text-2xl">{curZone.icon}</div>
+                    <div className="text-xs text-slate-300 font-semibold">Aucun article ne correspond à « {zoneSearch} » dans cette zone.</div>
+                    <button
+                      type="button"
+                      onClick={() => setZoneSearch("")}
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                    >
+                      Réinitialiser la recherche
+                    </button>
+                  </div>
+                ) : (
+                  matchedProducts.slice(0, 6).map(p => (
+                    <div
+                      key={p.id}
+                      onClick={() => onSelectProduct && onSelectProduct(p)}
+                      className="p-3 rounded-2xl bg-slate-950/85 hover:bg-slate-950 border border-white/10 hover:border-cyan-400/60 transition flex items-center justify-between gap-3 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={getProductImg(p)}
+                          alt={p.name}
+                          className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl bg-white object-contain p-1 flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs sm:text-sm text-white group-hover:text-cyan-300 truncate">
+                            {p.name}
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-mono-num truncate">
+                            Réf: {p.reference} • {p.in_stock ? <span className="text-emerald-400">En stock ({p.available_stock})</span> : <span className="text-rose-400">Rupture</span>}
+                          </div>
+                          <div className="text-xs sm:text-sm font-black font-mono-num text-sky-400 mt-0.5">
+                            {fmtMoney(p.effective_price)}
+                          </div>
+                        </div>
+                      </div>
 
-                <div className="space-y-2">
-                  <button
-                    onClick={() => {
-                      setSirenOn(s => !s);
-                      if (showToast) showToast(!sirenOn ? "🚨 Flash & Sirène TiOC 110dB activés !" : "✓ Alarme TiOC désactivée", "info");
-                    }}
-                    className={`w-full py-3 px-3 rounded-2xl font-extrabold text-xs transition flex items-center justify-center gap-1.5 border ${
-                      sirenOn
-                        ? "bg-red-600 border-red-400 text-white animate-pulse shadow-lg shadow-red-600/40"
-                        : "bg-white/10 hover:bg-white/15 border-white/15 text-slate-200"
-                    }`}
-                  >
-                    <span>🚨</span>
-                    <span>{sirenOn ? "Sirène Active !" : "Tester Sirène IA"}</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      if (showToast) showToast("📸 Capture HD enregistrée depuis le flux de démonstration !", "success");
-                    }}
-                    className="w-full py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-slate-200 transition"
-                  >
-                    📸 Capture Photo
-                  </button>
-                </div>
+                      <div className="flex flex-col sm:flex-row items-center gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => onAddToCart && onAddToCart(p)}
+                          title="Ajouter au panier"
+                          className="px-2.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition"
+                        >
+                          🛒
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDirectOrder && onDirectOrder(p)}
+                          className="px-3 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-extrabold shadow transition whitespace-nowrap"
+                        >
+                          ⚡ Commander
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
+              {/* Bouton Voir toute la catégorie dans le catalogue */}
               <button
-                onClick={() => onFilterCatalog(cur.query)}
+                type="button"
+                onClick={() => {
+                  const kw = activeZone === "digicode" ? "digi" : activeZone === "alarm" ? "alarm" : activeZone === "wifi_ptz" ? "wifi" : activeZone === "xvr_hdd" ? "xvr" : activeZone === "power_poe" ? "switch" : "camera";
+                  onOpenCatalogZone(zoneSearch.trim() || kw);
+                }}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
               >
-                <span>🛒 Voir les caméras équipées</span>
+                <span>🔍 Voir les {matchedProducts.length} équipements ({curZone.shortLabel}) au Catalogue</span>
                 <span>→</span>
               </button>
             </div>
