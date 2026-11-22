@@ -2872,6 +2872,802 @@ if (typeof window !== "undefined") {
     }
 
 
+
+    /* ---------- LABORATOIRE 3D WEBGL INTERACTIF (Villa Radar 360° + Caméra Vue Éclatée 3D) ---------- */
+    function Interactive3DSecurityLab({ onGoCatalog, onGoKit, showToast }) {
+      const mountRef = React.useRef(null);
+      const [labMode, setLabMode] = useState("villa"); // "villa" | "exploded"
+      const [camView, setCamView] = useState("orbit"); // "orbit" | "top" | "entrance" | "parking"
+      const [camCount, setCamCount] = useState(8); // 4 | 8
+      const [spectrum, setSpectrum] = useState("colorvu"); // "colorvu" | "ir" | "alarm"
+      const [explodeFactor, setExplodeFactor] = useState(0.85); // 0 to 1
+      const [selectedPart, setSelectedPart] = useState(0);
+
+      // Mutable ref shared with Three.js animation loop
+      const stateRef = React.useRef({
+        labMode: "villa",
+        camView: "orbit",
+        camCount: 8,
+        spectrum: "colorvu",
+        explodeFactor: 0.85,
+        selectedPart: 0,
+        userRotY: 0,
+        userRotX: 0
+      });
+
+      useEffect(() => {
+        stateRef.current.labMode = labMode;
+        stateRef.current.camView = camView;
+        stateRef.current.camCount = camCount;
+        stateRef.current.spectrum = spectrum;
+        stateRef.current.explodeFactor = explodeFactor;
+        stateRef.current.selectedPart = selectedPart;
+      }, [labMode, camView, camCount, spectrum, explodeFactor, selectedPart]);
+
+      const partsInfo = [
+        { id: 0, name: "Vue Globale 360°", tag: "Système Complet", desc: "Faites glisser avec la souris ou le doigt pour tourner autour du modèle 3D." },
+        { id: 1, name: "1. Bras 3-Axes IP67", tag: "Alliage Aluminium", desc: "Support mural anti-vandalisme IK10 & étanche IP67 résistant aux intempéries (-30°C à +60°C)." },
+        { id: 2, name: "2. Châssis Thermique", tag: "Blindage Métal", desc: "Coque blindée à dissipation thermique passive pour un fonctionnement continu 24h/24 et 7j/7." },
+        { id: 3, name: "3. Puce IA WizSense NPU", tag: "Deep Learning IA", desc: "Processeur neuronal filtrant 99% des fausses alarmes (feuilles, pluie, animaux) pour cibler humains et véhicules." },
+        { id: 4, name: "4. Capteur Sony Starvis 4K", tag: "CMOS Ultra-Sensible", desc: "Capteur grand format 1/1.8" 8 Mégapixels offrant une clarté nocturne exceptionnelle et WDR 120dB." },
+        { id: 5, name: "5. Optique Saphir F1.0", tag: "Lentille Multi-Verre", desc: "Objectif motorisé à grande ouverture F1.0 captant 4x plus de lumière qu'une caméra classique." },
+        { id: 6, name: "6. Couronne LED IR & ColorVu", tag: "Portée 40m–80m", desc: "Double éclairage intelligent : LED infrarouges 850nm invisibles + projecteur LED blanc chaud dissuasif." }
+      ];
+
+      useEffect(() => {
+        const el = mountRef.current;
+        if (!el || !window.THREE) return;
+        const T = window.THREE;
+        const W = () => el.clientWidth || 800;
+        const H = () => el.clientHeight || 480;
+
+        const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(W(), H());
+        renderer.shadowMap.enabled = true;
+        el.innerHTML = "";
+        el.appendChild(renderer.domElement);
+
+        const scene = new T.Scene();
+        const camera = new T.PerspectiveCamera(42, W() / H(), 0.1, 200);
+        camera.position.set(14, 11, 16);
+        camera.lookAt(0, 1, 0);
+
+        // Lights
+        const hemi = new T.HemisphereLight(0xdbeafe, 0x0f172a, 0.85);
+        scene.add(hemi);
+        const dirLight = new T.DirectionalLight(0xffffff, 1.15);
+        dirLight.position.set(12, 18, 10);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        const strobeRed = new T.PointLight(0xef4444, 0, 28);
+        strobeRed.position.set(-4, 7, 4);
+        scene.add(strobeRed);
+        const strobeBlue = new T.PointLight(0x3b82f6, 0, 28);
+        strobeBlue.position.set(4, 7, 4);
+        scene.add(strobeBlue);
+
+        // ==================== GROUP 1: 3D SMART VILLA & PERIMETER RADAR ====================
+        const villaGroup = new T.Group();
+        scene.add(villaGroup);
+
+        // Cyber ground grid
+        const gridHelper = new T.GridHelper(32, 32, 0x2563eb, 0x1e293b);
+        gridHelper.position.y = -0.02;
+        villaGroup.add(gridHelper);
+
+        const groundMat = new T.MeshStandardMaterial({ color: 0x091020, roughness: 0.8, metalness: 0.2 });
+        const ground = new T.Mesh(new T.PlaneGeometry(32, 32), groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        villaGroup.add(ground);
+
+        // Outer glowing radar ring
+        const radarRing = new T.Mesh(
+          new T.RingGeometry(11.5, 11.75, 64),
+          new T.MeshBasicMaterial({ color: 0x38bdf8, side: T.DoubleSide, transparent: true, opacity: 0.45 })
+        );
+        radarRing.rotation.x = -Math.PI / 2;
+        radarRing.position.y = 0.03;
+        villaGroup.add(radarRing);
+
+        // Villa Main Building (2 floors + glass windows + roof)
+        const wallMat = new T.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.35, metalness: 0.15 });
+        const darkArchMat = new T.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.5 });
+        const glassWinMat = new T.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.65, roughness: 0.1 });
+
+        const floor1 = new T.Mesh(new T.BoxGeometry(7.2, 2.8, 5.4), wallMat);
+        floor1.position.set(0, 1.4, -0.8);
+        floor1.castShadow = true;
+        floor1.receiveShadow = true;
+        villaGroup.add(floor1);
+
+        const floor2 = new T.Mesh(new T.BoxGeometry(5.6, 2.5, 4.6), wallMat);
+        floor2.position.set(-0.5, 4.05, -0.8);
+        floor2.castShadow = true;
+        villaGroup.add(floor2);
+
+        const roofSlab = new T.Mesh(new T.BoxGeometry(6.2, 0.28, 5.1), darkArchMat);
+        roofSlab.position.set(-0.5, 5.4, -0.8);
+        villaGroup.add(roofSlab);
+
+        // Showroom / Villa Glowing Windows
+        const win1 = new T.Mesh(new T.BoxGeometry(2.6, 1.6, 0.12), glassWinMat);
+        win1.position.set(-1.5, 1.5, 1.91);
+        villaGroup.add(win1);
+        const win2 = new T.Mesh(new T.BoxGeometry(3.2, 1.4, 0.12), glassWinMat);
+        win2.position.set(-0.5, 4.1, 1.51);
+        villaGroup.add(win2);
+        const door = new T.Mesh(new T.BoxGeometry(1.3, 2.1, 0.14), darkArchMat);
+        door.position.set(1.8, 1.05, 1.91);
+        villaGroup.add(door);
+
+        // Perimeter fence posts
+        const fenceMat = new T.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.3 });
+        const fenceBack = new T.Mesh(new T.BoxGeometry(15, 1.1, 0.2), fenceMat);
+        fenceBack.position.set(0, 0.55, -6.5);
+        villaGroup.add(fenceBack);
+        const fenceLeft = new T.Mesh(new T.BoxGeometry(0.2, 1.1, 13), fenceMat);
+        fenceLeft.position.set(-7.5, 0.55, 0);
+        villaGroup.add(fenceLeft);
+        const fenceRight = new T.Mesh(new T.BoxGeometry(0.2, 1.1, 13), fenceMat);
+        fenceRight.position.set(7.5, 0.55, 0);
+        villaGroup.add(fenceRight);
+
+        // 3D Parked Car in Driveway
+        const carGroup = new T.Group();
+        const carBody = new T.Mesh(new T.BoxGeometry(1.9, 0.65, 3.6), new T.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.7, roughness: 0.2 }));
+        carBody.position.y = 0.55;
+        carGroup.add(carBody);
+        const carCabin = new T.Mesh(new T.BoxGeometry(1.6, 0.55, 1.8), new T.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.1 }));
+        carCabin.position.set(0, 1.1, -0.2);
+        carGroup.add(carCabin);
+        carGroup.position.set(4.5, 0, 2.5);
+        villaGroup.add(carGroup);
+
+        // Moving 3D Intruder / Target with AI Bounding Box
+        const targetGroup = new T.Group();
+        const targetMesh = new T.Mesh(
+          new T.CylinderGeometry(0.32, 0.32, 1.65, 24),
+          new T.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 0.8 })
+        );
+        targetMesh.position.y = 0.85;
+        targetGroup.add(targetMesh);
+        const targetHead = new T.Mesh(
+          new T.SphereGeometry(0.25, 24, 24),
+          new T.MeshStandardMaterial({ color: 0xfca5a5, emissive: 0xef4444, emissiveIntensity: 0.6 })
+        );
+        targetHead.position.y = 1.95;
+        targetGroup.add(targetHead);
+        // 3D AI Detection Wireframe Box around intruder
+        const boxGeo = new T.BoxGeometry(1.15, 2.35, 1.15);
+        const boxEdges = new T.EdgesGeometry(boxGeo);
+        const aiBox = new T.LineSegments(boxEdges, new T.LineBasicMaterial({ color: 0x22c55e }));
+        aiBox.position.y = 1.18;
+        targetGroup.add(aiBox);
+        // Target ground ring
+        const targetRing = new T.Mesh(
+          new T.RingGeometry(0.65, 0.82, 32),
+          new T.MeshBasicMaterial({ color: 0xef4444, side: T.DoubleSide })
+        );
+        targetRing.rotation.x = -Math.PI / 2;
+        targetRing.position.y = 0.05;
+        targetGroup.add(targetRing);
+        villaGroup.add(targetGroup);
+
+        // 8 Mounted 3D CCTV Cameras + Volumetric Laser Cones
+        const camConfigs = [
+          { pos: [-3.5, 2.7, 2.0], rotY: -0.35, primary: true },   // CAM 1 Front Left
+          { pos: [3.5, 2.7, 2.0], rotY: 0.45, primary: true },     // CAM 2 Front Right (Parking)
+          { pos: [-3.5, 2.7, -3.5], rotY: -2.6, primary: true },   // CAM 3 Back Left
+          { pos: [3.5, 2.7, -3.5], rotY: 2.6, primary: true },     // CAM 4 Back Right
+          { pos: [-0.5, 5.5, 1.8], rotY: 0, primary: false },      // CAM 5 Roof Front PTZ
+          { pos: [-3.4, 4.9, -0.8], rotY: -1.57, primary: false }, // CAM 6 Upper West
+          { pos: [2.4, 4.9, -0.8], rotY: 1.57, primary: false },   // CAM 7 Upper East
+          { pos: [-0.5, 5.5, -3.2], rotY: 3.14, primary: false }   // CAM 8 Roof North
+        ];
+
+        const camNodes = [];
+        camConfigs.forEach((cfg) => {
+          const cg = new T.Group();
+          cg.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
+          cg.rotation.y = cfg.rotY;
+
+          // Mini 3D camera body
+          const camBox = new T.Mesh(
+            new T.CylinderGeometry(0.18, 0.18, 0.65, 20),
+            new T.MeshStandardMaterial({ color: 0xffffff, metalness: 0.3, roughness: 0.2 })
+          );
+          camBox.rotation.x = Math.PI / 2;
+          camBox.rotation.z = 0;
+          cg.add(camBox);
+
+          // Glowing LED lens
+          const camLed = new T.Mesh(
+            new T.SphereGeometry(0.12, 16, 16),
+            new T.MeshBasicMaterial({ color: 0x38bdf8 })
+          );
+          camLed.position.set(0, 0, 0.35);
+          cg.add(camLed);
+
+          // Volumetric 3D Vision Cone
+          const coneMat = new T.MeshBasicMaterial({
+            color: 0x0ea5e9,
+            transparent: true,
+            opacity: 0.18,
+            side: T.DoubleSide,
+            depthWrite: false
+          });
+          const coneMesh = new T.Mesh(new T.ConeGeometry(2.8, 7.2, 32, 1, true), coneMat);
+          coneMesh.rotation.x = -Math.PI / 2;
+          coneMesh.position.set(0, -1.1, 3.8);
+          coneMesh.rotation.x = -Math.PI / 2 + 0.28;
+          cg.add(coneMesh);
+
+          villaGroup.add(cg);
+          camNodes.push({ group: cg, coneMat, camLed, primary: cfg.primary, baseRotY: cfg.rotY });
+        });
+
+        // ==================== GROUP 2: GIANT EXPLODED 3D CAMERA ANATOMY ====================
+        const explodedGroup = new T.Group();
+        explodedGroup.visible = false;
+        scene.add(explodedGroup);
+
+        const metalWhite = new T.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.35, roughness: 0.25 });
+        const metalDark = new T.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.75, roughness: 0.2 });
+        const pcbGreen = new T.MeshStandardMaterial({ color: 0x065f46, metalness: 0.5, roughness: 0.3 });
+        const goldMat = new T.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.5, metalness: 0.9, roughness: 0.15 });
+        const sapphireGlass = new T.MeshPhysicalMaterial({ color: 0x38bdf8, transmission: 0.35, opacity: 0.88, transparent: true, roughness: 0.05, metalness: 0.1, clearcoat: 1 });
+
+        // Part 1: 3-Axis Mount & Base (back)
+        const part1 = new T.Group();
+        const mBase = new T.Mesh(new T.CylinderGeometry(1.3, 1.45, 0.45, 48), metalWhite);
+        mBase.rotation.x = Math.PI / 2;
+        part1.add(mBase);
+        const mArm = new T.Mesh(new T.CylinderGeometry(0.38, 0.38, 1.8, 32), metalWhite);
+        mArm.rotation.x = Math.PI / 2;
+        mArm.position.z = 0.9;
+        part1.add(mArm);
+        const mBall = new T.Mesh(new T.SphereGeometry(0.55, 32, 32), metalDark);
+        mBall.position.z = 1.8;
+        part1.add(mBall);
+        explodedGroup.add(part1);
+
+        // Part 2: Armored Thermal Housing Shell
+        const part2 = new T.Group();
+        const shell = new T.Mesh(new T.CylinderGeometry(1.45, 1.45, 3.2, 64, 1, true), metalWhite);
+        shell.rotation.x = Math.PI / 2;
+        shell.material.side = T.DoubleSide;
+        part2.add(shell);
+        // Cooling fins
+        for (let i = -2; i <= 2; i++) {
+          const fin = new T.Mesh(new T.BoxGeometry(3.05, 0.08, 2.6), metalDark);
+          fin.position.y = i * 0.35;
+          part2.add(fin);
+        }
+        explodedGroup.add(part2);
+
+        // Part 3: AI WizSense NPU Motherboard + Glowing Processor
+        const part3 = new T.Group();
+        const pcb = new T.Mesh(new T.CylinderGeometry(1.22, 1.22, 0.16, 48), pcbGreen);
+        pcb.rotation.x = Math.PI / 2;
+        part3.add(pcb);
+        const aiChip = new T.Mesh(new T.BoxGeometry(0.95, 0.95, 0.24), metalDark);
+        aiChip.position.z = 0.12;
+        part3.add(aiChip);
+        const aiCore = new T.Mesh(new T.BoxGeometry(0.55, 0.55, 0.28), goldMat);
+        aiCore.position.z = 0.14;
+        part3.add(aiCore);
+        explodedGroup.add(part3);
+
+        // Part 4: Sony Starvis 4K CMOS Sensor Module
+        const part4 = new T.Group();
+        const sensorFrame = new T.Mesh(new T.BoxGeometry(1.5, 1.5, 0.22), metalDark);
+        part4.add(sensorFrame);
+        const cmosGlass = new T.Mesh(
+          new T.BoxGeometry(1.05, 0.8, 0.28),
+          new T.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0ea5e9, emissiveIntensity: 0.9, metalness: 0.9, roughness: 0.05 })
+        );
+        part4.add(cmosGlass);
+        explodedGroup.add(part4);
+
+        // Part 5: Multi-Element Sapphire F1.0 Optical Lens Assembly
+        const part5 = new T.Group();
+        const barrel = new T.Mesh(new T.CylinderGeometry(0.88, 1.05, 1.4, 48), metalDark);
+        barrel.rotation.x = Math.PI / 2;
+        part5.add(barrel);
+        const lensFront = new T.Mesh(new T.SphereGeometry(0.78, 48, 48), sapphireGlass);
+        lensFront.scale.z = 0.45;
+        lensFront.position.z = 0.65;
+        part5.add(lensFront);
+        const goldRing = new T.Mesh(new T.TorusGeometry(0.88, 0.05, 16, 64), goldMat);
+        goldRing.position.z = 0.55;
+        part5.add(goldRing);
+        explodedGroup.add(part5);
+
+        // Part 6: IR / ColorVu LED Matrix Ring + Sunshield Visor
+        const part6 = new T.Group();
+        const bezel = new T.Mesh(new T.TorusGeometry(1.32, 0.16, 24, 64), metalDark);
+        part6.add(bezel);
+        const glowRing = new T.Mesh(
+          new T.TorusGeometry(1.12, 0.05, 16, 64),
+          new T.MeshBasicMaterial({ color: 0x38bdf8 })
+        );
+        glowRing.position.z = 0.08;
+        part6.add(glowRing);
+        for (let i = 0; i < 8; i++) {
+          const a = (i / 8) * Math.PI * 2;
+          const led = new T.Mesh(
+            new T.SphereGeometry(0.11, 16, 16),
+            new T.MeshBasicMaterial({ color: i % 2 === 0 ? 0xef4444 : 0xfbbf24 })
+          );
+          led.position.set(Math.cos(a) * 1.12, Math.sin(a) * 1.12, 0.12);
+          part6.add(led);
+        }
+        const topVisor = new T.Mesh(
+          new T.CylinderGeometry(1.58, 1.58, 2.2, 48, 1, true, Math.PI * 1.15, Math.PI * 0.7),
+          metalWhite
+        );
+        topVisor.material.side = T.DoubleSide;
+        topVisor.rotation.x = Math.PI / 2;
+        topVisor.rotation.y = Math.PI;
+        topVisor.position.z = -0.5;
+        part6.add(topVisor);
+        explodedGroup.add(part6);
+
+        // Orbiting Holographic Data Rings around Exploded Camera
+        const holoRing1 = new T.Mesh(
+          new T.TorusGeometry(4.8, 0.025, 16, 100),
+          new T.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35 })
+        );
+        holoRing1.rotation.x = Math.PI / 2.3;
+        explodedGroup.add(holoRing1);
+
+        // Mouse & Touch Drag Orbit Controls
+        let isDragging = false;
+        let prevX = 0, prevY = 0;
+        const onDown = (e) => {
+          isDragging = true;
+          const pt = e.touches ? e.touches[0] : e;
+          prevX = pt.clientX;
+          prevY = pt.clientY;
+        };
+        const onMove = (e) => {
+          if (!isDragging) return;
+          const pt = e.touches ? e.touches[0] : e;
+          const dx = pt.clientX - prevX;
+          const dy = pt.clientY - prevY;
+          stateRef.current.userRotY += dx * 0.008;
+          stateRef.current.userRotX = Math.max(-0.6, Math.min(0.8, stateRef.current.userRotX + dy * 0.006));
+          prevX = pt.clientX;
+          prevY = pt.clientY;
+        };
+        const onUp = () => { isDragging = false; };
+
+        el.addEventListener("mousedown", onDown);
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+        el.addEventListener("touchstart", onDown, { passive: true });
+        window.addEventListener("touchmove", onMove, { passive: true });
+        window.addEventListener("touchend", onUp);
+
+        const onResize = () => {
+          if (!el) return;
+          renderer.setSize(W(), H());
+          camera.aspect = W() / H();
+          camera.updateProjectionMatrix();
+        };
+        window.addEventListener("resize", onResize);
+
+        let raf;
+        const clock = new T.Clock();
+
+        const animate = () => {
+          const t = clock.getElapsedTime();
+          const st = stateRef.current;
+
+          if (st.labMode === "villa") {
+            villaGroup.visible = true;
+            explodedGroup.visible = false;
+
+            // Intruder patrol path around the villa
+            const angle = t * 0.55;
+            const tx = Math.cos(angle) * 6.8;
+            const tz = Math.sin(angle) * 4.5 + 1.2;
+            targetGroup.position.set(tx, 0, tz);
+            targetGroup.rotation.y = -angle + Math.PI / 2;
+            targetRing.scale.setScalar(1 + Math.sin(t * 5) * 0.15);
+
+            // Spectrum & Alarm Strobe
+            const isAlarm = st.spectrum === "alarm";
+            const isIr = st.spectrum === "ir";
+            const coneColor = isAlarm ? 0xef4444 : isIr ? 0xf43f5e : 0x38bdf8;
+
+            if (isAlarm) {
+              strobeRed.intensity = (Math.sin(t * 14) > 0) ? 4.5 : 0;
+              strobeBlue.intensity = (Math.sin(t * 14) <= 0) ? 4.5 : 0;
+            } else {
+              strobeRed.intensity = 0;
+              strobeBlue.intensity = 0;
+            }
+
+            camNodes.forEach((cn, idx) => {
+              cn.group.visible = st.camCount === 8 || cn.primary;
+              cn.coneMat.color.setHex(coneColor);
+              cn.camLed.material.color.setHex(coneColor);
+              cn.coneMat.opacity = isAlarm ? (0.22 + Math.sin(t * 10) * 0.1) : 0.17;
+              // Subtle panning sweep
+              cn.group.rotation.y = cn.baseRotY + Math.sin(t * 1.1 + idx) * 0.28;
+            });
+
+            // Camera Viewpoint presets + user drag
+            let targetCamPos = { x: 14, y: 11, z: 16 };
+            let lookTarget = new T.Vector3(0, 1.2, 0);
+            if (st.camView === "top") {
+              targetCamPos = { x: 0.1, y: 24, z: 2.5 };
+              lookTarget.set(0, 0, 0);
+            } else if (st.camView === "entrance") {
+              targetCamPos = { x: -4.5, y: 4.5, z: 9.5 };
+              lookTarget.set(0, 1.5, 0);
+            } else if (st.camView === "parking") {
+              targetCamPos = { x: 10.5, y: 5.2, z: 8.5 };
+              lookTarget.set(3.5, 1.0, 2.0);
+            } else {
+              const orbA = t * 0.15 + st.userRotY;
+              const rad = 18.5;
+              targetCamPos = {
+                x: Math.sin(orbA) * rad,
+                y: 10.5 + st.userRotX * 6,
+                z: Math.cos(orbA) * rad
+              };
+            }
+            camera.position.x += (targetCamPos.x - camera.position.x) * 0.06;
+            camera.position.y += (targetCamPos.y - camera.position.y) * 0.06;
+            camera.position.z += (targetCamPos.z - camera.position.z) * 0.06;
+            camera.lookAt(lookTarget);
+          } else {
+            // EXPLODED 3D CAMERA ANATOMY MODE
+            villaGroup.visible = false;
+            explodedGroup.visible = true;
+            strobeRed.intensity = 0;
+            strobeBlue.intensity = 0;
+
+            const ef = st.explodeFactor;
+            // Smoothly position each of the 6 internal modules along Z axis
+            const targetZ = [
+              -3.8 * ef - 1.2, // Part 1: Mount
+              -1.6 * ef,       // Part 2: Armored Shell
+              -0.3 * ef,       // Part 3: AI NPU Motherboard
+              1.1 * ef,        // Part 4: Sony Starvis 4K Sensor
+              2.6 * ef + 0.5,  // Part 5: Sapphire F1.0 Lens
+              4.2 * ef + 1.2   // Part 6: IR / ColorVu Ring & Visor
+            ];
+            const parts = [part1, part2, part3, part4, part5, part6];
+            parts.forEach((p, idx) => {
+              p.position.z += (targetZ[idx] - p.position.z) * 0.08;
+              // Highlight selected part with gentle float
+              const isSel = st.selectedPart === idx + 1;
+              const targetScale = isSel ? 1.16 : 1.0;
+              p.scale.x += (targetScale - p.scale.x) * 0.1;
+              p.scale.y += (targetScale - p.scale.y) * 0.1;
+              p.scale.z += (targetScale - p.scale.z) * 0.1;
+            });
+
+            part3.rotation.z = t * 0.5;
+            holoRing1.rotation.z = t * 0.4;
+
+            const rotY = t * 0.25 + st.userRotY;
+            const camX = Math.sin(rotY) * 10.5;
+            const camZ = Math.cos(rotY) * 10.5;
+            const camY = 2.8 + st.userRotX * 5;
+            camera.position.x += (camX - camera.position.x) * 0.08;
+            camera.position.y += (camY - camera.position.y) * 0.08;
+            camera.position.z += (camZ - camera.position.z) * 0.08;
+            camera.lookAt(0, 0, 0);
+          }
+
+          renderer.render(scene, camera);
+          raf = requestAnimationFrame(animate);
+        };
+        animate();
+
+        return () => {
+          cancelAnimationFrame(raf);
+          el.removeEventListener("mousedown", onDown);
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+          el.removeEventListener("touchstart", onDown);
+          window.removeEventListener("touchmove", onMove);
+          window.removeEventListener("touchend", onUp);
+          window.removeEventListener("resize", onResize);
+          renderer.dispose();
+        };
+      }, []);
+
+      return (
+        <section className="reveal rounded-[2.25rem] bg-gradient-to-br from-slate-950 via-[#070e20] to-slate-950 text-white border border-cyan-500/30 shadow-[0_35px_100px_-25px_rgba(6,182,212,0.45)] overflow-hidden">
+          {/* Top Header & 3D Mode Switcher */}
+          <div className="px-6 sm:px-8 py-5 border-b border-white/10 bg-slate-900/70 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-extrabold uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span>Moteur 3D WebGL Temps Réel • Exclusivité INFOTECH ZEMRI</span>
+              </div>
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-1.5">
+                Laboratoire <span className="text-gradient-hero">3D Interactif 360°</span>
+              </h2>
+            </div>
+
+            {/* Mode Switcher: Villa Radar 3D vs Exploded Camera Anatomy 3D */}
+            <div className="inline-flex p-1.5 rounded-2xl bg-slate-950 border border-white/15 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setLabMode("villa")}
+                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
+                  labMode === "villa"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>🏠</span>
+                <span>Villa & Radar 3D 360°</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLabMode("exploded")}
+                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
+                  labMode === "exploded"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>🔬</span>
+                <span>Caméra 4K Vue Éclatée 3D</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-12 gap-6 p-6 sm:p-8 items-center">
+            {/* Interactive 3D WebGL Viewport */}
+            <div className="lg:col-span-8 relative h-[380px] sm:h-[480px] rounded-3xl overflow-hidden border-2 border-cyan-500/30 bg-[#050914] cursor-grab active:cursor-grabbing shadow-2xl">
+              <div ref={mountRef} className="absolute inset-0 w-full h-full" />
+
+              {/* Top HUD Telemetry inside 3D Canvas */}
+              <div className="absolute top-3.5 left-3.5 right-3.5 flex flex-wrap justify-between items-center gap-2 pointer-events-none">
+                <div className="px-3.5 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/30 font-mono-num text-xs text-cyan-300 font-bold flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>
+                    {labMode === "villa"
+                      ? `SIMULATION 3D • ${camCount} CAMÉRAS ACTIVES • COUVERTURE ${camCount === 8 ? "100% SANS ANGLE MORT" : "75% STANDARD"}`
+                      : `ANATOMIE 3D • ÉCLATEMENT ${Math.round(explodeFactor * 100)}% • 6 MODULES INTERNES`}
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/15 text-[11px] text-slate-300 font-semibold">
+                  🖱️ Glissez pour tourner à 360°
+                </div>
+              </div>
+
+              {/* Bottom Quick Overlay Controls inside 3D Canvas */}
+              {labMode === "villa" ? (
+                <div className="absolute bottom-3.5 left-3.5 right-3.5 flex flex-wrap justify-between items-center gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: "orbit", label: "🚁 Drone 360°" },
+                      { id: "top", label: "🛰️ Vue Satellite Radar" },
+                      { id: "entrance", label: "🚪 Entrée" },
+                      { id: "parking", label: "🚗 Parking" }
+                    ].map(v => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setCamView(v.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold backdrop-blur-md border transition ${
+                          camView === v.id
+                            ? "bg-blue-600 border-blue-400 text-white shadow-lg"
+                            : "bg-slate-950/80 border-white/15 text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = spectrum === "alarm" ? "colorvu" : "alarm";
+                      setSpectrum(next);
+                      if (showToast) showToast(next === "alarm" ? "🚨 Simulation d'intrusion 3D : Alarme TiOC déclenchée !" : "✓ Retour au mode surveillance normale", "info");
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold border transition ${
+                      spectrum === "alarm"
+                        ? "bg-red-600 border-red-400 text-white animate-pulse shadow-lg shadow-red-600/40"
+                        : "bg-slate-950/85 border-red-500/40 text-red-400 hover:bg-red-600 hover:text-white"
+                    }`}
+                  >
+                    🚨 {spectrum === "alarm" ? "Alarme 3D Active !" : "Simuler Intrusion 3D"}
+                  </button>
+                </div>
+              ) : (
+                <div className="absolute bottom-3.5 left-3.5 right-3.5 flex flex-wrap justify-between items-center gap-3 bg-slate-950/85 backdrop-blur-md p-3 rounded-2xl border border-white/15">
+                  <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                    <span className="text-xs font-extrabold text-cyan-300 whitespace-nowrap">💥 Éclatement 3D :</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.02"
+                      value={explodeFactor}
+                      onChange={e => setExplodeFactor(Number(e.target.value))}
+                      className="w-full accent-cyan-400 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setExplodeFactor(0)}
+                      className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white"
+                    >
+                      Assembler (0%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExplodeFactor(1)}
+                      className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold"
+                    >
+                      💥 Éclater (100%)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Control & Engineering Panel */}
+            <div className="lg:col-span-4 space-y-5 bg-slate-900/90 p-5 sm:p-6 rounded-3xl border border-white/10">
+              {labMode === "villa" ? (
+                <>
+                  <div>
+                    <span className="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-[11px] font-extrabold uppercase">
+                      Architecture & Périmètre 3D
+                    </span>
+                    <h3 className="font-display text-xl font-extrabold text-white mt-2">
+                      Simulation de Couverture 360°
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      Visualisez en 3D comment nos caméras Dahua couvrent chaque angle de votre villa, magasin ou hangar avec détection périmétrique IA.
+                    </p>
+                  </div>
+
+                  {/* Camera Count Toggle */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-300">Configuration du Système 3D :</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCamCount(4)}
+                        className={`p-3 rounded-2xl border text-left transition ${
+                          camCount === 4 ? "border-cyan-400 bg-cyan-500/20 text-white font-extrabold" : "border-white/10 bg-white/5 text-slate-400"
+                        }`}
+                      >
+                        <div className="text-sm font-bold">📹 Kit 4 Caméras</div>
+                        <div className="text-[10px] text-slate-300 mt-0.5">4 façades principales</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCamCount(8)}
+                        className={`p-3 rounded-2xl border text-left transition ${
+                          camCount === 8 ? "border-cyan-400 bg-cyan-500/20 text-white font-extrabold" : "border-white/10 bg-white/5 text-slate-400"
+                        }`}
+                      >
+                        <div className="text-sm font-bold">🛡️ Kit 8 Caméras</div>
+                        <div className="text-[10px] text-emerald-300 mt-0.5">100% Sans angle mort</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Optical Spectrum Mode */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-300">Faisceaux Optiques 3D :</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: "colorvu", label: "🌈 ColorVu" },
+                        { id: "ir", label: "🌑 Laser IR" },
+                        { id: "alarm", label: "🚨 Alarme TiOC" }
+                      ].map(sp => (
+                        <button
+                          key={sp.id}
+                          type="button"
+                          onClick={() => setSpectrum(sp.id)}
+                          className={`py-2.5 px-2 rounded-xl text-xs font-extrabold border transition ${
+                            spectrum === sp.id
+                              ? "bg-blue-600 border-blue-400 text-white shadow"
+                              : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+                          }`}
+                        >
+                          {sp.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-white/10 space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Cible mobile 3D :</span>
+                      <span className="text-emerald-400 font-mono-num font-bold">● VERROUILLÉE PAR IA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Portée des cônes 3D :</span>
+                      <span className="text-sky-300 font-mono-num font-bold">40m – 80m UHD</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onGoKit}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                  >
+                    <span>🛠 Configurer ce Kit ({camCount} Caméras)</span>
+                    <span>→</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-extrabold uppercase">
+                      Ingénierie Interne 3D
+                    </span>
+                    <h3 className="font-display text-xl font-extrabold text-white mt-2">
+                      Anatomie d'une Caméra 4K IA
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-1">
+                      Cliquez sur un composant interne pour l'inspecter en 3D :
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1">
+                    {partsInfo.slice(1).map(pt => (
+                      <button
+                        key={pt.id}
+                        type="button"
+                        onClick={() => { setSelectedPart(pt.id); if (explodeFactor < 0.5) setExplodeFactor(0.9); }}
+                        className={`w-full p-2.5 rounded-xl border text-left transition flex items-center justify-between ${
+                          selectedPart === pt.id
+                            ? "border-cyan-400 bg-cyan-500/20 text-white"
+                            : "border-white/10 bg-white/5 hover:bg-white/10 text-slate-300"
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-extrabold">{pt.name}</div>
+                          <div className="text-[10px] text-cyan-300">{pt.tag}</div>
+                        </div>
+                        <span className="text-xs">🔍</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-950 border border-cyan-500/30 text-xs text-slate-300 leading-relaxed">
+                    <strong className="text-cyan-300 block mb-0.5">
+                      {(partsInfo[selectedPart] || partsInfo[0]).name} :
+                    </strong>
+                    {(partsInfo[selectedPart] || partsInfo[0]).desc}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onGoCatalog}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                  >
+                    <span>🛒 Explorer le Catalogue 4K</span>
+                    <span>→</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     /* ---------- Simulateur Interactif Salle de Contrôle 4K IA (ColorVu / IR / PTZ / TiOC) ---------- */
     function LiveCCTVSimulator({ onFilterCatalog, showToast }) {
       const [mode, setMode] = useState("colorvu"); // "day4k", "colorvu", "ir", "tioc"
