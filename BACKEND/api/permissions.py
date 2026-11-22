@@ -1,6 +1,23 @@
 import hmac
 from django.conf import settings
 from rest_framework.permissions import BasePermission
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+
+class SafeJWTAuthentication(JWTAuthentication):
+    """
+    Forgiving JWT authentication that returns None (anonymous user) instead of
+    raising 401 AuthenticationFailed when an expired or malformed Bearer token
+    is present in the browser's localStorage. Views that require authentication
+    still enforce IsAuthenticated / IsAdminOrStaff via permission_classes.
+    """
+
+    def authenticate(self, request):
+        try:
+            return super().authenticate(request)
+        except Exception:
+            return None
+
 
 
 class IsAdminOrStaff(BasePermission):

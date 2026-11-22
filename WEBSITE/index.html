@@ -182,12 +182,12 @@
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 
   
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
-    const API_BASE = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.origin.includes("onrender.com"))) ? "/api/v1" : "https://infotech-zemri-backend.onrender.com/api/v1";
+    const API_BASE = (typeof window !== "undefined" && (((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port === "8000") || window.location.origin.includes("onrender.com"))) ? "/api/v1" : "https://infotech-zemri-backend.onrender.com/api/v1";
 const I18N = {
   "fr": {
     "flag": "🇫🇷",
@@ -699,6 +699,8 @@ if (typeof window !== "undefined") {
       const [priceMin, setPriceMin] = useState("");
       const [priceMax, setPriceMax] = useState("");
       const [visibleCount, setVisibleCount] = useState(24);
+      const [homeFilter, setHomeFilter] = useState("all");
+      const [homeLimit, setHomeLimit] = useState(16);
       const [compare, setCompare] = useState([]);
       const [showCompare, setShowCompare] = useState(false);
       const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem("cctv_favs") || "[]"); } catch { return []; } });
@@ -768,38 +770,69 @@ if (typeof window !== "undefined") {
       }, [token]);
 
       const loadHomeAndProducts = async () => {
+        const applyProds = (d) => {
+          if (!d) return false;
+          const list = d.results || (Array.isArray(d) ? d : []);
+          if (list.length > 0) {
+            setProducts(list);
+            return true;
+          }
+          return false;
+        };
+
+        // 1. Pré-chargement ultra-rapide depuis /products.json si présent (ex: Vercel CDN)
+        fetch("/products.json")
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (d) {
+              setProducts(prev => (prev && prev.length > 0) ? prev : (d.results || (Array.isArray(d) ? d : [])));
+            }
+          })
+          .catch(() => {});
+
+        fetch("/catalog_home.json")
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (d) {
+              setHomeData(prev => prev || d);
+            }
+          })
+          .catch(() => {});
+
+        // 2. Synchronisation en direct depuis l'API Django (Stock & Prix réels)
         try {
           let [resHome, resProds] = await Promise.all([
             fetch(`${API_BASE}/catalog/home/`, { headers: authHeaders }),
             fetch(`${API_BASE}/products/?limit=500`, { headers: authHeaders })
           ]);
-          // Si un ancien token JWT est expiré (401), on le supprime et on recharge immédiatement les articles en mode public
-          if (resProds.status === 401 || resHome.status === 401) {
-            localStorage.removeItem("cctv_jwt");
-            setToken("");
+          if (resProds.status === 401 || resHome.status === 401 || !resProds.ok) {
+            if (resProds.status === 401 || resHome.status === 401) {
+              localStorage.removeItem("cctv_jwt");
+              setToken("");
+            }
             const pubHeaders = { "Content-Type": "application/json" };
             [resHome, resProds] = await Promise.all([
               fetch(`${API_BASE}/catalog/home/`, { headers: pubHeaders }),
               fetch(`${API_BASE}/products/?limit=500`, { headers: pubHeaders })
             ]);
           }
-          if (resHome.ok) {
+          if (resHome && resHome.ok) {
             setHomeData(await resHome.json());
-          } else {
-            fetch("/catalog_home.json").then(r => r.ok ? r.json() : null).then(d => { if (d) setHomeData(d); }).catch(() => {});
           }
-          if (resProds.ok) {
-            const d = await resProds.json();
-            setProducts(d.results || (Array.isArray(d) ? d : []));
+          if (resProds && resProds.ok) {
+            applyProds(await resProds.json());
           } else {
-            fetch("/products.json").then(r => r.ok ? r.json() : null).then(d => { if (d) setProducts(d.results || (Array.isArray(d) ? d : [])); }).catch(() => {});
+            const remoteRes = await fetch("https://infotech-zemri-backend.onrender.com/api/v1/products/?limit=500");
+            if (remoteRes.ok) applyProds(await remoteRes.json());
           }
-          loadWilayas();
         } catch (err) {
           console.error(err);
-          fetch("/products.json").then(r => r.ok ? r.json() : null).then(d => { if (d) setProducts(d.results || (Array.isArray(d) ? d : [])); }).catch(() => {});
-          fetch("/catalog_home.json").then(r => r.ok ? r.json() : null).then(d => { if (d) setHomeData(d); }).catch(() => {});
+          try {
+            const remoteRes = await fetch("https://infotech-zemri-backend.onrender.com/api/v1/products/?limit=500");
+            if (remoteRes.ok) applyProds(await remoteRes.json());
+          } catch (e2) {}
         }
+        loadWilayas();
       };
 
       const loadWilayas = async () => {
@@ -1371,11 +1404,132 @@ if (typeof window !== "undefined") {
           )}
 
           {/* MAIN CONTENT */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
             {/* ==================== TAB 1: HOME ==================== */}
             {tab === "home" && (
-              <div className="space-y-12">
-                {/* HERO COMMAND CENTER 3D */}
+              <div className="space-y-10">
+                {/* 1. EN HAUT DE PAGE : VILLA 3D RÉALISTE INTERACTIVE & ARTICLES EN DIRECT */}
+                <InteractiveVillaExplorer
+                  products={products}
+                  onSelectProduct={(p) => setSelectedProduct(p)}
+                  onAddToCart={(p) => addToCart(p, 1)}
+                  onDirectOrder={(p) => { addToCart(p, 1); goTab("cart"); }}
+                  onOpenCatalogZone={(q) => { setSelectedCat("all"); setSelectedBrand("all"); setSearchQ(q); goTab("catalog"); }}
+                  favs={favs}
+                  onToggleFav={(p) => toggleFav(p)}
+                  compare={compare}
+                  onToggleCompare={(p) => toggleCompare(p)}
+                  showToast={showToast}
+                />
+
+                {/* 2. TOUS NOS ARTICLES & PRODUITS EN STOCK (Affichage direct avec filtres rapides) */}
+                <section className="space-y-5">
+                  <div className="flex flex-wrap justify-between items-end gap-3 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-extrabold uppercase tracking-wider mb-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span>Catalogue Direct Magasin Oran • Stock Synchronisé</span>
+                      </div>
+                      <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900">
+                        Nos Produits &amp; Articles Disponibles ({products.length})
+                      </h2>
+                      <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                        Tarifs synchronisés en temps réel ({appliedTier}) • Commandez en 1 clic avec livraison NOEST 69 Wilayas
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: "all", label: `🔥 Tous (${products.length})` },
+                        { id: "camera", label: "📹 Caméras" },
+                        { id: "alarm", label: "🚨 Alarmes" },
+                        { id: "digi", label: "🔢 Digicodes" },
+                        { id: "wifi", label: "📡 PTZ & Wi-Fi" },
+                        { id: "xvr", label: "💾 XVR / NVR" },
+                        { id: "hdd", label: "💽 Disques WD" },
+                        { id: "power", label: "⚡ PoE & Alim" },
+                      ].map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => { setHomeFilter(f.id); setHomeLimit(16); }}
+                          className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition shadow-sm border ${
+                            homeFilter === f.id
+                              ? "bg-blue-600 text-white border-blue-600 shadow-blue-600/25"
+                              : "bg-slate-50 border-slate-200 hover:border-blue-500 text-slate-800 hover:text-blue-600"
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => { setSearchQ(""); setSelectedCat("all"); goTab("catalog"); }}
+                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition shadow-md"
+                      >
+                        Catalogue Complet ({products.length}) →
+                      </button>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const homeFilteredList = [...products]
+                      .filter(p => {
+                        if (homeFilter === "all") return true;
+                        const cat = String(p.category_name || "").toLowerCase();
+                        const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
+                        if (homeFilter === "camera") return cat.includes("camera") || /cam|ipc|hac|dh-|hik|dome|bullet|t1a|b1a|1200|1500|2249/i.test(hay);
+                        if (homeFilter === "alarm") return cat.includes("alarm") || /alarm|siren|detecteur|pir|ara|ard|arc|ajax|etiger/i.test(hay);
+                        if (homeFilter === "digi") return /digi\s*code|digicode|ep7612|epa10k|bleuthot|pointeuse|zk|interphone|clavier|badge/i.test(hay);
+                        if (homeFilter === "wifi") return cat.includes("wi-fi") || cat.includes("ptz") || /wifi|wi-fi|ptz|imou|ezviz|sd4|sd5|cruiser|ranger/i.test(hay);
+                        if (homeFilter === "xvr") return cat.includes("dvr") || cat.includes("nvr") || /xvr|nvr|dvr/i.test(hay);
+                        if (homeFilter === "hdd") return cat.includes("hard drive") || /disque|hdd|purple|1tb|2tb|4tb|500gb/i.test(hay);
+                        if (homeFilter === "power") return cat.includes("power") || cat.includes("cable") || cat.includes("connector") || /switch|poe|alim|bnc|cat6|coax/i.test(hay);
+                        return true;
+                      })
+                      .sort((a, b) => ((b.in_stock ? 2 : 0) + (hasRealPhoto(b) ? 1 : 0)) - ((a.in_stock ? 2 : 0) + (hasRealPhoto(a) ? 1 : 0)));
+
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6">
+                          {homeFilteredList.slice(0, homeLimit).map(p => (
+                            <ProductCardItem
+                              key={p.id}
+                              p={p}
+                              onSelect={() => setSelectedProduct(p)}
+                              onAdd={() => addToCart(p, 1)}
+                              onDirectOrder={() => { addToCart(p, 1); goTab("cart"); }}
+                              showToast={showToast}
+                              isFav={favs.includes(p.id)}
+                              onFav={() => toggleFav(p)}
+                              inCompare={!!compare.find(x => x.id === p.id)}
+                              onCompare={() => toggleCompare(p)}
+                            />
+                          ))}
+                        </div>
+                        {homeFilteredList.length > homeLimit && (
+                          <div className="flex flex-wrap justify-center gap-3 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => setHomeLimit(n => n + 16)}
+                              className="px-6 py-3.5 rounded-2xl bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-extrabold text-xs sm:text-sm shadow-sm transition"
+                            >
+                              + Afficher plus de produits ({homeFilteredList.length - homeLimit} restants)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setSearchQ(""); setSelectedCat("all"); goTab("catalog"); }}
+                              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/25 transition"
+                            >
+                              Explorer tout le Catalogue ({products.length} articles) →
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </section>
+
+                {/* 3. HERO COMMAND CENTER 3D */}
                 <section className="relative overflow-hidden rounded-[2.25rem] hero-command text-white border border-blue-500/25 shadow-[0_35px_90px_-30px_rgba(37,99,235,0.55)]">
                   <div className="absolute inset-0 cyber-grid pointer-events-none"></div>
 
@@ -1393,19 +1547,19 @@ if (typeof window !== "undefined") {
                     </div>
                   </div>
 
-                  <div className="relative grid lg:grid-cols-12 gap-8 items-center p-6 sm:p-10 md:p-14 min-h-[540px]">
-                    <div className="lg:col-span-7 space-y-6 z-10">
+                  <div className="relative grid lg:grid-cols-12 gap-8 items-center p-6 sm:p-10 md:p-12">
+                    <div className="lg:col-span-7 space-y-5 z-10">
                       <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-sky-300 text-xs font-bold tracking-wide">
                         <span>🛡️</span>
                         <span>{tr("hero_badge")}</span>
                       </div>
 
-                      <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold leading-[1.06] tracking-tight text-white">
+                      <h1 className="font-display text-3xl sm:text-5xl font-extrabold leading-[1.06] tracking-tight text-white">
                         {tr("hero_title_1")}<br />
                         <span className="text-gradient-hero">{tr("hero_title_2")}</span>
                       </h1>
 
-                      <p className="text-slate-300 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl">
+                      <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
                         {tr("hero_sub")}
                       </p>
 
@@ -1433,30 +1587,8 @@ if (typeof window !== "undefined") {
                         </button>
                       </div>
 
-                      {/* Quick Filter Shortcut Pills inside Hero */}
-                      <div className="pt-2">
-                        <div className="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-2">Accès Rapide aux Équipements :</div>
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            { label: "📹 Caméras IP & HDCVI", q: "camera" },
-                            { label: "💾 Enregistreurs XVR / NVR", q: "xvr" },
-                            { label: "💽 Disques WD Purple", q: "purple" },
-                            { label: "🌐 Switchs PoE & Réseau", q: "switch" },
-                            { label: "🚨 Alarmes & Sirènes", q: "alarme" },
-                          ].map((chip, idx) => (
-                            <button
-                              key={idx}
-                              onClick={() => { setSearchQ(chip.q); goTab("catalog"); }}
-                              className="px-3 py-1.5 rounded-xl bg-white/8 hover:bg-blue-600/40 border border-white/15 hover:border-blue-400 text-xs font-semibold text-slate-200 hover:text-white transition"
-                            >
-                              {chip.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
                       {/* Live Animated Counters */}
-                      <div className="grid grid-cols-3 gap-3 max-w-lg pt-3">
+                      <div className="grid grid-cols-3 gap-3 max-w-lg pt-2">
                         <Counter to={products.length} label={tr("counter_articles")} dark />
                         <Counter to={69} label={tr("counter_wilayas")} dark />
                         <Counter to={24} suffix="/7" label={tr("counter_surveillance")} dark />
@@ -1464,8 +1596,7 @@ if (typeof window !== "undefined") {
                     </div>
 
                     {/* Right 3D Interactive Camera + HUD Overlays */}
-                    <div className="lg:col-span-5 relative h-[360px] sm:h-[460px]">
-                      {/* HUD Corner Brackets */}
+                    <div className="lg:col-span-5 relative h-[340px] sm:h-[420px]">
                       <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-cyan-400/60 rounded-tl-lg pointer-events-none"></div>
                       <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-cyan-400/60 rounded-tr-lg pointer-events-none"></div>
                       <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-cyan-400/60 rounded-bl-lg pointer-events-none"></div>
@@ -1486,71 +1617,6 @@ if (typeof window !== "undefined") {
                         🚚 Livraison NOEST Domicile & Stop Desk
                       </div>
                     </div>
-                  </div>
-                </section>
-
-                {/* 1. VILLA 3D RÉALISTE INTERACTIVE & ARTICLES EN DIRECT (Montée juste sous la bannière !) */}
-                <InteractiveVillaExplorer
-                  products={products}
-                  onSelectProduct={(p) => setSelectedProduct(p)}
-                  onAddToCart={(p) => addToCart(p, 1)}
-                  onDirectOrder={(p) => { addToCart(p, 1); goTab("cart"); }}
-                  onOpenCatalogZone={(q) => { setSelectedCat("all"); setSelectedBrand("all"); setSearchQ(q); goTab("catalog"); }}
-                  favs={favs}
-                  onToggleFav={(p) => toggleFav(p)}
-                  compare={compare}
-                  onToggleCompare={(p) => toggleCompare(p)}
-                  showToast={showToast}
-                />
-
-                {/* 2. ARTICLES & PRODUITS EN STOCK (Montés en haut de page avec affichage immédiat de 12 articles) */}
-                <section className="reveal space-y-5">
-                  <div className="flex flex-wrap justify-between items-end gap-3">
-                    <div>
-                      <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-600">Catalogue Direct Magasin Oran</div>
-                      <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900">
-                        Nos Articles en Stock ({products.length})
-                      </h2>
-                      <p className="text-xs sm:text-sm text-slate-500">
-                        Tarifs synchronisés en temps réel ({appliedTier}) • Commandez en 1 clic avec livraison NOEST 69 Wilayas
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { label: "📹 Caméras", q: "camera" },
-                        { label: "🚨 Alarmes", q: "alarm" },
-                        { label: "🔢 Digicodes", q: "digi" },
-                        { label: "💾 XVR / NVR", q: "xvr" },
-                      ].map((f, i) => (
-                        <button
-                          key={i}
-                          onClick={() => { setSearchQ(f.q); goTab("catalog"); }}
-                          className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-500 text-xs font-extrabold text-slate-800 hover:text-blue-600 transition shadow-sm"
-                        >
-                          {f.label}
-                        </button>
-                      ))}
-                      <button onClick={() => { setSearchQ(""); setSelectedCat("all"); goTab("catalog"); }} className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-extrabold transition shadow-md">
-                        Voir tous les articles ({products.length}) →
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6">
-                    {[...products].sort((a, b) => (hasRealPhoto(b) ? 1 : 0) - (hasRealPhoto(a) ? 1 : 0)).slice(0, 12).map(p => (
-                      <ProductCardItem
-                        key={p.id}
-                        p={p}
-                        onSelect={() => setSelectedProduct(p)}
-                        onAdd={() => addToCart(p, 1)}
-                        onDirectOrder={() => { addToCart(p, 1); goTab("cart"); }}
-                        showToast={showToast}
-                        isFav={favs.includes(p.id)}
-                        onFav={() => toggleFav(p)}
-                        inCompare={!!compare.find(x => x.id === p.id)}
-                        onCompare={() => toggleCompare(p)}
-                      />
-                    ))}
                   </div>
                 </section>
 
@@ -4461,7 +4527,7 @@ if (typeof window !== "undefined") {
                 <span className="text-xs text-slate-400">Cliquez sur un article pour voir sa fiche ou commander</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
-                {matchedProducts.slice(0, 4).map(p => (
+                {matchedProducts.slice(0, 8).map(p => (
                   <ProductCardItem
                     key={p.id}
                     p={p}

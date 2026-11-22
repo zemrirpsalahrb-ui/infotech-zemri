@@ -105,7 +105,7 @@ cors_origins = [
     if o.strip()
 ]
 CORS_ALLOWED_ORIGINS = cors_origins
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
@@ -123,7 +123,7 @@ CORS_ALLOW_HEADERS = [
 # Django REST Framework & Rate Limiting
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "api.permissions.SafeJWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
