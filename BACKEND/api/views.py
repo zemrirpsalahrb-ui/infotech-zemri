@@ -711,7 +711,7 @@ class CheckoutOrderView(APIView):
                 line_total=line_total,
             )
 
-        if subtotal >= Decimal("50000.00") or delivery_method == "PICKUP":
+        if delivery_method == "PICKUP":
             shipping_fee = Decimal("0.00")
 
         order.subtotal = subtotal
