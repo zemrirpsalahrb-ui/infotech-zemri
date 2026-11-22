@@ -513,7 +513,7 @@
                       </div>
                       <div className="grid grid-cols-3 gap-3 max-w-md pt-2">
                         <Counter to={products.length} label="Articles" />
-                        <Counter to={58} label="Wilayas livrées" />
+                        <Counter to={69} label="Wilayas livrées" />
                         <Counter to={24} suffix="/7" label="Surveillance" />
                       </div>
                     </div>
@@ -561,8 +561,8 @@
                     <h2 className="font-display text-3xl md:text-4xl font-bold text-slate-900">Une installation complète, <span className="text-blue-600">sans compromis</span>.</h2>
                     <div className="grid sm:grid-cols-2 gap-3">
                       {[
-                        ["✅", "Garantie officielle", "Produits d'origine avec garantie constructeur."],
-                        ["🚚", "Livraison 58 wilayas", "Ou retrait gratuit au magasin."],
+                        ["✅", "Produits 100% d'origine", "Matériel Dahua & sécurité certifié."],
+                        ["🚚", "Livraison 69 wilayas", "Ou retrait gratuit au magasin."],
                         ["🧑‍🔧", "Conseil installateur", "Nous dimensionnons votre système."],
                         ["💰", "Prix pro", "Tarifs installateur & revendeur après validation."],
                       ].map(([i, t, d]) => (
@@ -1027,7 +1027,6 @@
                       ["Catégorie", c => c.category_name || "—"],
                       ["Prix", c => <span className="font-extrabold text-blue-600">{fmtMoney(c.effective_price)}</span>],
                       ["Stock", c => c.in_stock ? <span className="text-emerald-600 font-semibold">{c.available_stock} dispo</span> : <span className="text-red-600">Rupture</span>],
-                      ["Garantie", c => c.warranty_months ? `${c.warranty_months} mois` : "—"],
                       ["", c => <button onClick={() => addToCart(c, 1)} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">+ Panier</button>],
                     ].map(([label, fn], i) => (
                       <tr key={i} className={i % 2 ? "bg-slate-50" : ""}>
@@ -1189,7 +1188,6 @@
                 <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">{p.short_description || p.description || "Contactez-nous pour la fiche technique complète."}</p>
-              {p.warranty_months > 0 && <div className="text-xs font-semibold text-slate-700">🛡 Garantie {p.warranty_months} mois</div>}
               <div className="mt-auto p-4 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
                 <div>
                   <div className="text-xs text-slate-500">Prix ({tier})</div>

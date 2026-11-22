@@ -829,7 +829,8 @@ class DesktopSyncProductsView(APIView):
                     kit_component_type=kit_comp,
                     kit_technology=kit_tech,
                     kit_channels=kit_ch,
-                    short_description=f"Équipement professionnel {name} (Réf: {ref}) - Garantie {12} mois.",
+                    short_description=f"Équipement professionnel {name} (Réf: {ref}).",
+                    warranty_months=0,
                     last_desktop_sync=now,
                 )
                 created_count += 1
