@@ -1046,6 +1046,91 @@ if (typeof window !== "undefined") {
         }
       };
 
+      // Générateur de Devis Proforma Officiel Imprimable / PDF
+      const printOfficialQuote = () => {
+        if (cart.length === 0) return;
+        const quoteRef = "DEV-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(1000 + Math.random() * 9000);
+        const dateStr = new Date().toLocaleDateString("fr-DZ");
+        const wName = activeWilayaObj ? activeWilayaObj.name : (checkoutForm.wilaya || "Oran");
+        const rowsHtml = cart.map((item, idx) => `
+          <tr>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;">${idx + 1}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-family:monospace;">${item.product.reference || "-"}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:bold;">${item.product.name}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;">${item.quantity}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;">${fmtMoney(item.product.effective_price)}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">${fmtMoney(item.product.effective_price * item.quantity)}</td>
+          </tr>
+        `).join("");
+
+        const html = `<!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Devis Proforma ${quoteRef} — INFOTECH ZEMRI</title>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 32px; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 24px; }
+            .brand { font-size: 24px; font-weight: 900; color: #0f172a; }
+            .brand span { color: #2563eb; }
+            .meta { text-align: right; font-size: 13px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+            th { background: #0f172a; color: #ffffff; padding: 11px 10px; text-align: left; }
+            .totals { margin-top: 24px; margin-left: auto; width: 320px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; background: #f8fafc; }
+            .totals-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+            .totals-final { display: flex; justify-content: space-between; padding-top: 10px; margin-top: 8px; border-top: 2px solid #0f172a; font-size: 17px; font-weight: 900; color: #2563eb; }
+            .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; display: flex; justify-content: space-between; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="brand">INFOTECH <span>ZEMRI</span> — LOGISZ CCTV</div>
+              <div style="font-size:13px;color:#475569;margin-top:4px;">Vidéosurveillance, Alarmes, Réseau & Matériel Informatique</div>
+              <div style="font-size:12px;color:#64748b;margin-top:4px;">📍 4 Boulevard Didouche Mourad, Oran, Algérie</div>
+              <div style="font-size:12px;color:#64748b;">📞 Tél / WhatsApp : 0557 88 27 19 / 0791 47 63 04 • TikTok : @infotech.sz</div>
+            </div>
+            <div class="meta">
+              <div style="font-size:18px;font-weight:900;color:#2563eb;">DEVIS PROFORMA</div>
+              <div><strong>N° :</strong> ${quoteRef}</div>
+              <div><strong>Date :</strong> ${dateStr}</div>
+              <div><strong>Client :</strong> ${checkoutForm.customer_name || "Client Comptoir / Web"}</div>
+              <div><strong>Tél :</strong> ${checkoutForm.customer_phone || "-"}</div>
+              <div><strong>Wilaya :</strong> ${wName}</div>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align:center;">#</th>
+                <th>Référence</th>
+                <th>Désignation de l'équipement</th>
+                <th style="text-align:center;">Qté</th>
+                <th style="text-align:right;">Prix Unitaire</th>
+                <th style="text-align:right;">Total Ligne</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+          <div class="totals">
+            <div class="totals-row"><span>Sous-total articles :</span><strong>${fmtMoney(cartSubtotal)}</strong></div>
+            <div class="totals-row"><span>Livraison NOEST (${deliveryType}) :</span><strong>${shippingFee === 0 ? "0,00 DA (Gratuit)" : fmtMoney(shippingFee)}</strong></div>
+            <div class="totals-final"><span>TOTAL NET À PAYER :</span><span>${fmtMoney(cartTotal)}</span></div>
+          </div>
+          <div class="footer">
+            <div>Devis valable dans la limite des stocks disponibles. Matériel certifié d'origine.</div>
+            <div style="font-weight:bold;color:#0f172a;">Cachet & Signature INFOTECH ZEMRI</div>
+          </div>
+          <script>window.onload = () => { window.print(); };</script>
+        </body>
+        </html>`;
+        const w = window.open("", "_blank");
+        if (w) {
+          w.document.write(html);
+          w.document.close();
+        }
+      };
+
       const handleCheckout = async (e) => {
         e.preventDefault();
         if (cart.length === 0) return;
@@ -1537,6 +1622,25 @@ if (typeof window !== "undefined") {
                     ))}
                   </div>
                 </section>
+
+                {/* SIMULATEUR INTERACTIF 4K IA COLORVU / IR / PTZ */}
+                <LiveCCTVSimulator
+                  onFilterCatalog={(q) => { setSearchQ(q); goTab("catalog"); }}
+                  showToast={showToast}
+                />
+
+                {/* CALCULATEUR INTELLIGENT DE STOCKAGE WD PURPLE & PROJET CCTV */}
+                <SmartProjectCalculator
+                  products={products}
+                  showToast={showToast}
+                  onAddPackToCart={(camProd, camQty, xvrProd, hddProd) => {
+                    if (camProd) addToCart(camProd, camQty);
+                    if (xvrProd) addToCart(xvrProd, 1);
+                    if (hddProd) addToCart(hddProd, 1);
+                    showToast(`⚡ Pack complet (${camQty} caméras + enregistreur + disque dur) ajouté au panier !`, "success");
+                    goTab("cart");
+                  }}
+                />
 
                 {/* WHY US - 3D CUBE & KIT BUILDER BANNER */}
                 <section className="reveal rounded-[2rem] bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 text-white p-6 sm:p-10 border border-blue-500/20 shadow-2xl grid md:grid-cols-12 gap-8 items-center">
@@ -2206,17 +2310,28 @@ if (typeof window !== "undefined") {
                   <button
                     type="submit"
                     disabled={cart.length === 0 || checkoutLoading}
-                    className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-extrabold text-base transition shadow-lg hover:shadow-blue-500/25 flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 text-white font-extrabold text-base transition shadow-xl shadow-blue-600/25 flex items-center justify-center gap-2"
                   >
                     {checkoutLoading ? (
                       <span>Enregistrement chez NOEST...</span>
                     ) : (
                       <>
                         <span>✓ Confirmer la commande</span>
-                        <span className="text-xs opacity-90 font-normal">({fmtMoney(cartTotal)})</span>
+                        <span className="text-xs bg-white/20 px-2.5 py-0.5 rounded-lg font-mono-num font-black">{fmtMoney(cartTotal)}</span>
                       </>
                     )}
                   </button>
+
+                  {cart.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={printOfficialQuote}
+                      className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-900 text-slate-700 hover:text-white font-extrabold text-xs transition flex items-center justify-center gap-2 border border-slate-200"
+                    >
+                      <span>📄</span>
+                      <span>Imprimer / Télécharger un Devis Proforma Officiel (PDF)</span>
+                    </button>
+                  )}
                 </form>
               </div>
             )}
@@ -2697,9 +2812,30 @@ if (typeof window !== "undefined") {
       }, [q, products]);
       return (
         <form className="relative flex-1 max-w-md hidden md:block" onSubmit={e => { e.preventDefault(); if (q.trim()) { onSubmit(q.trim()); setOpen(false); } }}>
-          <input value={q} onChange={e => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 180)}
-            placeholder={`🔍  ${tr("search_ph")}`}
-            className="w-full px-4 py-2.5 rounded-2xl bg-slate-100/80 border border-transparent focus:bg-white focus:border-blue-500 text-sm outline-none transition" />
+          <div className="relative flex items-center">
+            <input value={q} onChange={e => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 180)}
+              placeholder={`🔍  ${tr("search_ph")}`}
+              className="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 focus:bg-white focus:border-blue-500 text-sm outline-none transition" />
+            <button
+              type="button"
+              title="Recherche vocale"
+              onClick={() => {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SR) { alert("La recherche vocale n'est pas supportée sur ce navigateur."); return; }
+                const rec = new SR();
+                rec.lang = (window.__currentLang === "ar" || window.__currentLang === "dz") ? "ar-DZ" : "fr-FR";
+                rec.onresult = (ev) => {
+                  const txt = ev.results[0][0].transcript;
+                  setQ(txt);
+                  onSubmit(txt);
+                };
+                rec.start();
+              }}
+              className="absolute right-2.5 w-7 h-7 rounded-xl hover:bg-blue-50 text-slate-500 hover:text-blue-600 flex items-center justify-center text-sm transition"
+            >
+              🎙️
+            </button>
+          </div>
           {open && hits.length > 0 && (
             <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden z-50">
               {hits.map(p => (
@@ -2732,6 +2868,427 @@ if (typeof window !== "undefined") {
           <div className={`font-display font-mono-num text-xl sm:text-2xl font-extrabold ${dark ? "text-sky-400" : "text-slate-900"}`}>{v}{suffix}</div>
           <div className={`text-[10px] sm:text-[11px] font-semibold mt-0.5 ${dark ? "text-slate-300" : "text-slate-500"}`}>{label}</div>
         </div>
+      );
+    }
+
+
+    /* ---------- Simulateur Interactif Salle de Contrôle 4K IA (ColorVu / IR / PTZ / TiOC) ---------- */
+    function LiveCCTVSimulator({ onFilterCatalog, showToast }) {
+      const [mode, setMode] = useState("colorvu"); // "day4k", "colorvu", "ir", "tioc"
+      const [zoom, setZoom] = useState(1);
+      const [pan, setPan] = useState({ x: 0, y: 0 });
+      const [sirenOn, setSirenOn] = useState(false);
+      const [clockStr, setClockStr] = useState("");
+
+      useEffect(() => {
+        const updateClock = () => {
+          const d = new Date();
+          setClockStr(d.toLocaleDateString("fr-DZ") + " " + d.toLocaleTimeString("fr-DZ"));
+        };
+        updateClock();
+        const t = setInterval(updateClock, 1000);
+        return () => clearInterval(t);
+      }, []);
+
+      const modes = {
+        day4k: {
+          title: "☀️ Jour 4K Ultra HD",
+          badge: "3840×2160 • 60 FPS • WDR 120dB",
+          desc: "Clarté cristalline de jour avec lecture de plaques et reconnaissance humaine IA.",
+          filter: "brightness(1.05) contrast(1.08) saturate(1.15)",
+          overlay: "rgba(14, 165, 233, 0.04)",
+          query: "4MP"
+        },
+        colorvu: {
+          title: "🌈 Nuit ColorVu Full-Color",
+          badge: "Ouverture F1.0 • Couleur 24h/24",
+          desc: "Vision nocturne en couleur réelle même dans l'obscurité grâce au capteur haute sensibilité et LED chaude.",
+          filter: "brightness(0.95) contrast(1.18) saturate(1.35) hue-rotate(-5deg)",
+          overlay: "rgba(245, 158, 11, 0.08)",
+          query: "camera"
+        },
+        ir: {
+          title: "🌑 Nuit Infrarouge Smart IR 40m",
+          badge: "IR LED 850nm • Portée 40-80m",
+          desc: "Vision infrarouge monochrome haute précision pour une surveillance discrète à longue distance.",
+          filter: "grayscale(100%) contrast(1.35) brightness(0.92)",
+          overlay: "rgba(16, 185, 129, 0.08)",
+          query: "camera"
+        },
+        tioc: {
+          title: "🚨 Dissuasion Active IA (TiOC 3-en-1)",
+          badge: "Franchissement Ligne IA • Sirène 110dB + Flash",
+          desc: "Détecte automatiquement les intrus, déclenche un flash rouge/bleu et une alarme sonore + notification mobile.",
+          filter: "brightness(0.92) contrast(1.22) saturate(1.25)",
+          overlay: "rgba(239, 68, 68, 0.12)",
+          query: "alarme"
+        }
+      };
+
+      const cur = modes[mode] || modes.colorvu;
+
+      return (
+        <section className="reveal rounded-[2.25rem] bg-slate-950 text-white border border-blue-500/30 shadow-[0_30px_80px_-25px_rgba(37,99,235,0.45)] overflow-hidden">
+          {/* Header Bar */}
+          <div className="px-6 sm:px-8 py-5 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 bg-slate-900/60">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-cyan-400">
+                <span className="w-2 h-2 rounded-full bg-red-500 rec-dot"></span>
+                <span>Simulateur Interactif En Direct • Technologie Dahua & Hikvision</span>
+              </div>
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                Testez la Vision <span className="text-gradient-hero">4K IA & ColorVu</span> en Temps Réel
+              </h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(modes).map(([k, m]) => (
+                <button
+                  key={k}
+                  onClick={() => { setMode(k); if (k === "tioc") setSirenOn(true); else setSirenOn(false); }}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 ${
+                    mode === k
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/30 scale-105"
+                      : "bg-white/10 hover:bg-white/20 text-slate-300"
+                  }`}
+                >
+                  {m.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-12 gap-6 p-6 sm:p-8 items-center">
+            {/* Live Simulated Monitor */}
+            <div className="lg:col-span-8 relative rounded-3xl overflow-hidden border-2 border-slate-800 bg-black h-[320px] sm:h-[420px] select-none shadow-2xl group">
+              {/* Simulated Street / Showroom Surveillance Feed */}
+              <div
+                className="w-full h-full transition-all duration-300 relative"
+                style={{
+                  transform: `scale(${zoom}) translate(${pan.x}%, ${pan.y}%)`,
+                  filter: cur.filter
+                }}
+              >
+                <img
+                  src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1400&q=85"
+                  alt="Simulation CCTV"
+                  className="w-full h-full object-cover opacity-90"
+                />
+                <div className="absolute inset-0" style={{ backgroundColor: cur.overlay }}></div>
+
+                {/* AI Bounding Box 1: Vehicle / Target */}
+                <div className="absolute top-[28%] left-[18%] w-36 sm:w-48 h-24 sm:h-28 border-2 border-emerald-400 rounded-lg bg-emerald-500/10 backdrop-blur-[1px] p-1.5 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-mono-num text-[9px] font-black">
+                      🚗 VÉHICULE 99.2%
+                    </span>
+                    <span className="text-[9px] font-mono-num text-emerald-300 font-bold">ID #048</span>
+                  </div>
+                  <div className="text-[9px] font-mono-num text-white bg-slate-950/80 px-1.5 py-0.5 rounded w-fit">
+                    VITESSE: 18 KM/H • AUTORISÉ
+                  </div>
+                </div>
+
+                {/* AI Bounding Box 2: Human Intrusion Detection */}
+                <div className={`absolute bottom-[18%] right-[22%] w-28 sm:w-36 h-36 sm:h-44 border-2 ${mode === "tioc" || sirenOn ? "border-red-500 bg-red-500/20 animate-pulse" : "border-cyan-400 bg-cyan-500/10"} rounded-lg p-1.5 flex flex-col justify-between`}>
+                  <span className={`px-1.5 py-0.5 rounded ${mode === "tioc" || sirenOn ? "bg-red-600 text-white" : "bg-cyan-400 text-slate-950"} font-mono-num text-[9px] font-black w-fit`}>
+                    {mode === "tioc" || sirenOn ? "⚠ INTRUSION IA 98.7%" : "🚶 HUMAIN 98.7%"}
+                  </span>
+                  <div className="text-[9px] font-mono-num text-white bg-slate-950/80 px-1.5 py-0.5 rounded">
+                    ZONE PÉRIMÉTRIQUE A
+                  </div>
+                </div>
+
+                {/* Tripwire Perimeter Line */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <line x1="10" y1="78" x2="90" y2="62" stroke={mode === "tioc" || sirenOn ? "#ef4444" : "#38bdf8"} strokeWidth="0.6" strokeDasharray="2,1" />
+                </svg>
+              </div>
+
+              {/* Active Deterrence Red/Blue Police Strobe Overlay */}
+              {(mode === "tioc" || sirenOn) && (
+                <div className="absolute inset-0 pointer-events-none animate-pulse bg-gradient-to-r from-red-600/25 via-transparent to-blue-600/25"></div>
+              )}
+
+              {/* Top OSD Camera Telemetry Overlay */}
+              <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 pointer-events-none">
+                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-[11px] text-emerald-400 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 rec-dot"></span>
+                  <span>CAM-01 • INFOTECH ZEMRI 4K</span>
+                  <span className="text-slate-400">|</span>
+                  <span className="text-sky-300">{cur.badge}</span>
+                </div>
+                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-[11px] text-slate-200">
+                  {clockStr || "LIVE FEED"}
+                </div>
+              </div>
+
+              {/* Bottom OSD Crosshair & Zoom Indicator */}
+              <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center pointer-events-none">
+                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-xs text-cyan-300 font-bold">
+                  🔍 ZOOM OPTIQUE : {zoom.toFixed(1)}x • PTZ ({pan.x}, {pan.y})
+                </div>
+                <div className="px-3 py-1 rounded-lg bg-slate-950/80 backdrop-blur border border-white/15 font-mono-num text-[11px] text-amber-300 font-bold">
+                  AI CODEC H.265+ • 4096 Kbps
+                </div>
+              </div>
+            </div>
+
+            {/* Right Control Deck */}
+            <div className="lg:col-span-4 space-y-5 bg-slate-900/90 p-5 sm:p-6 rounded-3xl border border-white/10">
+              <div>
+                <span className="px-2.5 py-1 rounded-full bg-blue-500/20 text-sky-300 text-[11px] font-extrabold uppercase">
+                  {cur.badge}
+                </span>
+                <h3 className="font-display text-xl font-extrabold text-white mt-2">{cur.title}</h3>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">{cur.desc}</p>
+              </div>
+
+              {/* Optical Zoom Slider */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-300">🔍 Zoom Optique Motorisé</span>
+                  <span className="font-mono-num text-sky-400">{zoom.toFixed(1)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={zoom}
+                  onChange={e => setZoom(Number(e.target.value))}
+                  className="w-full accent-blue-500 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 font-mono-num">
+                  <button onClick={() => setZoom(1)} className="hover:text-white">1x (Grand Angle 110°)</button>
+                  <button onClick={() => setZoom(2)} className="hover:text-white">2x (Détail)</button>
+                  <button onClick={() => setZoom(3)} className="hover:text-white">3x (Plaque / Visage)</button>
+                </div>
+              </div>
+
+              {/* PTZ Joypad & Active Siren Toggle */}
+              <div className="grid grid-cols-2 gap-3 items-center pt-1">
+                <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-2 rounded-2xl border border-white/10 text-center">
+                  <div></div>
+                  <button onClick={() => setPan(p => ({ ...p, y: Math.min(20, p.y + 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">▲</button>
+                  <div></div>
+                  <button onClick={() => setPan(p => ({ ...p, x: Math.min(20, p.x + 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">◄</button>
+                  <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} title="Réinitialiser PTZ" className="p-2 rounded-xl bg-blue-600/30 hover:bg-blue-600 text-[10px] font-extrabold text-sky-300">🎯</button>
+                  <button onClick={() => setPan(p => ({ ...p, x: Math.max(-20, p.x - 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">►</button>
+                  <div></div>
+                  <button onClick={() => setPan(p => ({ ...p, y: Math.max(-20, p.y - 5) }))} className="p-2 rounded-xl bg-white/10 hover:bg-blue-600 text-xs font-bold">▼</button>
+                  <div></div>
+                </div>
+
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setSirenOn(s => !s);
+                      if (showToast) showToast(!sirenOn ? "🚨 Flash & Sirène TiOC 110dB activés !" : "✓ Alarme TiOC désactivée", "info");
+                    }}
+                    className={`w-full py-3 px-3 rounded-2xl font-extrabold text-xs transition flex items-center justify-center gap-1.5 border ${
+                      sirenOn
+                        ? "bg-red-600 border-red-400 text-white animate-pulse shadow-lg shadow-red-600/40"
+                        : "bg-white/10 hover:bg-white/15 border-white/15 text-slate-200"
+                    }`}
+                  >
+                    <span>🚨</span>
+                    <span>{sirenOn ? "Sirène Active !" : "Tester Sirène IA"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (showToast) showToast("📸 Capture HD enregistrée depuis le flux de démonstration !", "success");
+                    }}
+                    className="w-full py-2.5 px-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-slate-200 transition"
+                  >
+                    📸 Capture Photo
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={() => onFilterCatalog(cur.query)}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
+              >
+                <span>🛒 Voir les caméras équipées</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    /* ---------- Calculateur Intelligent de Stockage Disque Dur WD Purple & Dimensionnement ---------- */
+    function SmartProjectCalculator({ products, onAddPackToCart, showToast }) {
+      const [cams, setCams] = useState(4);
+      const [resMp, setResMp] = useState(4); // 2, 4, 5, 8 MP
+      const [days, setDays] = useState(15); // 7, 15, 30, 60 days
+
+      // Bitrate approximatif en H.265+ (Mbps par caméra)
+      const bitratePerCam = resMp === 2 ? 1.5 : resMp === 4 ? 2.5 : resMp === 5 ? 3.2 : 5.5;
+      const totalMbps = (cams * bitratePerCam).toFixed(1);
+      // Go par jour par caméra en H.265+ = Mbps * 10.5 Go
+      const totalGb = Math.round(cams * bitratePerCam * 10.5 * days);
+      const totalTbRaw = totalGb / 1000;
+      const recommendedTb = totalTbRaw <= 1 ? 1 : totalTbRaw <= 2 ? 2 : totalTbRaw <= 4 ? 4 : totalTbRaw <= 6 ? 6 : 8;
+      const recommendedChannels = cams <= 4 ? 4 : cams <= 8 ? 8 : cams <= 16 ? 16 : 32;
+      const recommendedPsu = cams <= 4 ? "Alimentation 12V 5A" : cams <= 8 ? "Alimentation 12V 10A" : "Boîtier 12V 20A / Switch PoE 16P";
+
+      const handleAutoBuild = () => {
+        if (!products || products.length === 0) return;
+        const camProd = products.find(p => p.in_stock && /cam|ipc|hac|bullet|dome/i.test(p.name)) || products[0];
+        const xvrProd = products.find(p => p.in_stock && /xvr|nvr|dvr/i.test(p.name));
+        const hddProd = products.find(p => p.in_stock && /purple|disque|hdd|tb|to/i.test(p.name));
+        onAddPackToCart(camProd, cams, xvrProd, hddProd);
+      };
+
+      return (
+        <section className="reveal card-light rounded-[2.25rem] p-6 sm:p-10 border border-slate-200 shadow-xl">
+          <div className="grid lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-extrabold uppercase tracking-wider">
+                  📐 Calculateur d'Ingénierie Vidéosurveillance
+                </div>
+                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+                  Dimensionnez votre <span className="text-blue-600">Disque Dur WD Purple & Kit CCTV</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Indiquez le nombre de caméras et la durée d'enregistrement souhaitée : notre algorithme calcule instantanément le stockage requis en compression IA H.265+.
+                </p>
+              </div>
+
+              {/* 1. Nombre de caméras */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs sm:text-sm font-extrabold text-slate-700">1. Nombre de Caméras à installer :</label>
+                  <span className="px-3 py-1 rounded-xl bg-blue-600 text-white font-mono-num font-black text-sm">{cams} Caméra{cams > 1 ? "s" : ""}</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="32"
+                  value={cams}
+                  onChange={e => setCams(Number(e.target.value))}
+                  className="w-full accent-blue-600 cursor-pointer"
+                />
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {[2, 4, 8, 12, 16, 24, 32].map(n => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setCams(n)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold border transition ${cams === n ? "bg-slate-900 text-white border-slate-900" : "bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-400"}`}
+                    >
+                      {n} Caméras
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. Résolution */}
+              <div className="space-y-2">
+                <label className="block text-xs sm:text-sm font-extrabold text-slate-700">2. Résolution & Qualité des Caméras :</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { mp: 2, label: "2 MP (1080p)", sub: "Full HD Standard" },
+                    { mp: 4, label: "4 MP (2K QHD)", sub: "Recommandé Pro" },
+                    { mp: 5, label: "5 MP Super HD", sub: "Haute Précision" },
+                    { mp: 8, label: "8 MP (4K UHD)", sub: "Ultra Détail IA" }
+                  ].map(r => (
+                    <button
+                      key={r.mp}
+                      type="button"
+                      onClick={() => setResMp(r.mp)}
+                      className={`p-3 rounded-2xl border text-left transition ${resMp === r.mp ? "border-blue-600 bg-blue-50/70 text-blue-950 font-extrabold ring-2 ring-blue-500/20" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+                    >
+                      <div className="text-xs sm:text-sm font-bold">{r.label}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{r.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Durée d'enregistrement */}
+              <div className="space-y-2">
+                <label className="block text-xs sm:text-sm font-extrabold text-slate-700">3. Durée d'Archives Vidéo Continue (24h/24) :</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[7, 15, 30, 60].map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDays(d)}
+                      className={`py-2.5 px-3 rounded-2xl border text-center font-bold text-xs sm:text-sm transition ${days === d ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                    >
+                      {d} Jours
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Results Dashboard Card */}
+            <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 text-white p-6 sm:p-7 border border-blue-500/30 shadow-2xl space-y-5">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-sky-400">Résultat Technique</div>
+                  <div className="font-display text-lg font-extrabold text-white">Configuration Recommandée</div>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold">
+                  Codec H.265+
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-white/10 border border-white/10">
+                  <div className="text-[11px] text-slate-300">💽 Disque WD Purple</div>
+                  <div className="font-display font-mono-num text-2xl sm:text-3xl font-black text-sky-400 mt-1">
+                    {recommendedTb} To
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">({totalGb} Go estimés)</div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/10 border border-white/10">
+                  <div className="text-[11px] text-slate-300">💾 Enregistreur XVR/NVR</div>
+                  <div className="font-display font-mono-num text-2xl sm:text-3xl font-black text-emerald-400 mt-1">
+                    {recommendedChannels} CH
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{recommendedChannels} Canaux UHD</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="text-[11px] text-slate-400">⚡ Alimentation</div>
+                  <div className="text-xs font-extrabold text-white mt-1">{recommendedPsu}</div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="text-[11px] text-slate-400">🌐 Flux Réseau Total</div>
+                  <div className="text-xs font-mono-num font-extrabold text-amber-300 mt-1">{totalMbps} Mbps</div>
+                </div>
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={handleAutoBuild}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                >
+                  <span>⚡ Composer ce Pack dans mon Panier</span>
+                  <span>→</span>
+                </button>
+                <a
+                  href={`https://wa.me/213557882719?text=${encodeURIComponent(`Bonjour INFOTECH ZEMRI, je souhaite un devis pour une installation de ${cams} caméras (${resMp} MP) avec ${days} jours d'enregistrement (Enregistreur ${recommendedChannels} canaux + Disque dur ${recommendedTb} To).`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-3 px-4 rounded-2xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-400/30 text-emerald-300 font-bold text-xs text-center transition block"
+                >
+                  💬 Recevoir l'étude & devis sur WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
       );
     }
 
