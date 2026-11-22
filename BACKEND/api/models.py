@@ -312,6 +312,15 @@ class OnlineOrder(models.Model):
     has_stock_conflict = models.BooleanField(default=False)
     conflict_details = models.TextField(blank=True, default="")
 
+    # NOEST Delivery Partner Integration
+    delivery_commune = models.CharField(max_length=100, blank=True, default="")
+    delivery_stop_desk = models.BooleanField(default=False)
+    delivery_station_code = models.CharField(max_length=20, blank=True, default="")
+    delivery_tracking = models.CharField(max_length=60, blank=True, default="", db_index=True)
+    delivery_status = models.CharField(max_length=60, blank=True, default="")
+    delivery_label_url = models.CharField(max_length=255, blank=True, default="")
+    delivery_error = models.TextField(blank=True, default="")
+
     # Desktop POS Conversion Tracking (Prevents double stock deduction!)
     pos_converted = models.BooleanField(default=False, db_index=True)
     pos_bon_number = models.CharField(max_length=40, blank=True, default="")

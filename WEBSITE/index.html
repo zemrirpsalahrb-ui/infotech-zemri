@@ -469,6 +469,68 @@ if (typeof window !== "undefined") {
       return n.toLocaleString("fr-DZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " DA";
     }
 
+
+    const FALLBACK_WILAYAS = [
+      { id: 1, name: "01 - Adrar", home_fee: 1000, desk_fee: 500 },
+      { id: 2, name: "02 - Chlef", home_fee: 600, desk_fee: 300 },
+      { id: 3, name: "03 - Laghouat", home_fee: 800, desk_fee: 400 },
+      { id: 4, name: "04 - Oum El Bouaghi", home_fee: 700, desk_fee: 350 },
+      { id: 5, name: "05 - Batna", home_fee: 700, desk_fee: 350 },
+      { id: 6, name: "06 - Béjaïa", home_fee: 700, desk_fee: 350 },
+      { id: 7, name: "07 - Biskra", home_fee: 800, desk_fee: 400 },
+      { id: 8, name: "08 - Béchar", home_fee: 900, desk_fee: 450 },
+      { id: 9, name: "09 - Blida", home_fee: 600, desk_fee: 300 },
+      { id: 10, name: "10 - Bouira", home_fee: 600, desk_fee: 300 },
+      { id: 11, name: "11 - Tamanrasset", home_fee: 1400, desk_fee: 700 },
+      { id: 12, name: "12 - Tébessa", home_fee: 800, desk_fee: 400 },
+      { id: 13, name: "13 - Tlemcen", home_fee: 600, desk_fee: 300 },
+      { id: 14, name: "14 - Tiaret", home_fee: 600, desk_fee: 300 },
+      { id: 15, name: "15 - Tizi Ouzou", home_fee: 700, desk_fee: 350 },
+      { id: 16, name: "16 - Alger", home_fee: 600, desk_fee: 300 },
+      { id: 17, name: "17 - Djelfa", home_fee: 800, desk_fee: 400 },
+      { id: 18, name: "18 - Jijel", home_fee: 700, desk_fee: 350 },
+      { id: 19, name: "19 - Sétif", home_fee: 700, desk_fee: 350 },
+      { id: 20, name: "20 - Saïda", home_fee: 600, desk_fee: 300 },
+      { id: 21, name: "21 - Skikda", home_fee: 700, desk_fee: 350 },
+      { id: 22, name: "22 - Sidi Bel Abbès", home_fee: 500, desk_fee: 250 },
+      { id: 23, name: "23 - Annaba", home_fee: 700, desk_fee: 350 },
+      { id: 24, name: "24 - Guelma", home_fee: 700, desk_fee: 350 },
+      { id: 25, name: "25 - Constantine", home_fee: 700, desk_fee: 350 },
+      { id: 26, name: "26 - Médéa", home_fee: 600, desk_fee: 300 },
+      { id: 27, name: "27 - Mostaganem", home_fee: 500, desk_fee: 250 },
+      { id: 28, name: "28 - M'Sila", home_fee: 700, desk_fee: 350 },
+      { id: 29, name: "29 - Mascara", home_fee: 500, desk_fee: 250 },
+      { id: 30, name: "30 - Ouargla", home_fee: 900, desk_fee: 450 },
+      { id: 31, name: "31 - Oran", home_fee: 500, desk_fee: 250 },
+      { id: 32, name: "32 - El Bayadh", home_fee: 900, desk_fee: 450 },
+      { id: 33, name: "33 - Illizi", home_fee: 1400, desk_fee: 700 },
+      { id: 34, name: "34 - Bordj Bou Arreridj", home_fee: 700, desk_fee: 350 },
+      { id: 35, name: "35 - Boumerdès", home_fee: 600, desk_fee: 300 },
+      { id: 36, name: "36 - El Tarf", home_fee: 800, desk_fee: 400 },
+      { id: 37, name: "37 - Tindouf", home_fee: 1400, desk_fee: 700 },
+      { id: 38, name: "38 - Tissemsilt", home_fee: 700, desk_fee: 350 },
+      { id: 39, name: "39 - El Oued", home_fee: 900, desk_fee: 450 },
+      { id: 40, name: "40 - Khenchela", home_fee: 800, desk_fee: 400 },
+      { id: 41, name: "41 - Souk Ahras", home_fee: 800, desk_fee: 400 },
+      { id: 42, name: "42 - Tipaza", home_fee: 600, desk_fee: 300 },
+      { id: 43, name: "43 - Mila", home_fee: 700, desk_fee: 350 },
+      { id: 44, name: "44 - Aïn Defla", home_fee: 600, desk_fee: 300 },
+      { id: 45, name: "45 - Naâma", home_fee: 900, desk_fee: 450 },
+      { id: 46, name: "46 - Aïn Témouchent", home_fee: 500, desk_fee: 250 },
+      { id: 47, name: "47 - Ghardaïa", home_fee: 900, desk_fee: 450 },
+      { id: 48, name: "48 - Relizane", home_fee: 500, desk_fee: 250 },
+      { id: 49, name: "49 - El M'Ghair", home_fee: 900, desk_fee: 450 },
+      { id: 50, name: "50 - El Meniaa", home_fee: 1000, desk_fee: 500 },
+      { id: 51, name: "51 - Ouled Djellal", home_fee: 800, desk_fee: 400 },
+      { id: 52, name: "52 - Bordj Baji Mokhtar", home_fee: 1500, desk_fee: 800 },
+      { id: 53, name: "53 - Béni Abbès", home_fee: 1100, desk_fee: 600 },
+      { id: 54, name: "54 - Timimoun", home_fee: 1100, desk_fee: 600 },
+      { id: 55, name: "55 - Touggourt", home_fee: 900, desk_fee: 450 },
+      { id: 56, name: "56 - Djanet", home_fee: 1500, desk_fee: 800 },
+      { id: 57, name: "57 - In Salah", home_fee: 1200, desk_fee: 600 },
+      { id: 58, name: "58 - In Guezzam", home_fee: 1500, desk_fee: 800 }
+    ];
+
     function App() {
       const [tab, setTab] = useState("home"); // home, catalog, kit, cart, account
       const [lang, setLang] = useState(() => {
@@ -518,13 +580,23 @@ if (typeof window !== "undefined") {
       const [kitSelection, setKitSelection] = useState({});
       const [kitEval, setKitEval] = useState(null);
 
+      // NOEST delivery state
+      const [wilayasList, setWilayasList] = useState(FALLBACK_WILAYAS);
+      const [communesList, setCommunesList] = useState([]);
+      const [desksList, setDesksList] = useState([]);
+      const [deliveryType, setDeliveryType] = useState("HOME"); // "HOME", "STOPDESK", "PICKUP"
+      const [selectedWilayaId, setSelectedWilayaId] = useState(31); // Default Oran (31)
+      const [selectedCommune, setSelectedCommune] = useState("Oran");
+      const [selectedStationCode, setSelectedStationCode] = useState("");
+      const [checkoutLoading, setCheckoutLoading] = useState(false);
+
       // Checkout & Tracking state
       const [checkoutForm, setCheckoutForm] = useState({
         customer_name: "",
         customer_phone: "",
         customer_email: "",
         company_name: "",
-        wilaya: "Alger",
+        wilaya: "Oran",
         delivery_address: "",
         delivery_method: "DELIVERY",
         payment_method: "CASH_ON_DELIVERY",
@@ -565,10 +637,106 @@ if (typeof window !== "undefined") {
             const d = await resProds.json();
             setProducts(d.results || []);
           }
+          // Charger la liste officielle des Wilayas et tarifs NOEST
+          loadWilayas();
         } catch (err) {
           console.error(err);
         }
       };
+
+      const loadWilayas = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/delivery/wilayas/`);
+          if (res.ok) {
+            const d = await res.json();
+            if (d.wilayas && d.wilayas.length > 0) {
+              setWilayasList(d.wilayas);
+              const oran = d.wilayas.find(w => w.id === 31) || d.wilayas[0];
+              if (oran && !checkoutForm.customer_name) {
+                setCheckoutForm(prev => ({ ...prev, wilaya: oran.name }));
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("NOEST wilayas fallback used");
+        }
+      };
+
+      // Chargement automatique des communes et points relais NOEST selon la wilaya choisie
+      useEffect(() => {
+        if (!selectedWilayaId) return;
+        fetch(`${API_BASE}/delivery/communes/${selectedWilayaId}/`)
+          .then(r => r.ok ? r.json() : { communes: [] })
+          .then(d => {
+            const comms = d.communes || [];
+            setCommunesList(comms);
+            if (comms.length > 0) {
+              setSelectedCommune(comms[0].name);
+            }
+          })
+          .catch(() => setCommunesList([]));
+
+        fetch(`${API_BASE}/delivery/desks/${selectedWilayaId}/`)
+          .then(r => r.ok ? r.json() : { desks: [] })
+          .then(d => {
+            const ds = d.desks || [];
+            setDesksList(ds);
+            if (ds.length > 0) {
+              setSelectedStationCode(ds[0].code);
+            } else {
+              setSelectedStationCode("");
+            }
+          })
+          .catch(() => setDesksList([]));
+      }, [selectedWilayaId]);
+
+      // Calcul dynamique des frais de livraison NOEST
+      const activeWilayaObj = useMemo(() => {
+        return (wilayasList || []).find(w => w.id === Number(selectedWilayaId)) || null;
+      }, [wilayasList, selectedWilayaId]);
+
+      const shippingFee = useMemo(() => {
+        if (deliveryType === "PICKUP") return 0;
+        if (cartSubtotal >= 50000) return 0; // Livraison offerte dès 50 000 DA
+        if (!activeWilayaObj) return deliveryType === "STOPDESK" ? 250 : 500;
+        return deliveryType === "STOPDESK" ? (Number(activeWilayaObj.desk_fee) || 250) : (Number(activeWilayaObj.home_fee) || 500);
+      }, [deliveryType, cartSubtotal, activeWilayaObj]);
+
+      const cartTotal = useMemo(() => {
+        return cartSubtotal + shippingFee;
+      }, [cartSubtotal, shippingFee]);
+
+      // Détection automatique des liens de partage TikTok (?ref=..., ?p=..., ?product=...)
+      useEffect(() => {
+        if (!products || products.length === 0) return;
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const targetRef = params.get("ref") || params.get("p") || params.get("product") || params.get("item") || params.get("sku");
+          const doBuy = params.get("buy") || params.get("order") || params.get("commander");
+          
+          if (targetRef) {
+            const q = targetRef.trim().toLowerCase();
+            const found = products.find(p => 
+              String(p.id) === q || 
+              String(p.reference || "").toLowerCase() === q ||
+              String(p.name || "").toLowerCase() === q ||
+              String(p.reference || "").toLowerCase().includes(q)
+            );
+            if (found) {
+              if (doBuy) {
+                addToCart(found, 1);
+                setTab("cart");
+                showToast(`⚡ Produit « ${found.name} » ajouté au panier !`, "success");
+              } else {
+                setSelectedProduct(found);
+                showToast(`Caméra sélectionnée : « ${found.name} »`, "info");
+              }
+            }
+          }
+        } catch (e) {
+          console.error("TikTok query param parsing error:", e);
+        }
+      }, [products]);
 
       const loadMe = async () => {
         if (!token) { setProfile(null); return; }
@@ -731,9 +899,25 @@ if (typeof window !== "undefined") {
       const handleCheckout = async (e) => {
         e.preventDefault();
         if (cart.length === 0) return;
+        setCheckoutLoading(true);
         const idemKey = "WEB-CHK-" + Date.now();
         const payload = {
-          ...checkoutForm,
+          customer_name: checkoutForm.customer_name,
+          customer_phone: checkoutForm.customer_phone,
+          customer_email: checkoutForm.customer_email || "",
+          company_name: checkoutForm.company_name || "",
+          wilaya: activeWilayaObj ? activeWilayaObj.name : (checkoutForm.wilaya || "Oran"),
+          wilaya_id: selectedWilayaId,
+          commune: selectedCommune || "",
+          delivery_commune: selectedCommune || "",
+          delivery_type: deliveryType,
+          delivery_method: deliveryType === "PICKUP" ? "PICKUP" : "DELIVERY",
+          stop_desk: deliveryType === "STOPDESK",
+          station_code: deliveryType === "STOPDESK" ? selectedStationCode : "",
+          delivery_station_code: deliveryType === "STOPDESK" ? selectedStationCode : "",
+          delivery_address: deliveryType === "PICKUP" ? "Retrait au magasin 4 Boulevard Didouche Mourad, Oran" : (checkoutForm.delivery_address || ""),
+          payment_method: deliveryType === "PICKUP" ? "PAY_AT_STORE" : "CASH_ON_DELIVERY",
+          notes: checkoutForm.notes || "",
           idempotency_key: idemKey,
           items: cart.map(i => ({
             product_id: i.product.id,
@@ -741,19 +925,29 @@ if (typeof window !== "undefined") {
             quantity: i.quantity
           }))
         };
-        const res = await fetch(`${API_BASE}/orders/checkout/`, {
-          method: "POST",
-          headers: { ...authHeaders, "X-Idempotency-Key": idemKey },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setLastCreatedOrder(data.order);
-          setCart([]);
-          showToast(`Commande ${data.order.order_uid} transmise au logiciel de caisse LOGISZ !`, "success");
-          loadHomeAndProducts();
-        } else {
-          showToast(data.error || "Erreur lors de la validation de la commande", "error");
+        try {
+          const res = await fetch(`${API_BASE}/orders/checkout/`, {
+            method: "POST",
+            headers: { ...authHeaders, "X-Idempotency-Key": idemKey },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setLastCreatedOrder(data.order);
+            setCart([]);
+            if (data.order && data.order.delivery_tracking) {
+              showToast(`✓ Commande validée ! N° Suivi NOEST : ${data.order.delivery_tracking}`, "success");
+            } else {
+              showToast(`✓ Commande ${data.order.order_uid} validée avec succès !`, "success");
+            }
+            loadHomeAndProducts();
+          } else {
+            showToast(data.error || "Erreur lors de la validation de la commande", "error");
+          }
+        } catch (err) {
+          showToast("Erreur de connexion au serveur", "error");
+        } finally {
+          setCheckoutLoading(false);
         }
       };
 
@@ -1327,9 +1521,57 @@ if (typeof window !== "undefined") {
                   </div>
 
                   {lastCreatedOrder && (
-                    <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
-                      <div className="text-lg font-extrabold text-emerald-800">✓ Commande enregistrée : {lastCreatedOrder.order_uid}</div>
-                      <p className="text-sm text-emerald-700">Transmise immédiatement à la caisse LOGISZ.</p>
+                    <div className="p-6 rounded-3xl bg-emerald-50 border-2 border-emerald-400 space-y-3 shadow-md animate-fadeIn">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xl shadow-sm">
+                          ✓
+                        </div>
+                        <div>
+                          <div className="text-lg font-extrabold text-emerald-950">Commande {lastCreatedOrder.order_uid} validée !</div>
+                          <div className="text-xs text-emerald-700">Enregistrée à la caisse LOGISZ & transmise au service logistique</div>
+                        </div>
+                      </div>
+
+                      {lastCreatedOrder.delivery_tracking ? (
+                        <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-sm space-y-2 mt-2">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Colis NOEST Express</span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">En préparation pour ramassage</span>
+                          </div>
+                          <div className="text-2xl font-black font-mono text-blue-700 tracking-wider">
+                            {lastCreatedOrder.delivery_tracking}
+                          </div>
+                          <p className="text-xs text-slate-600">
+                            Votre colis est enregistré chez la société de livraison <strong>NOEST Express</strong>. Le livreur vous appellera sur votre téléphone ({lastCreatedOrder.customer_phone}) dès son arrivée.
+                          </p>
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            <a
+                              href={`https://wa.me/213557882719?text=${encodeURIComponent(`Bonjour INFOTECH ZEMRI, je viens de passer la commande ${lastCreatedOrder.order_uid} (N° Suivi NOEST: ${lastCreatedOrder.delivery_tracking}) pour un montant de ${lastCreatedOrder.total_amount} DA.`)}`}
+                              target="_blank" rel="noreferrer"
+                              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow"
+                            >
+                              💬 Confirmer sur WhatsApp avec le magasin
+                            </a>
+                            {lastCreatedOrder.delivery_label_url && (
+                              <a
+                                href={lastCreatedOrder.delivery_label_url}
+                                target="_blank" rel="noreferrer"
+                                className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold inline-flex items-center gap-1.5"
+                              >
+                                📄 Bordereau de livraison (PDF)
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-white border border-emerald-200 text-xs text-emerald-800">
+                          {lastCreatedOrder.delivery_method === "PICKUP" ? (
+                            <span>🏬 Votre commande est prête à être retirée au magasin <strong>INFOTECH ZEMRI</strong> (4 Boulevard Didouche Mourad, Oran).</span>
+                          ) : (
+                            <span>📦 Votre commande a été enregistrée et nos équipes préparent votre colis pour l'expédition.</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1359,26 +1601,202 @@ if (typeof window !== "undefined") {
                   </div>
                 </div>
 
-                <form onSubmit={handleCheckout} className="card-light p-6 rounded-2xl space-y-4 h-fit">
-                  <h3 className="text-xl font-extrabold text-slate-900">{tr("checkout_title")}</h3>
-                  <input required placeholder={`${tr("cust_name")} *`} value={checkoutForm.customer_name} onChange={e => setCheckoutForm({ ...checkoutForm, customer_name: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <input required type="tel" inputMode="tel" placeholder={`${tr("cust_phone")} *`} value={checkoutForm.customer_phone} onChange={e => setCheckoutForm({ ...checkoutForm, customer_phone: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <input placeholder={tr("wilaya")} value={checkoutForm.wilaya} onChange={e => setCheckoutForm({ ...checkoutForm, wilaya: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <input placeholder={tr("deliv_addr")} value={checkoutForm.delivery_address} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_address: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <select value={checkoutForm.delivery_method} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_method: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
-                    <option value="DELIVERY">{tr("deliv_home")}</option>
-                    <option value="PICKUP">{tr("deliv_pickup")}</option>
-                  </select>
-                  <select value={checkoutForm.payment_method} onChange={e => setCheckoutForm({ ...checkoutForm, payment_method: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
-                    <option value="CASH_ON_DELIVERY">{tr("pay_cod")}</option>
-                    <option value="PAY_AT_STORE">Paiement au comptoir</option>
-                  </select>
-                  <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
-                    <span className="text-sm text-slate-600">{tr("total_items")}</span>
-                    <span className="text-xl font-extrabold text-blue-600">{fmtMoney(cartSubtotal)}</span>
+                <form onSubmit={handleCheckout} className="card-light p-6 rounded-3xl space-y-4 h-fit shadow-lg border border-slate-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h3 className="text-xl font-extrabold text-slate-900">{tr("checkout_title")}</h3>
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold">📦 Livraison Rapide NOEST</span>
                   </div>
-                  <button type="submit" disabled={cart.length === 0} className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-sm">
-                    {tr("confirm_order")}
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{tr("cust_name")} *</label>
+                    <input required placeholder="Ex: Mohamed Amine" value={checkoutForm.customer_name} onChange={e => setCheckoutForm({ ...checkoutForm, customer_name: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-blue-500 outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{tr("cust_phone")} * (Le livreur vous appellera)</label>
+                    <input required type="tel" inputMode="tel" placeholder="05XX XX XX XX / 06XX / 07XX" value={checkoutForm.customer_phone} onChange={e => setCheckoutForm({ ...checkoutForm, customer_phone: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:border-blue-500 outline-none" />
+                  </div>
+
+                  {/* Mode de livraison */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="block text-xs font-bold text-slate-700">{tr("deliv_method")}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryType("HOME")}
+                        className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${deliveryType === "HOME" ? "border-blue-600 bg-blue-50/70 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"}`}
+                      >
+                        <span className="text-sm">🏠 Domicile</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5">À votre porte</span>
+                        <span className="text-xs font-extrabold text-blue-600 mt-1">{cartSubtotal >= 50000 ? "GRATUIT" : activeWilayaObj ? `${activeWilayaObj.home_fee} DA` : "500 DA"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryType("STOPDESK")}
+                        className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${deliveryType === "STOPDESK" ? "border-blue-600 bg-blue-50/70 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"}`}
+                      >
+                        <span className="text-sm">🏢 Stop Desk</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5">Point Relais NOEST</span>
+                        <span className="text-xs font-extrabold text-emerald-600 mt-1">{cartSubtotal >= 50000 ? "GRATUIT" : activeWilayaObj ? `${activeWilayaObj.desk_fee} DA` : "250 DA"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryType("PICKUP")}
+                        className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${deliveryType === "PICKUP" ? "border-blue-600 bg-blue-50/70 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"}`}
+                      >
+                        <span className="text-sm">🏬 Magasin</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5">Oran Didouche</span>
+                        <span className="text-xs font-extrabold text-purple-600 mt-1">0 DA (Gratuit)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Wilaya & Destination fields */}
+                  {deliveryType !== "PICKUP" && (
+                    <div className="space-y-3 pt-1">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Wilaya de destination (Réseau NOEST)</label>
+                        <select
+                          value={selectedWilayaId}
+                          onChange={e => {
+                            const wid = Number(e.target.value);
+                            setSelectedWilayaId(wid);
+                            const found = (wilayasList || []).find(w => w.id === wid);
+                            if (found) setCheckoutForm(prev => ({ ...prev, wilaya: found.name, wilaya_id: wid }));
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-blue-500 outline-none"
+                        >
+                          {(wilayasList || []).map(w => (
+                            <option key={w.id} value={w.id}>
+                              {w.id} - {w.name} ({w.home_fee} DA domicile / {w.desk_fee} DA Stop Desk)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {deliveryType === "STOPDESK" ? (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Bureau Point Relais Stop Desk NOEST *</label>
+                          {desksList.length > 0 ? (
+                            <select
+                              value={selectedStationCode}
+                              onChange={e => setSelectedStationCode(e.target.value)}
+                              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-blue-500 outline-none"
+                            >
+                              {desksList.map((d, idx) => (
+                                <option key={idx} value={d.code}>
+                                  [{d.code}] {d.name} — {d.address} {d.horaires ? `(${d.horaires})` : ""}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div className="p-3 rounded-xl bg-amber-50 text-amber-800 text-xs">
+                              Recherche des bureaux Stop Desk pour cette wilaya...
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Commune</label>
+                            {communesList.length > 0 ? (
+                              <select
+                                value={selectedCommune}
+                                onChange={e => setSelectedCommune(e.target.value)}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:border-blue-500 outline-none"
+                              >
+                                {communesList.map((c, idx) => (
+                                  <option key={idx} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                placeholder="Votre commune"
+                                value={selectedCommune}
+                                onChange={e => setSelectedCommune(e.target.value)}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-blue-500 outline-none"
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Adresse précise *</label>
+                            <input
+                              required
+                              placeholder="Quartier, rue, n° de porte, repère..."
+                              value={checkoutForm.delivery_address}
+                              onChange={e => setCheckoutForm({ ...checkoutForm, delivery_address: e.target.value })}
+                              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-blue-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {deliveryType === "PICKUP" && (
+                    <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-xs text-purple-900 space-y-1">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <span>📍 Magasin INFOTECH ZEMRI</span>
+                        <span className="px-2 py-0.5 rounded-full bg-purple-200 text-purple-800 font-extrabold text-[10px]">Gratuit</span>
+                      </div>
+                      <div>4 Boulevard Didouche Mourad, Oran (En face Jardin public)</div>
+                      <div className="text-slate-600">Ouvert du Samedi au Jeudi de 08h30 à 18h00. Tél : 0557 88 27 19</div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  <div>
+                    <input
+                      placeholder="Remarque pour le livreur (optionnel)"
+                      value={checkoutForm.notes}
+                      onChange={e => setCheckoutForm({ ...checkoutForm, notes: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  {/* Totaux & Récapitulatif */}
+                  <div className="border-t border-slate-200 pt-3 space-y-2">
+                    <div className="flex justify-between items-center text-xs text-slate-600">
+                      <span>Sous-total articles :</span>
+                      <span className="font-bold font-mono text-slate-800">{fmtMoney(cartSubtotal)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-slate-600">
+                      <span>Frais de livraison {deliveryType === "STOPDESK" ? "(Stop Desk)" : deliveryType === "PICKUP" ? "(Magasin)" : "(Domicile)"} :</span>
+                      <span className="font-bold font-mono text-slate-800">
+                        {shippingFee === 0 ? <span className="text-emerald-600 font-extrabold">GRATUIT (0 DA)</span> : fmtMoney(shippingFee)}
+                      </span>
+                    </div>
+                    {cartSubtotal >= 50000 && (
+                      <div className="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg font-semibold text-center border border-emerald-200">
+                        🎉 Félicitations : Livraison OFFERTE sur cette commande !
+                      </div>
+                    )}
+                    <div className="border-t border-dashed border-slate-200 pt-2 flex justify-between items-center">
+                      <div>
+                        <div className="text-xs text-slate-500 uppercase font-bold">Total à payer à la livraison :</div>
+                        <div className="text-[10px] text-slate-400">Paiement en espèces (Cash on Delivery)</div>
+                      </div>
+                      <div className="text-2xl font-black text-blue-600 font-mono">
+                        {fmtMoney(cartTotal)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={cart.length === 0 || checkoutLoading}
+                    className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-extrabold text-base transition shadow-lg hover:shadow-blue-500/25 flex items-center justify-center gap-2"
+                  >
+                    {checkoutLoading ? (
+                      <span>Enregistrement chez NOEST...</span>
+                    ) : (
+                      <>
+                        <span>✓ Confirmer la commande</span>
+                        <span className="text-xs opacity-90 font-normal">({fmtMoney(cartTotal)})</span>
+                      </>
+                    )}
                   </button>
                 </form>
               </div>
@@ -1466,6 +1884,13 @@ if (typeof window !== "undefined") {
           {selectedProduct && (
             <ProductModal p={selectedProduct} tier={appliedTier} products={products} whatsapp={homeData && homeData.whatsapp}
               onPick={(q) => setSelectedProduct(q)}
+              showToast={showToast}
+              onDirectOrder={(prod) => {
+                addToCart(prod, 1);
+                setSelectedProduct(null);
+                setTab("cart");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               onClose={() => setSelectedProduct(null)} onAdd={() => { addToCart(selectedProduct, 1); setSelectedProduct(null); }} />
           )}
 
@@ -1648,7 +2073,7 @@ if (typeof window !== "undefined") {
     }
 
     /* ---------- Fiche produit : galerie + zoom 3D ---------- */
-    function ProductModal({ p, tier, onClose, onAdd, products = [], whatsapp, onPick }) {
+    function ProductModal({ p, tier, onClose, onAdd, onDirectOrder, showToast, products = [], whatsapp, onPick }) {
       const imgs = (p.images && p.images.length ? p.images.map(i => i.image_url) : [getProductImg(p)]);
       const [idx, setIdx] = useState(0);
       const [zoom, setZoom] = useState({ on: false, x: 50, y: 50 });
@@ -1693,13 +2118,46 @@ if (typeof window !== "undefined") {
                   <div className="text-3xl font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
                   <div className={`text-xs font-medium ${p.in_stock ? "text-emerald-600" : "text-red-600"}`}>{p.in_stock ? `${p.available_stock} ${tr("in_stock")}` : tr("out_of_stock")}</div>
                 </div>
-                <button onClick={onAdd} className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-sm transition hover:scale-105">{tr("add_to_cart_modal")}</button>
+                <div className="flex gap-2">
+                  <button onClick={onAdd} className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition hover:scale-105">
+                    {tr("add_to_cart_modal")}
+                  </button>
+                  <button onClick={() => onDirectOrder ? onDirectOrder(p) : onAdd()} className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm transition hover:scale-105 shadow-md">
+                    ⚡ Commander direct
+                  </button>
+                </div>
               </div>
-              {waNum && (
-                <a href={`https://wa.me/${waNum}?text=${waMsg}`} target="_blank" rel="noreferrer" className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm text-center transition">
-                  {tr("order_wa")}
-                </a>
-              )}
+
+              <div className="flex flex-col gap-2">
+                {waNum && (
+                  <a href={`https://wa.me/${waNum}?text=${waMsg}`} target="_blank" rel="noreferrer" className="w-full py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm text-center transition flex items-center justify-center gap-2">
+                    <span>💬</span> {tr("order_wa")}
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const shareUrl = `${window.location.origin}${window.location.pathname}?ref=${encodeURIComponent(p.reference || p.id)}`;
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                      navigator.clipboard.writeText(shareUrl).then(() => {
+                        if (showToast) showToast(`✓ Lien TikTok copié : ${shareUrl}`, "success");
+                        else alert(`Lien copié : ${shareUrl}`);
+                      }).catch(() => {
+                        prompt("Copiez ce lien pour TikTok :", shareUrl);
+                      });
+                    } else {
+                      prompt("Copiez ce lien pour TikTok :", shareUrl);
+                    }
+                  }}
+                  className="w-full py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-2"
+                >
+                  <span>🎵</span> Copier le lien TikTok de ce produit
+                </button>
+                <div className="text-[11px] text-slate-500 flex items-center justify-center gap-1.5 pt-0.5">
+                  <span className="text-emerald-600 font-bold">●</span>
+                  <span>Expédition rapide NOEST Express • Paiement à la réception</span>
+                </div>
+              </div>
               {related.length > 0 && (
                 <div className="pt-2">
                   <div className="text-xs font-bold uppercase text-slate-500 mb-2">{tr("similar_products")}</div>

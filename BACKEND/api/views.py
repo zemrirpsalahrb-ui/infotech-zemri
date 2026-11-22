@@ -1,3 +1,4 @@
+from . import noest_client
 import base64
 import os
 import uuid
@@ -12,7 +13,7 @@ from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -627,9 +628,27 @@ class CheckoutOrderView(APIView):
         rand_suffix = uuid.uuid4().hex[:5].upper()
         order_uid = f"WEB-{date_prefix}-{rand_suffix}"
 
+        # NOEST delivery fields
+        raw_wilaya = str(request.data.get("wilaya", "Oran")).strip()
+        wilaya_id = request.data.get("wilaya_id")
+        delivery_commune = str(request.data.get("commune", "")).strip()
+        delivery_type = str(request.data.get("delivery_type", "")).strip().upper()
+        delivery_stop_desk = bool(request.data.get("stop_desk", False) or delivery_type == "STOPDESK")
+        delivery_station_code = str(request.data.get("station_code", "")).strip()
+
+        # Calcul automatique des frais de livraison NOEST
         shipping_fee = Decimal("0.00")
         if delivery_method == "DELIVERY":
-            shipping_fee = to_dec(request.data.get("shipping_fee", "600.00"), "600.00")
+            try:
+                fees_data = noest_client.get_fees().get("tarifs", {}).get("delivery", {})
+                w_key = str(wilaya_id) if wilaya_id else "31"
+                w_tarifs = fees_data.get(w_key, {})
+                if delivery_stop_desk:
+                    shipping_fee = Decimal(str(w_tarifs.get("tarif_stopdesk", "250.00")))
+                else:
+                    shipping_fee = Decimal(str(w_tarifs.get("tarif", "500.00")))
+            except Exception:
+                shipping_fee = to_dec(request.data.get("shipping_fee", "600.00"), "600.00")
 
         order = OnlineOrder.objects.create(
             order_uid=order_uid,
@@ -639,8 +658,11 @@ class CheckoutOrderView(APIView):
             customer_phone=customer_phone,
             customer_email=str(request.data.get("customer_email", "")).strip(),
             company_name=str(request.data.get("company_name", "")).strip(),
-            wilaya=str(request.data.get("wilaya", "Alger")).strip(),
+            wilaya=raw_wilaya,
             delivery_address=str(request.data.get("delivery_address", "")).strip(),
+            delivery_commune=delivery_commune,
+            delivery_stop_desk=delivery_stop_desk,
+            delivery_station_code=delivery_station_code,
             notes=str(request.data.get("notes", "")).strip(),
             applied_tier=tier,
             delivery_method=delivery_method,
@@ -700,9 +722,36 @@ class CheckoutOrderView(APIView):
             order.conflict_details = " | ".join(conflicts)
         order.save()
 
+        # Envoi automatique vers NOEST Livraison
+        if delivery_method == "DELIVERY" and getattr(settings, "NOEST_AUTO_CREATE", True):
+            try:
+                noest_res = noest_client.create_noest_order(
+                    order=order,
+                    wilaya_id=wilaya_id,
+                    commune_name=delivery_commune,
+                    stop_desk=1 if delivery_stop_desk else 0,
+                    station_code=delivery_station_code
+                )
+                if noest_res.get("success"):
+                    tracking = noest_res.get("tracking", "")
+                    order.delivery_tracking = tracking
+                    order.delivery_status = "SENT_TO_NOEST"
+                    order.delivery_label_url = f"https://app.noest-dz.com/api/public/get/order/label?tracking={tracking}"
+                    order.save(update_fields=["delivery_tracking", "delivery_status", "delivery_label_url"])
+                    if getattr(settings, "NOEST_AUTO_VALIDATE", False) and tracking:
+                        noest_client.validate_noest_order(tracking)
+                else:
+                    order.delivery_error = str(noest_res.get("error", ""))
+                    order.save(update_fields=["delivery_error"])
+            except Exception as e:
+                order.delivery_error = str(e)
+                order.save(update_fields=["delivery_error"])
+
         return Response({
             "message": "Votre commande a été enregistrée avec succès !",
             "order": OnlineOrderSerializer(order).data,
+            "delivery_tracking": order.delivery_tracking,
+            "delivery_status": order.delivery_status,
             "whatsapp_number": settings.BUSINESS_WHATSAPP,
         }, status=status.HTTP_201_CREATED)
 
@@ -1309,3 +1358,139 @@ class StorePhotosView(APIView):
             os.remove(path)
             return Response({"deleted": name})
         return Response({"error": "Introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ============================================================================
+# NOEST DELIVERY PARTNER INTEGRATION VIEWS
+# ============================================================================
+
+class DeliveryWilayasView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            wilayas = noest_client.get_wilayas()
+            fees = noest_client.get_fees()
+            delivery_fees = fees.get("tarifs", {}).get("delivery", {})
+
+            results = []
+            for w in wilayas:
+                w_code = str(w.get("code"))
+                fee_info = delivery_fees.get(w_code, {})
+                home_price = float(fee_info.get("tarif", 600))
+                desk_price = float(fee_info.get("tarif_stopdesk", 300))
+                results.append({
+                    "id": int(w.get("code")),
+                    "code": w.get("code"),
+                    "name": w.get("nom"),
+                    "home_fee": home_price,
+                    "desk_fee": desk_price,
+                    "is_active": w.get("is_active", 1) == 1
+                })
+            results.sort(key=lambda x: x["id"])
+            return Response({"wilayas": results})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DeliveryCommunesView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, wilaya_id):
+        try:
+            communes = noest_client.get_communes(wilaya_id)
+            results = []
+            for c in communes:
+                results.append({
+                    "id": c.get("id"),
+                    "name": c.get("nom"),
+                    "code_postal": c.get("code_postal"),
+                    "is_active": c.get("is_active", 1) == 1
+                })
+            results.sort(key=lambda x: x["name"])
+            return Response({"communes": results})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DeliveryDesksView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, wilaya_id):
+        try:
+            desks = noest_client.get_desks()
+            w_str = f"{wilaya_id:02d}"
+            matched = []
+            for k, d in desks.items():
+                if k.startswith(w_str):
+                    matched.append({
+                        "code": d.get("code"),
+                        "name": d.get("name"),
+                        "address": d.get("address"),
+                        "commune": d.get("commune"),
+                        "horaires": d.get("horaires"),
+                        "map": d.get("map")
+                    })
+            return Response({"desks": matched})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DeliveryTrackView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, tracking_code):
+        try:
+            res = noest_client.track_noest_order(tracking_code.strip())
+            return Response(res)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminOrderSendNoestView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, order_uid):
+        order = get_object_or_404(OnlineOrder, order_uid__iexact=order_uid.strip())
+        wilaya_id = request.data.get("wilaya_id")
+        commune = request.data.get("commune", "")
+        stop_desk = request.data.get("stop_desk", 0)
+        station_code = request.data.get("station_code", "")
+
+        res = noest_client.create_noest_order(
+            order=order,
+            wilaya_id=wilaya_id,
+            commune_name=commune,
+            stop_desk=stop_desk,
+            station_code=station_code
+        )
+        if res.get("success"):
+            tracking = res.get("tracking", "")
+            order.delivery_tracking = tracking
+            order.delivery_status = "SENT_TO_NOEST"
+            order.delivery_label_url = f"https://app.noest-dz.com/api/public/get/order/label?tracking={tracking}"
+            order.delivery_error = ""
+            order.save()
+            return Response({"message": f"Colis créé chez NOEST avec succès ! N° {tracking}", "tracking": tracking})
+        else:
+            err = str(res.get("error", "Erreur lors de la création NOEST"))
+            order.delivery_error = err
+            order.save()
+            return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminOrderValidateNoestView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, order_uid):
+        order = get_object_or_404(OnlineOrder, order_uid__iexact=order_uid.strip())
+        if not order.delivery_tracking:
+            return Response({"error": "Cette commande n'a pas encore de numéro de suivi NOEST."}, status=status.HTTP_400_BAD_REQUEST)
+
+        res = noest_client.validate_noest_order(order.delivery_tracking)
+        if res.get("success"):
+            order.delivery_status = "VALIDATED_ON_NOEST"
+            order.save()
+            return Response({"message": "Commande validée pour la collecte logistique NOEST !"})
+        else:
+            return Response({"error": str(res.get("error", "Erreur validation"))}, status=status.HTTP_400_BAD_REQUEST)

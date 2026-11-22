@@ -158,3 +158,10 @@ CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
 
+
+# NOEST Delivery Partner API Integration (https://app.noest-dz.com)
+NOEST_API_BASE_URL = os.getenv("NOEST_API_BASE_URL", "https://app.noest-dz.com")
+NOEST_API_TOKEN = os.getenv("NOEST_API_TOKEN", "60TAGGo3ZQWdifzKVmmPWSBlVVz7bhOXnwn")
+NOEST_USER_GUID = os.getenv("NOEST_USER_GUID", "02VXZWSF")
+NOEST_AUTO_CREATE = os.getenv("NOEST_AUTO_CREATE", "True").lower() in ("true", "1", "yes")
+NOEST_AUTO_VALIDATE = os.getenv("NOEST_AUTO_VALIDATE", "False").lower() in ("true", "1", "yes")

@@ -22,6 +22,12 @@ from .views import (
     AdminReviewModerationView,
     AdminCategoryBannerManageView,
     StorePhotosView,
+    DeliveryWilayasView,
+    DeliveryCommunesView,
+    DeliveryDesksView,
+    DeliveryTrackView,
+    AdminOrderSendNoestView,
+    AdminOrderValidateNoestView,
 )
 
 urlpatterns = [
@@ -40,6 +46,14 @@ urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="auth-login"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
     path("auth/me/", MeView.as_view(), name="auth-me"),
+
+    # Delivery Partner (NOEST) Endpoints
+    path("delivery/wilayas/", DeliveryWilayasView.as_view(), name="delivery-wilayas"),
+    path("delivery/communes/<int:wilaya_id>/", DeliveryCommunesView.as_view(), name="delivery-communes"),
+    path("delivery/desks/<int:wilaya_id>/", DeliveryDesksView.as_view(), name="delivery-desks"),
+    path("delivery/track/<str:tracking_code>/", DeliveryTrackView.as_view(), name="delivery-track"),
+    path("admin/orders/<str:order_uid>/send-noest/", AdminOrderSendNoestView.as_view(), name="admin-order-send-noest"),
+    path("admin/orders/<str:order_uid>/validate-noest/", AdminOrderValidateNoestView.as_view(), name="admin-order-validate-noest"),
 
     # Checkout & Orders
     path("orders/checkout/", CheckoutOrderView.as_view(), name="orders-checkout"),
