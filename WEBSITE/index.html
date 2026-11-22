@@ -9,6 +9,15 @@
   <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #0f172a; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .safe-area-bottom { padding-bottom: calc(0.4rem + env(safe-area-inset-bottom)); }
+    }
+    @media (max-width: 640px) {
+      input, select, textarea { font-size: 16px !important; }
+      .tilt { transform: none !important; }
+    }
     [dir="rtl"], [dir="rtl"] body { font-family: 'Cairo', 'Tajawal', sans-serif; text-align: right; }
     [dir="rtl"] .font-display { font-family: 'Cairo', 'Tajawal', sans-serif; letter-spacing: 0; }
     .lang-btn-active { background-color: #2563eb; color: #ffffff !important; }
@@ -496,6 +505,7 @@ if (typeof window !== "undefined") {
       const [favs, setFavs] = useState(() => { try { return JSON.parse(localStorage.getItem("cctv_favs") || "[]"); } catch { return []; } });
       const [onlyFavs, setOnlyFavs] = useState(false);
       const [mobileMenu, setMobileMenu] = useState(false);
+      const [showMobileFilters, setShowMobileFilters] = useState(false);
       const [showTop, setShowTop] = useState(false);
       const [cart, setCart] = useState(() => {
         try { return JSON.parse(localStorage.getItem("cctv_cart") || "[]"); } catch { return []; }
@@ -804,20 +814,20 @@ if (typeof window !== "undefined") {
 
           {/* NAVBAR */}
           <header className="sticky top-0 z-40 glass-light">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-              <div onClick={() => goTab("home")} className="flex items-center gap-3 cursor-pointer flex-shrink-0">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-lg shadow-sm">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3">
+              <div onClick={() => goTab("home")} className="flex items-center gap-2 sm:gap-3 cursor-pointer flex-shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-base sm:text-lg shadow-sm">
                   LZ
                 </div>
-                <div className="hidden sm:block">
-                  <div className="font-extrabold text-lg tracking-tight text-slate-900">
+                <div>
+                  <div className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900">
                     LOGISZ <span className="text-blue-600">CCTV</span>
                   </div>
-                  <div className="text-[11px] text-slate-500">Vidéosurveillance & Sécurité Professionnelle</div>
+                  <div className="hidden sm:block text-[11px] text-slate-500">Vidéosurveillance & Sécurité Professionnelle</div>
                 </div>
               </div>
 
-              {/* Recherche globale avec suggestions */}
+              {/* Recherche globale avec suggestions (Desktop) */}
               <HeaderSearch products={products} onPick={(p) => setSelectedProduct(p)} onSubmit={(q) => { setSearchQ(q); goTab("catalog"); }} />
 
               <nav className="hidden lg:flex items-center gap-1.5">
@@ -841,22 +851,38 @@ if (typeof window !== "undefined") {
                   <a href="/mon-dashboard/" className="px-3 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition" title="Mon Dashboard">⚙</a>
                 )}
               </nav>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="hidden sm:inline-flex items-center gap-0.5 bg-slate-100 p-1 rounded-xl text-xs font-bold border border-slate-200">
-                  <button onClick={() => changeLang("fr")} className={`px-2 py-1 rounded-lg transition ${lang === "fr" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="Français">🇫🇷 FR</button>
-                  <button onClick={() => changeLang("dz")} className={`px-2 py-1 rounded-lg transition ${lang === "dz" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="الدارجة الجزائرية">🇩🇿 الدارجة</button>
-                  <button onClick={() => changeLang("ar")} className={`px-2 py-1 rounded-lg transition ${lang === "ar" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="العربية الفصحى">🇸🇦 العربية</button>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <div className="inline-flex items-center gap-0.5 bg-slate-100 p-0.5 sm:p-1 rounded-xl text-[10px] sm:text-xs font-bold border border-slate-200">
+                  <button onClick={() => changeLang("fr")} className={`px-1.5 sm:px-2 py-1 rounded-lg transition ${lang === "fr" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="Français">🇫🇷 FR</button>
+                  <button onClick={() => changeLang("dz")} className={`px-1.5 sm:px-2 py-1 rounded-lg transition ${lang === "dz" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="الدارجة الجزائرية">🇩🇿 الدارجة</button>
+                  <button onClick={() => changeLang("ar")} className={`px-1.5 sm:px-2 py-1 rounded-lg transition ${lang === "ar" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="العربية الفصحى">🇸🇦 العربية</button>
                 </div>
                 <button
                   onClick={() => goTab("cart")}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center gap-2 shadow-sm"
+                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
                 >
                   <span>🛒</span>
-                  <span key={cart.reduce((s, i) => s + i.quantity, 0)} className="px-2 py-0.5 text-xs rounded-full bg-white/20 bump">{cart.reduce((s, i) => s + i.quantity, 0)}</span>
+                  <span key={cart.reduce((s, i) => s + i.quantity, 0)} className="px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs rounded-full bg-white/20 bump">{cart.reduce((s, i) => s + i.quantity, 0)}</span>
                 </button>
-                <button onClick={() => setMobileMenu(v => !v)} className="lg:hidden w-10 h-10 rounded-xl border border-slate-200 bg-white text-slate-700 text-lg">☰</button>
+                <button onClick={() => setMobileMenu(v => !v)} className="lg:hidden w-8 h-8 sm:w-10 sm:h-10 rounded-xl border border-slate-200 bg-white text-slate-700 text-base">☰</button>
               </div>
             </div>
+            {/* Mobile instant search bar (< md) */}
+            <div className="md:hidden px-3 pb-2.5 pt-0.5">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQ}
+                  onChange={e => { setSearchQ(e.target.value); if (tab !== "catalog") setTab("catalog"); }}
+                  placeholder={`🔍  ${tr("search_ph")}`}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-100 text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 border border-slate-200"
+                />
+                {searchQ && (
+                  <button onClick={() => setSearchQ("")} className="absolute right-3 top-2 text-xs text-slate-400 font-bold">✕</button>
+                )}
+              </div>
+            </div>
+
             {mobileMenu && (
               <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-3 grid grid-cols-2 gap-2">
                 {[["home", "🏠 " + tr("nav_home")], ["catalog", "📦 " + tr("nav_catalog")], ["kit", "🛠 " + tr("nav_kit")], ["account", profile ? "👤 " + profile.username : "👤 " + tr("nav_account")], ["cart", "🛒 " + tr("nav_cart")]].map(([id, l]) => (
@@ -1003,7 +1029,7 @@ if (typeof window !== "undefined") {
                       Tout voir ({products.length}) →
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                     {[...products].sort((a, b) => (hasRealPhoto(b) ? 1 : 0) - (hasRealPhoto(a) ? 1 : 0)).slice(0, 8).map(p => (
                       <ProductCardItem
                         key={p.id}
@@ -1022,9 +1048,58 @@ if (typeof window !== "undefined") {
 
             {/* ==================== TAB 2: CATALOG ==================== */}
             {tab === "catalog" && (
-              <div className="grid lg:grid-cols-[260px_1fr] gap-6 items-start">
-                {/* FILTRES */}
-                <aside className="card-light p-5 rounded-3xl space-y-5 lg:sticky lg:top-24">
+              <div className="space-y-4">
+                {/* Barre horizontale de categories defilante au doigt sur mobile */}
+                <div className="flex gap-2 overflow-x-auto pb-1.5 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
+                  <button
+                    onClick={() => setSelectedCat("all")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap flex-shrink-0 transition shadow-sm ${
+                      selectedCat === "all" ? "bg-slate-900 text-white" : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {tr("all_cats")}
+                  </button>
+                  {homeData && homeData.categories && homeData.categories.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedCat(c.slug)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap flex-shrink-0 transition shadow-sm ${
+                        selectedCat === c.slug ? "bg-blue-600 text-white border border-blue-600" : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {c.name} <span className="opacity-70 text-[10px]">({c.product_count})</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Bouton de filtres mobile pliable */}
+                <div className="lg:hidden flex items-center gap-2">
+                  <button
+                    onClick={() => setShowMobileFilters(v => !v)}
+                    className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition border ${
+                      showMobileFilters ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-800 border-slate-200 shadow-sm"
+                    }`}
+                  >
+                    <span>⚙</span>
+                    <span>{tr("filters")}</span>
+                    {onlyInStock && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
+                    {onlyFavs && <span className="w-2 h-2 rounded-full bg-rose-500"></span>}
+                    <span>{showMobileFilters ? "▲" : "▼"}</span>
+                  </button>
+                  <select
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value)}
+                    className="py-2 px-3 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-800 shadow-sm"
+                  >
+                    <option value="newest">{tr("sort_newest")}</option>
+                    <option value="price_asc">{tr("sort_p_asc")}</option>
+                    <option value="price_desc">{tr("sort_p_desc")}</option>
+                  </select>
+                </div>
+
+                <div className="grid lg:grid-cols-[260px_1fr] gap-6 items-start">
+                  {/* FILTRES (repliable sur telephone, fixe sur grand ecran) */}
+                  <aside className={`card-light p-4 sm:p-5 rounded-2xl sm:rounded-3xl space-y-4 sm:space-y-5 lg:sticky lg:top-24 ${showMobileFilters ? "block" : "hidden lg:block"}`}>
                   <div className="flex justify-between items-center">
                     <h3 className="font-display font-bold text-slate-900">{tr("filters")}</h3>
                     <button onClick={resetFilters} className="text-xs text-blue-600 hover:underline font-semibold">{tr("reset_filters")}</button>
@@ -1101,7 +1176,7 @@ if (typeof window !== "undefined") {
                       <button onClick={resetFilters} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">{tr("reset_filters")}</button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
                       {filteredProducts.slice(0, visibleCount).map(p => (
                         <ProductCardItem
                           key={p.id}
@@ -1122,6 +1197,7 @@ if (typeof window !== "undefined") {
                     </div>
                   )}
                 </div>
+              </div>
               </div>
             )}
 
@@ -1286,7 +1362,7 @@ if (typeof window !== "undefined") {
                 <form onSubmit={handleCheckout} className="card-light p-6 rounded-2xl space-y-4 h-fit">
                   <h3 className="text-xl font-extrabold text-slate-900">{tr("checkout_title")}</h3>
                   <input required placeholder={`${tr("cust_name")} *`} value={checkoutForm.customer_name} onChange={e => setCheckoutForm({ ...checkoutForm, customer_name: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <input required placeholder={`${tr("cust_phone")} *`} value={checkoutForm.customer_phone} onChange={e => setCheckoutForm({ ...checkoutForm, customer_phone: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <input required type="tel" inputMode="tel" placeholder={`${tr("cust_phone")} *`} value={checkoutForm.customer_phone} onChange={e => setCheckoutForm({ ...checkoutForm, customer_phone: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
                   <input placeholder={tr("wilaya")} value={checkoutForm.wilaya} onChange={e => setCheckoutForm({ ...checkoutForm, wilaya: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
                   <input placeholder={tr("deliv_addr")} value={checkoutForm.delivery_address} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_address: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
                   <select value={checkoutForm.delivery_method} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_method: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
@@ -1355,7 +1431,7 @@ if (typeof window !== "undefined") {
                             <input required type="password" placeholder="Mot de passe *" value={regForm.password} onChange={e => setRegForm({ ...regForm, password: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <input required placeholder={`${tr("cust_phone")} *`} value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                            <input required type="tel" inputMode="tel" placeholder={`${tr("cust_phone")} *`} value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                             <input placeholder="Entreprise" value={regForm.company_name} onChange={e => setRegForm({ ...regForm, company_name: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                           </div>
                           <button type="submit" className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm">{tr("auth_submit_register")}</button>
@@ -1440,7 +1516,7 @@ if (typeof window !== "undefined") {
           )}
 
           {/* WHATSAPP & TIKTOK FLOTTANTS */}
-          <div className="fixed bottom-6 left-6 z-40 flex flex-col gap-3">
+          <div className="fixed bottom-20 left-4 sm:left-6 z-40 flex flex-col gap-2.5">
             <a href="https://www.tiktok.com/@infotech.sz?is_from_webapp=1&sender_device=pc" target="_blank" rel="noreferrer"
                className="w-12 h-12 rounded-full bg-slate-950 hover:bg-slate-800 text-white border border-white/15 flex items-center justify-center shadow-xl transition hover:scale-110" title="TikTok @infotech.sz">
               <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
@@ -1450,6 +1526,35 @@ if (typeof window !== "undefined") {
               <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4C2.7 15.6 2.2 13.8 2.2 12 2.2 6.6 6.6 2.2 12 2.2S21.8 6.6 21.8 12 17.4 21.8 12 21.8zM12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.8 1 3.8 1.5 5.8 1.5 6.6 0 12-5.4 12-12S18.6 0 12 0z"/></svg>
             </a>
           </div>
+
+          {/* BARRE DE NAVIGATION MOBILE TYPE APPLICATION */}
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 flex justify-around items-center shadow-2xl safe-area-bottom">
+            <button onClick={() => goTab("home")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "home" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+              <span className="text-xl">🏠</span>
+              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_home")}</span>
+            </button>
+            <button onClick={() => goTab("catalog")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "catalog" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+              <span className="text-xl">📦</span>
+              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_catalog")}</span>
+            </button>
+            <button onClick={() => goTab("kit")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "kit" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+              <span className="text-xl">🛠</span>
+              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_kit")}</span>
+            </button>
+            <button onClick={() => goTab("cart")} className={`relative flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "cart" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+              <span className="text-xl">🛒</span>
+              {cart.length > 0 && (
+                <span className="absolute top-0.5 right-1.5 w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">
+                  {cart.reduce((s, i) => s + i.quantity, 0)}
+                </span>
+              )}
+              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_cart")}</span>
+            </button>
+            <button onClick={() => goTab("account")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "account" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+              <span className="text-xl">👤</span>
+              <span className="text-[10px] mt-0.5 font-semibold">{profile ? profile.username.slice(0, 6) : tr("nav_account")}</span>
+            </button>
+          </nav>
 
           {/* FOOTER */}
           <footer className="mt-16 bg-slate-950 text-slate-400">
@@ -1507,33 +1612,33 @@ if (typeof window !== "undefined") {
           <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} className="tilt relative bg-white border border-slate-200 rounded-3xl overflow-hidden flex flex-col justify-between h-full">
             <div className="shine"></div>
             <div onClick={onSelect} className="cursor-pointer">
-              <div className="relative h-52 bg-gradient-to-b from-slate-50 to-white overflow-hidden flex items-center justify-center">
+              <div className="relative h-36 sm:h-52 bg-gradient-to-b from-slate-50 to-white overflow-hidden flex items-center justify-center">
                 <img src={getProductImg(p)} alt={p.name} loading="lazy" className="pop max-h-[85%] max-w-[85%] object-contain drop-shadow-xl transition duration-500" />
-                <span className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${p.in_stock ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                <span className={`absolute top-2 right-2 sm:top-3 sm:right-3 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[11px] font-bold ${p.in_stock ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
                   {p.in_stock ? `${tr("in_stock")} (${p.available_stock})` : tr("out_of_stock")}
                 </span>
                 {p.brand_name && <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider">{p.brand_name}</span>}
                 {onFav && (
                   <button onClick={(e) => { e.stopPropagation(); onFav(); }} title="Favori"
-                    className={`absolute bottom-3 right-3 w-9 h-9 rounded-full border shadow-sm flex items-center justify-center text-base transition hover:scale-110 ${isFav ? "bg-rose-500 border-rose-500 text-white" : "bg-white/90 border-slate-200 text-slate-400"}`}>♥</button>
+                    className={`absolute bottom-2 right-2 sm:bottom-3 sm:right-3 w-7 h-7 sm:w-9 sm:h-9 rounded-full border shadow-sm flex items-center justify-center text-xs sm:text-base transition hover:scale-110 ${isFav ? "bg-rose-500 border-rose-500 text-white" : "bg-white/90 border-slate-200 text-slate-400"}`}>♥</button>
                 )}
                 {onCompare && (
                   <button onClick={(e) => { e.stopPropagation(); onCompare(); }} title="Comparer"
                     className={`absolute bottom-3 left-3 px-2.5 h-8 rounded-full border shadow-sm text-[11px] font-bold transition ${inCompare ? "bg-blue-600 border-blue-600 text-white" : "bg-white/90 border-slate-200 text-slate-600"}`}>⇄ {inCompare ? tr("compared") : tr("compare")}</button>
                 )}
               </div>
-              <div className="p-4 space-y-1 pop-sm">
-                <div className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">{p.category_name}</div>
-                <div className="font-bold text-slate-900 text-sm line-clamp-2 min-h-[2.5rem]">{p.name}</div>
-                <div className="text-[11px] text-slate-400 font-mono">Réf. {p.reference}</div>
+              <div className="p-2.5 sm:p-4 space-y-0.5 sm:space-y-1 pop-sm">
+                <div className="text-[10px] sm:text-[11px] text-blue-600 font-semibold uppercase tracking-wider truncate">{p.category_name}</div>
+                <div className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] leading-tight">{p.name}</div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 font-mono truncate">Réf. {p.reference}</div>
               </div>
             </div>
-            <div className="px-4 pb-4 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 pop-sm">
+            <div className="px-2.5 sm:px-4 pb-2.5 sm:pb-4 pt-1.5 sm:pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 pop-sm">
               <div>
-                <div className="text-[10px] text-slate-400 uppercase">{tr("price")} ({p.applied_tier})</div>
-                <div className="text-lg font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
+                <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase">{tr("price")} ({p.applied_tier})</div>
+                <div className="text-sm sm:text-lg font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
               </div>
-              <button onClick={onAdd} className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition hover:scale-105">
+              <button onClick={onAdd} className="px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-[11px] sm:text-xs font-bold transition hover:scale-105">
                 {tr("add_cart")}
               </button>
             </div>
