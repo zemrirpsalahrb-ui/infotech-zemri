@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LOGISZ SECURITY — Équipements CCTV & Vidéosurveillance Professionnelle</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #0f172a; }
+    [dir="rtl"], [dir="rtl"] body { font-family: 'Cairo', 'Tajawal', sans-serif; text-align: right; }
+    [dir="rtl"] .font-display { font-family: 'Cairo', 'Tajawal', sans-serif; letter-spacing: 0; }
+    .lang-btn-active { background-color: #2563eb; color: #ffffff !important; }
     .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; letter-spacing: -0.02em; }
     .glass-light { background: rgba(255, 255, 255, 0.78); backdrop-filter: blur(16px) saturate(160%); border-bottom: 1px solid rgba(226,232,240,.8); }
     .card-light { background: #ffffff; border: 1px solid #e2e8f0; transition: all 0.22s ease; }
@@ -59,7 +62,378 @@
   
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
-    const API_BASE = "/api/v1";
+    const API_BASE = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.origin.includes("onrender.com"))) ? "/api/v1" : "https://infotech-zemri-backend.onrender.com/api/v1";
+const I18N = {
+  "fr": {
+    "flag": "🇫🇷",
+    "name": "Français",
+    "stock_sync": "Stock Synchronisé",
+    "articles": "articles",
+    "tier": "Tarif",
+    "tier_public": "Public",
+    "tier_installer": "PRO Installateur",
+    "tier_reseller": "PRO Revendeur (Gros)",
+    "nav_home": "Accueil",
+    "nav_catalog": "Catalogue",
+    "nav_kit": "Kit CCTV",
+    "nav_account": "Espace Pro",
+    "nav_cart": "Panier",
+    "nav_dashboard": "Mon Dashboard",
+    "search_ph": "Rechercher une caméra, DVR, NVR, référence...",
+    "hero_badge": "● Stock Synchronisé • Magasin & Dépôt",
+    "hero_title_1": "Sécurité & Vidéosurveillance",
+    "hero_title_2": "haute performance.",
+    "hero_sub": "Spécialiste Dahua & matériel de surveillance en Algérie. Matériel 100% d'origine, devis gratuit et livraison rapide sur 69 wilayas.",
+    "hero_btn_catalog": "Explorer le catalogue",
+    "hero_btn_kit": "🛠 Configurer un kit",
+    "counter_articles": "Articles",
+    "counter_wilayas": "Wilayas livrées",
+    "counter_surveillance": "Surveillance",
+    "why_title": "Une installation complète,",
+    "why_title_highlight": "sans compromis.",
+    "f_orig_t": "Produits 100% d'origine",
+    "f_orig_d": "Matériel Dahua & sécurité certifié.",
+    "f_deliv_t": "Livraison 69 wilayas",
+    "f_deliv_d": "Ou retrait gratuit au magasin.",
+    "f_advice_t": "Conseil installateur",
+    "f_advice_d": "Nous dimensionnons votre système.",
+    "f_pro_t": "Prix pro",
+    "f_pro_d": "Tarifs installateur & revendeur après validation.",
+    "cats_title": "Catégories Vidéosurveillance",
+    "featured_title": "Produits Vedettes",
+    "view_all_catalog": "Voir tout le catalogue →",
+    "filters": "Filtres",
+    "category": "Catégorie",
+    "brand": "Marque",
+    "all_cats": "Toutes les catégories",
+    "all_brands": "Toutes les marques",
+    "in_stock_only": "En stock seulement",
+    "favs_only": "Favoris",
+    "sort_newest": "Nouveautés",
+    "sort_p_asc": "Prix croissant",
+    "sort_p_desc": "Prix décroissant",
+    "reset_filters": "Réinitialiser les filtres",
+    "load_more": "Afficher plus",
+    "no_products": "Aucun article ne correspond à votre recherche.",
+    "add_cart": "+ Panier",
+    "add_to_cart_modal": "+ Ajouter au panier",
+    "view_details": "Voir fiche",
+    "in_stock": "En stock",
+    "out_of_stock": "Rupture",
+    "price": "Prix",
+    "compare": "Comparer",
+    "compared": "Comparé",
+    "order_wa": "{tr("order_wa")}",
+    "similar_products": "Produits similaires",
+    "cart_title": "Votre Panier",
+    "cart_empty": "Votre panier est vide.",
+    "subtotal": "Sous-total",
+    "deliv_fee": "Livraison",
+    "total": "Total",
+    "total_items": "Total Articles :",
+    "checkout_title": "Finaliser la commande",
+    "cust_name": "Nom complet",
+    "cust_phone": "Numéro de téléphone",
+    "cust_email": "Email (optionnel)",
+    "wilaya": "Wilaya (69 wilayas)",
+    "deliv_addr": "Adresse de livraison",
+    "deliv_method": "Mode de livraison",
+    "deliv_home": "Livraison à domicile (69 Wilayas)",
+    "deliv_pickup": "Retrait au magasin à Oran (Gratuit)",
+    "pay_method": "Mode de paiement",
+    "pay_cod": "Paiement à la livraison (Cash)",
+    "notes_ph": "Remarques éventuelles (étage, repère...)",
+    "confirm_order": "✓ Confirmer la commande",
+    "order_success": "Commande validée avec succès !",
+    "track_order": "Suivre une commande",
+    "track_uid_ph": "Ex: WEB-2026...",
+    "btn_track": "Suivre",
+    "kit_title": "🛠 Configurateur de Kit CCTV",
+    "kit_sub": "{tr("kit_sub")}",
+    "kit_cams": "1. Caméras de Surveillance",
+    "kit_recorders": "2. Enregistreur DVR / XVR / NVR",
+    "kit_hdds": "3. Disque Dur Surveillance",
+    "kit_psus": "4. Alimentation 12V",
+    "kit_accessories": "5. Connecteurs & Accessoires",
+    "kit_summary": "Résumé du Kit",
+    "add_kit_cart": "{tr("add_kit_cart")}",
+    "store_heading": "Venez nous voir",
+    "store_our_store": "Notre magasin",
+    "store_title": "Notre Magasin INFOTECH ZEMRI",
+    "store_sub": "Vente de matériel informatique, caméras de surveillance et solutions de sécurité.",
+    "store_addr": "4 Boulevard Didouche Mourad, Oran, Algérie",
+    "open_maps": "{tr("open_maps")}",
+    "footer_desc": "Vidéosurveillance, alarmes, réseau et informatique. Stock synchronisé en direct avec notre caisse — ce que vous voyez est disponible.",
+    "footer_shop": "Boutique",
+    "footer_contact": "Magasin & Contact",
+    "footer_rights": "Tous droits réservés.",
+    "footer_deliv": "Retrait en magasin & Livraison 69 Wilayas",
+    "prod_count": "produits affichés",
+    "night_vision": "Vision nocturne 40m",
+    "auth_login": "Connexion",
+    "auth_register": "Demander un Compte PRO",
+    "auth_username": "Nom d'utilisateur",
+    "auth_password": "Mot de passe",
+    "auth_submit_login": "Se connecter",
+    "auth_submit_register": "Soumettre la demande",
+    "auth_logout": "Se déconnecter",
+    "product_label": "Produit",
+    "stock_label": "Stock",
+    "comparator_title": "Comparateur",
+    "dispo": "dispo",
+  },
+  "dz": {
+    "flag": "🇩🇿",
+    "name": "الدارجة (الجزائرية)",
+    "stock_sync": "الستوك متزامن مع المحل",
+    "articles": "سلعة متوفرة",
+    "tier": "السعر",
+    "tier_public": "سعر عام",
+    "tier_installer": "سعر الانستالاتور",
+    "tier_reseller": "سعر الجملة (الريزاندور)",
+    "nav_home": "الرئيسية",
+    "nav_catalog": "السلعة و الكتالوج",
+    "nav_kit": "خدم الكيت تاعك",
+    "nav_account": "حساب المحترفين",
+    "nav_cart": "السلة",
+    "nav_dashboard": "لوحة التحكم",
+    "search_ph": "حوس على كاميرا، تسجيل XVR/NVR، ريفرونس...",
+    "hero_badge": "● السلعة دوريجين متوفرة مباشرة في المحل والديبو",
+    "hero_title_1": "كاميرات المراقبة وتجهيزات الحماية",
+    "hero_title_2": "بأعلى جودة وسومة شابة.",
+    "hero_sub": "المتخصص الأول في كاميرات Dahua ومعدات المراقبة في الجزائر. سلعة دوريجين 100%، ديزاد وتوصيل سريع حتى لباب دارك في 69 ولاية.",
+    "hero_btn_catalog": "شوف كامل السلعة",
+    "hero_btn_kit": "🛠 ركب الكيت المناسب ليك",
+    "counter_articles": "سلعة كاينين",
+    "counter_wilayas": "ولاية مع التوصيل",
+    "counter_surveillance": "حماية وخدمة",
+    "why_title": "تركيب كامل ومتقن،",
+    "why_title_highlight": "بدون أي تكسار راس.",
+    "f_orig_t": "سلعة دوريجين 100%",
+    "f_orig_d": "سلعة داهوا معتمدة ومضمونة.",
+    "f_deliv_t": "توصيل حتى لـ 69 ولاية",
+    "f_deliv_d": "ولا تجوز تديها من المحل باطل.",
+    "f_advice_t": "نصائح وإرشادات من محترفين",
+    "f_advice_d": "نعاونوك تخير السستام لي يخرج عليك.",
+    "f_pro_t": "أسعار خاصة للمحترفين",
+    "f_pro_d": "تخفيضات خاصة للفنيين وأصحاب المحلات بعد التأكيد.",
+    "cats_title": "أقسام وتصنيفات المراقبة",
+    "featured_title": "السلعة الأكثر طلباً",
+    "view_all_catalog": "شوف كامل السلعة لي كاينة ←",
+    "filters": "الفلاتر",
+    "category": "القسم",
+    "brand": "الماركة",
+    "all_cats": "كامل الأصناف",
+    "all_brands": "كامل الماركات",
+    "in_stock_only": "لي راهم كاينين برك",
+    "favs_only": "المفضلة",
+    "sort_newest": "الجديد",
+    "sort_p_asc": "السعر من الأرخص",
+    "sort_p_desc": "السعر من الأغلى",
+    "reset_filters": "إعادة تعيين الفلاتر",
+    "load_more": "عرض المزيد من السلعة",
+    "no_products": "ما كاين حتى سلعة بهاد المواصفات.",
+    "add_cart": "+ زيد للسلة",
+    "add_to_cart_modal": "+ زيد للسلة ديريكت",
+    "view_details": "التفاصيل الكاملة",
+    "in_stock": "متوفر في المحل",
+    "out_of_stock": "خلاصت السلعة",
+    "price": "السعر",
+    "compare": "مقارنة",
+    "compared": "تمت المقارنة",
+    "order_wa": "💬 اطلب ولا استفسر ديريكت عبر واتساب",
+    "similar_products": "سلعة تشبهلها",
+    "cart_title": "سلة المشتريات تاعك",
+    "cart_empty": "السلة تاعك مازالها فارغة.",
+    "subtotal": "المجموع الأولي",
+    "deliv_fee": "التوصيل",
+    "total": "المجموع الإجمالي",
+    "total_items": "مجموع السلعة :",
+    "checkout_title": "تأكيد الطلب والتوصيل",
+    "cust_name": "الاسم واللقب الكامل",
+    "cust_phone": "رقم الهاتف للتواصل",
+    "cust_email": "الإيميل (اختياري)",
+    "wilaya": "الولاية (69 ولاية)",
+    "deliv_addr": "العنوان بالتفصيل (البلدية، الحي...)",
+    "deliv_method": "طريقة التوصيل",
+    "deliv_home": "توصيل حتى لباب الدار (69 ولاية)",
+    "deliv_pickup": "الاستلام مباشرة من المحل بوهران (باطل)",
+    "pay_method": "طريقة الدفع",
+    "pay_cod": "الدفع كاش عند الاستلام (يد بيد)",
+    "notes_ph": "ملاحظات إضافية (الطابق، علامة مميزة...)",
+    "confirm_order": "✓ فاليدي الطلب تاعك ديريكت",
+    "order_success": "الطلب تاعك تسجل بنجاح وراح نتاصلو بيك !",
+    "track_order": "تبع حالة الطلب تاعك",
+    "track_uid_ph": "مثال: WEB-2026...",
+    "btn_track": "تبع",
+    "kit_title": "🛠 ركب الكيت والكاميرات على حسابك",
+    "kit_sub": "خير السلعة لي تسحقها مع تأكيد التوافق التلقائي بين الكاميرات والمسجل.",
+    "kit_cams": "1. كاميرات المراقبة (دوريجين)",
+    "kit_recorders": "2. مسجل الفيديو XVR / NVR",
+    "kit_hdds": "3. ديسك دير مخصص للتشغيل 24/24",
+    "kit_psus": "4. بواط أليمونطاسيون 12V",
+    "kit_accessories": "5. الكابلات والكونكتورات",
+    "kit_summary": "تفاصيل الكيت تاعك",
+    "add_kit_cart": "زيد كامل الكيت للسلة ←",
+    "store_heading": "مرحبا بيكم في محلنا",
+    "store_our_store": "المحل تاعنا",
+    "store_title": "محلنا INFOTECH ZEMRI بوهران",
+    "store_sub": "بيع معدات الإعلام الآلي، كاميرات المراقبة وحلول الحماية والأمان.",
+    "store_addr": "4 شارع ديدوش مراد، وهران، الجزائر",
+    "open_maps": "🧭 موقع المحل عبر Google Maps",
+    "footer_desc": "كاميرات مراقبة، أجهزة إنذار، شبكات وإعلام آلي. الستوك متزامن مباشرة مع المحل — واش تشوف راه متوفر.",
+    "footer_shop": "المحل والسلعة",
+    "footer_contact": "المحل والاتصال",
+    "footer_rights": "جميع الحقوق محفوظة.",
+    "footer_deliv": "توصيل لكامل 69 ولاية أو استلام من المحل",
+    "prod_count": "سلعة معروضة",
+    "night_vision": "رؤية ليلية حتى 40 متر",
+    "auth_login": "دخول للحساب",
+    "auth_register": "فتح حساب محترف جديد",
+    "auth_username": "اسم المستخدم",
+    "auth_password": "كلمة السر",
+    "auth_submit_login": "دخول",
+    "auth_submit_register": "ارسل الطلب تاعك",
+    "auth_logout": "خروج من الحساب",
+    "product_label": "السلعة",
+    "stock_label": "الستوك",
+    "comparator_title": "مقارنة السلعة",
+    "dispo": "متوفر",
+  },
+  "ar": {
+    "flag": "🇸🇦",
+    "name": "العربية (الفصحى)",
+    "stock_sync": "مخزون متزامن مع المتجر",
+    "articles": "منتج متوفر",
+    "tier": "السعر",
+    "tier_public": "سعر العموم",
+    "tier_installer": "سعر الفني / المركب",
+    "tier_reseller": "سعر الجملة",
+    "nav_home": "الرئيسية",
+    "nav_catalog": "الكتالوج والمنتجات",
+    "nav_kit": "تجهيز طقم المراقبة",
+    "nav_account": "فضاء المحترفين",
+    "nav_cart": "سلة المشتريات",
+    "nav_dashboard": "لوحة التحكم",
+    "search_ph": "ابحث عن كاميرا، جهاز تسجيل XVR/NVR، أو مرجع...",
+    "hero_badge": "● مخزون متزامن • متوفر بالمتجر والمستودع",
+    "hero_title_1": "أنظمة المراقبة والحماية الأمنية",
+    "hero_title_2": "بأعلى كفاءة وأفضل أداء.",
+    "hero_sub": "المتخصص الرائد في أنظمة Dahua ومعدات المراقبة في الجزائر. عتاد أصلي 100%، استشارة وتوصيل سريع لكافة 69 ولاية.",
+    "hero_btn_catalog": "استكشف الكتالوج",
+    "hero_btn_kit": "🛠 تجهيز طقم مراقبة متكامل",
+    "counter_articles": "منتج متوفر",
+    "counter_wilayas": "ولاية نصل إليها",
+    "counter_surveillance": "أنظمة مراقبة وحماية",
+    "why_title": "تركيب كامل ومتكامل،",
+    "why_title_highlight": "بأعلى المعايير ودون مساومة.",
+    "f_orig_t": "منتجات أصلية 100%",
+    "f_orig_d": "عتاد Dahua ومعدات أمنية معتمدة ومضمونة.",
+    "f_deliv_t": "توصيل لكافة 69 ولاية",
+    "f_deliv_d": "أو استلام مباشر ومجاني من المتجر.",
+    "f_advice_t": "استشارات تقنية للمركبين",
+    "f_advice_d": "نساعدك في اختيار النظام الأنسب لاحتياجك بدقة.",
+    "f_pro_t": "أسعار تفضيلية للمحترفين",
+    "f_pro_d": "أسعار خاصة للفنيين والموزعين بعد التأكيد والاعتماد.",
+    "cats_title": "أقسام أنظمة المراقبة",
+    "featured_title": "المنتجات المميزة والأكثر طلباً",
+    "view_all_catalog": "عرض كافة المنتجات في الكتالوج ←",
+    "filters": "خيارات البحث والتصفية",
+    "category": "الفئة",
+    "brand": "العلامة التجارية",
+    "all_cats": "جميع الفئات",
+    "all_brands": "جميع العلامات التجارية",
+    "in_stock_only": "المتوفر في المخزون فقط",
+    "favs_only": "المفضلة",
+    "sort_newest": "الأحدث أولاً",
+    "sort_p_asc": "السعر: من الأقل للأعلى",
+    "sort_p_desc": "السعر: من الأعلى للأقل",
+    "reset_filters": "إعادة ضبط خيارات البحث",
+    "load_more": "تحميل المزيد من المنتجات",
+    "no_products": "لم يتم العثور على أي منتجات مطابقة للبحث.",
+    "add_cart": "+ أضف للسلة",
+    "add_to_cart_modal": "+ إضافة إلى سلة الشراء",
+    "view_details": "عرض التفاصيل",
+    "in_stock": "متوفر في المخزون",
+    "out_of_stock": "نفد من المخزون",
+    "price": "السعر",
+    "compare": "مقارنة",
+    "compared": "تمت المقارنة",
+    "order_wa": "💬 الطلب أو الاستفسار عبر واتساب",
+    "similar_products": "منتجات ذات صلة",
+    "cart_title": "سلة المشتريات",
+    "cart_empty": "سلة المشتريات فارغة حالياً.",
+    "subtotal": "المجموع الفرعي",
+    "deliv_fee": "رسوم التوصيل",
+    "total": "المجموع الكلي",
+    "total_items": "مجموع المنتجات :",
+    "checkout_title": "إتمام وتأكيد الطلب",
+    "cust_name": "الاسم الكامل",
+    "cust_phone": "رقم الهاتف",
+    "cust_email": "البريد الإلكتروني (اختياري)",
+    "wilaya": "الولاية (كافة 69 ولاية)",
+    "deliv_addr": "عنوان التوصيل (البلدية، الشارع...)",
+    "deliv_method": "طريقة التوصيل",
+    "deliv_home": "توصيل للمنزل (كافة 69 ولاية)",
+    "deliv_pickup": "استلام من المتجر في وهران (مجاناً)",
+    "pay_method": "طريقة السداد",
+    "pay_cod": "الدفع نقداً عند الاستلام",
+    "notes_ph": "ملاحظات إضافية (الطابق، علامة مميزة...)",
+    "confirm_order": "✓ تأكيد وإرسال الطلب الآن",
+    "order_success": "تم تأكيد طلبك بنجاح وسنتصل بك قريباً !",
+    "track_order": "تتبع حالة الطلب",
+    "track_uid_ph": "مثال: WEB-2026...",
+    "btn_track": "تتبع",
+    "kit_title": "🛠 نظام تجهيز طقم المراقبة المخصص",
+    "kit_sub": "قم بتخصيص طقم المراقبة الأنسب مع التحقق الآلي من توافق الكاميرات وأجهزة التسجيل.",
+    "kit_cams": "1. كاميرات المراقبة",
+    "kit_recorders": "2. أجهزة التسجيل XVR / NVR",
+    "kit_hdds": "3. قرص تخزين مخصص للمراقبة",
+    "kit_psus": "4. مزود الطاقة والمحولات 12V",
+    "kit_accessories": "5. الكابلات والملحقات",
+    "kit_summary": "ملخص الطقم المختار",
+    "add_kit_cart": "إضافة كافة عناصر الطقم للسلة ←",
+    "store_heading": "تفضلوا بزيارة متجرنا",
+    "store_our_store": "متجرنا",
+    "store_title": "متجرنا INFOTECH ZEMRI في وهران",
+    "store_sub": "بيع معدات تقنية المعلومات، كاميرات المراقبة وحلول الحماية والأمان.",
+    "store_addr": "4 شارع ديدوش مراد، وهران، الجزائر",
+    "open_maps": "🧭 مسار الوصول عبر Google Maps",
+    "footer_desc": "أنظمة مراقبة بالكاميرات، أجهزة إنذار، شبكات ومعلوماتية. المخزون متزامن مباشرة مع نظام المتجر — ما تراه متوفر فعلياً.",
+    "footer_shop": "المتجر",
+    "footer_contact": "المتجر والتواصل",
+    "footer_rights": "جميع الحقوق محفوظة.",
+    "footer_deliv": "استلام من المتجر وتوصيل لكافة 69 ولاية",
+    "prod_count": "منتج معروض",
+    "night_vision": "رؤية ليلية حتى 40 متراً",
+    "auth_login": "تسجيل الدخول",
+    "auth_register": "إنشاء حساب للمحترفين",
+    "auth_username": "اسم المستخدم",
+    "auth_password": "كلمة المرور",
+    "auth_submit_login": "دخول",
+    "auth_submit_register": "إرسال طلب التسجيل",
+    "auth_logout": "تسجيل الخروج",
+    "product_label": "المنتج",
+    "stock_label": "المخزون",
+    "comparator_title": "مقارنة المنتجات",
+    "dispo": "متوفر",
+  },
+};
+
+let currentLang = (typeof localStorage !== "undefined" && localStorage.getItem("cctv_lang")) || "fr";
+function tr(k) {
+  const l = (typeof window !== "undefined" && window.__currentLang) || currentLang || "fr";
+  return (I18N[l] && I18N[l][k]) || (I18N["fr"] && I18N["fr"][k]) || k;
+}
+if (typeof window !== "undefined") {
+  window.tr = tr;
+  window.__currentLang = currentLang;
+}
+
+
+
+
+
 
     const DEFAULT_IMAGES = {
       "IP Cameras": "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=700&q=80",
@@ -87,6 +461,23 @@
 
     function App() {
       const [tab, setTab] = useState("home"); // home, catalog, kit, cart, account
+      const [lang, setLang] = useState(() => {
+        const l = (typeof localStorage !== "undefined" && localStorage.getItem("cctv_lang")) || "fr";
+        if (typeof window !== "undefined") window.__currentLang = l;
+        return l;
+      });
+      const changeLang = (l) => {
+        setLang(l);
+        if (typeof window !== "undefined") window.__currentLang = l;
+        try { localStorage.setItem("cctv_lang", l); } catch(e){}
+        document.documentElement.dir = (l === "dz" || l === "ar") ? "rtl" : "ltr";
+        document.documentElement.lang = (l === "dz" || l === "ar") ? "ar" : "fr";
+      };
+      useEffect(() => {
+        if (typeof window !== "undefined") window.__currentLang = lang;
+        document.documentElement.dir = (lang === "dz" || lang === "ar") ? "rtl" : "ltr";
+        document.documentElement.lang = (lang === "dz" || lang === "ar") ? "ar" : "fr";
+      }, [lang]);
       const [token, setToken] = useState(() => localStorage.getItem("cctv_jwt") || "");
       const [profile, setProfile] = useState(null);
       const [homeData, setHomeData] = useState(null);
@@ -155,25 +546,16 @@
       const loadHomeAndProducts = async () => {
         try {
           const [resHome, resProds] = await Promise.all([
-            fetch(${API_BASE}/catalog/home/, { headers: authHeaders }).catch(() => null),
-            fetch(${API_BASE}/products/?limit=600, { headers: authHeaders }).catch(() => null)
+            fetch(`${API_BASE}/catalog/home/`, { headers: authHeaders }),
+            fetch(`${API_BASE}/products/?limit=500`, { headers: authHeaders })
           ]);
-          let gotHome = false, gotProds = false;
-          if (resHome && resHome.ok) { setHomeData(await resHome.json()); gotHome = true; }
-          if (resProds && resProds.ok) { const d = await resProds.json(); setProducts(d.results || d || []); gotProds = true; }
-          if (!gotHome) {
-            try { const fb = await fetch('/catalog_home.json'); if (fb.ok) setHomeData(await fb.json()); } catch(e){}
-          }
-          if (!gotProds) {
-            try { const fb = await fetch('/products.json'); if (fb.ok) { const d = await fb.json(); setProducts(d.results || d || []); } } catch(e){}
+          if (resHome.ok) setHomeData(await resHome.json());
+          if (resProds.ok) {
+            const d = await resProds.json();
+            setProducts(d.results || []);
           }
         } catch (err) {
           console.error(err);
-          try {
-            const [fbH, fbP] = await Promise.all([fetch('/catalog_home.json'), fetch('/products.json')]);
-            if (fbH.ok) setHomeData(await fbH.json());
-            if (fbP.ok) { const d = await fbP.json(); setProducts(d.results || d || []); }
-          } catch(e2){}
         }
       };
 
@@ -400,9 +782,15 @@
                   🎵 TikTok @infotech.sz
                 </a>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white font-semibold">
-                  Tarif : {appliedTier === "RESELLER" ? "PRO Revendeur (Gros)" : appliedTier === "INSTALLER" ? "PRO Installateur" : "Public"}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2 py-0.5 text-xs font-bold border border-white/15">
+                  <span className="text-white/60 text-[11px]">🌐</span>
+                  <button onClick={() => changeLang("fr")} className={`px-2 py-0.5 rounded-full text-xs font-bold transition ${lang === "fr" ? "bg-white text-slate-900 shadow" : "text-white/80 hover:text-white"}`}>🇫🇷 FR</button>
+                  <button onClick={() => changeLang("dz")} className={`px-2 py-0.5 rounded-full text-xs font-bold transition ${lang === "dz" ? "bg-emerald-500 text-white shadow" : "text-white/80 hover:text-white"}`}>🇩🇿 الدارجة</button>
+                  <button onClick={() => changeLang("ar")} className={`px-2 py-0.5 rounded-full text-xs font-bold transition ${lang === "ar" ? "bg-blue-600 text-white shadow" : "text-white/80 hover:text-white"}`}>🇸🇦 العربية</button>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white font-semibold text-xs">
+                  {tr("tier")} : {appliedTier === "RESELLER" ? tr("tier_reseller") : appliedTier === "INSTALLER" ? tr("tier_installer") : tr("tier_public")}
                 </span>
                 {isAdmin && (
                   <a href="/mon-dashboard/" className="px-2.5 py-0.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold">
@@ -433,10 +821,10 @@
 
               <nav className="hidden lg:flex items-center gap-1.5">
                 {[
-                  { id: "home", label: "Accueil" },
-                  { id: "catalog", label: "Catalogue" },
-                  { id: "kit", label: "Kit CCTV" },
-                  { id: "account", label: profile ? profile.username : "Espace Pro" },
+                  { id: "home", label: tr("nav_home") },
+                  { id: "catalog", label: tr("nav_catalog") },
+                  { id: "kit", label: tr("nav_kit") },
+                  { id: "account", label: profile ? profile.username : tr("nav_account") },
                 ].map(item => (
                   <button
                     key={item.id}
@@ -453,6 +841,11 @@
                 )}
               </nav>
               <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="hidden sm:inline-flex items-center gap-0.5 bg-slate-100 p-1 rounded-xl text-xs font-bold border border-slate-200">
+                  <button onClick={() => changeLang("fr")} className={`px-2 py-1 rounded-lg transition ${lang === "fr" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="Français">🇫🇷 FR</button>
+                  <button onClick={() => changeLang("dz")} className={`px-2 py-1 rounded-lg transition ${lang === "dz" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="الدارجة الجزائرية">🇩🇿 الدارجة</button>
+                  <button onClick={() => changeLang("ar")} className={`px-2 py-1 rounded-lg transition ${lang === "ar" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`} title="العربية الفصحى">🇸🇦 العربية</button>
+                </div>
                 <button
                   onClick={() => goTab("cart")}
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center gap-2 shadow-sm"
@@ -465,7 +858,7 @@
             </div>
             {mobileMenu && (
               <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-3 grid grid-cols-2 gap-2">
-                {[["home", "🏠 Accueil"], ["catalog", "📦 Catalogue"], ["kit", "🛠 Kit CCTV"], ["account", profile ? "👤 " + profile.username : "👤 Espace Pro"], ["cart", "🛒 Panier"]].map(([id, l]) => (
+                {[["home", "🏠 " + tr("nav_home")], ["catalog", "📦 " + tr("nav_catalog")], ["kit", "🛠 " + tr("nav_kit")], ["account", profile ? "👤 " + profile.username : "👤 " + tr("nav_account")], ["cart", "🛒 " + tr("nav_cart")]].map(([id, l]) => (
                   <button key={id} onClick={() => goTab(id)} className={`py-2.5 rounded-xl text-sm font-semibold ${tab === id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>{l}</button>
                 ))}
                 {isAdmin && <a href="/mon-dashboard/" className="py-2.5 rounded-xl text-sm font-bold bg-blue-50 text-blue-700 text-center">⚙ Dashboard</a>}
@@ -512,9 +905,9 @@
                         </button>
                       </div>
                       <div className="grid grid-cols-3 gap-3 max-w-md pt-2">
-                        <Counter to={products.length} label="Articles" />
-                        <Counter to={69} label="Wilayas livrées" />
-                        <Counter to={24} suffix="/7" label="Surveillance" />
+                        <Counter to={products.length} label={tr("counter_articles")} />
+                        <Counter to={69} label={tr("counter_wilayas")} />
+                        <Counter to={24} suffix="/7" label={tr("counter_surveillance")} />
                       </div>
                     </div>
                     <div className="relative h-[380px] md:h-[500px]">
@@ -558,13 +951,13 @@
                     </div>
                   </div>
                   <div className="space-y-5">
-                    <h2 className="font-display text-3xl md:text-4xl font-bold text-slate-900">Une installation complète, <span className="text-blue-600">sans compromis</span>.</h2>
+                    <h2 className="font-display text-3xl md:text-4xl font-bold text-slate-900">{tr("why_title")} <span className="text-blue-600">{tr("why_title_highlight")}</span></h2>
                     <div className="grid sm:grid-cols-2 gap-3">
                       {[
-                        ["✅", "Produits 100% d'origine", "Matériel Dahua & sécurité certifié."],
-                        ["🚚", "Livraison 69 wilayas", "Ou retrait gratuit au magasin."],
-                        ["🧑‍🔧", "Conseil installateur", "Nous dimensionnons votre système."],
-                        ["💰", "Prix pro", "Tarifs installateur & revendeur après validation."],
+                        ["✅", tr("f_orig_t"), tr("f_orig_d")],
+                        ["🚚", tr("f_deliv_t"), tr("f_deliv_d")],
+                        ["🧑‍🔧", tr("f_advice_t"), tr("f_advice_d")],
+                        ["💰", tr("f_pro_t"), tr("f_pro_d")],
                       ].map(([i, t, d]) => (
                         <div key={t} className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:shadow-lg transition">
                           <div className="text-xl">{i}</div>
@@ -580,7 +973,7 @@
                 {homeData && homeData.categories && (
                   <section className="reveal space-y-4">
                     <div>
-                      <h2 className="text-2xl font-extrabold text-slate-900">Catégories Vidéosurveillance</h2>
+                      <h2 className="text-2xl font-extrabold text-slate-900">{tr("cats_title")}</h2>
                       <p className="text-sm text-slate-500">Sélectionnez une catégorie pour explorer nos équipements</p>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -602,7 +995,7 @@
                 <section className="reveal space-y-5">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-2xl font-extrabold text-slate-900">Produits Vedettes</h2>
+                      <h2 className="text-2xl font-extrabold text-slate-900">{tr("featured_title")}</h2>
                       <p className="text-sm text-slate-500">Tarifs affichés pour votre profil ({appliedTier})</p>
                     </div>
                     <button onClick={() => setTab("catalog")} className="text-sm text-blue-600 hover:underline font-semibold">
@@ -632,8 +1025,8 @@
                 {/* FILTRES */}
                 <aside className="card-light p-5 rounded-3xl space-y-5 lg:sticky lg:top-24">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-display font-bold text-slate-900">Filtres</h3>
-                    <button onClick={resetFilters} className="text-xs text-blue-600 hover:underline font-semibold">Réinitialiser</button>
+                    <h3 className="font-display font-bold text-slate-900">{tr("filters")}</h3>
+                    <button onClick={resetFilters} className="text-xs text-blue-600 hover:underline font-semibold">{tr("reset_filters")}</button>
                   </div>
                   <input
                     type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)}
@@ -641,9 +1034,9 @@
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-blue-600"
                   />
                   <div>
-                    <div className="text-xs font-bold uppercase text-slate-500 mb-2">Catégorie</div>
+                    <div className="text-xs font-bold uppercase text-slate-500 mb-2">{tr("category")}</div>
                     <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
-                      <button onClick={() => setSelectedCat("all")} className={`w-full text-left px-3 py-1.5 rounded-lg text-sm ${selectedCat === "all" ? "bg-slate-900 text-white font-semibold" : "hover:bg-slate-100 text-slate-700"}`}>Toutes</button>
+                      <button onClick={() => setSelectedCat("all")} className={`w-full text-left px-3 py-1.5 rounded-lg text-sm ${selectedCat === "all" ? "bg-slate-900 text-white font-semibold" : "hover:bg-slate-100 text-slate-700"}`}>{tr("all_cats")}</button>
                       {homeData && homeData.categories && homeData.categories.filter(c => c.product_count > 0).map(c => (
                         <button key={c.id} onClick={() => setSelectedCat(c.slug)} className={`w-full text-left px-3 py-1.5 rounded-lg text-sm flex justify-between ${selectedCat === c.slug ? "bg-slate-900 text-white font-semibold" : "hover:bg-slate-100 text-slate-700"}`}>
                           <span className="truncate">{c.name}</span><span className="opacity-60 text-xs">{c.product_count}</span>
@@ -653,7 +1046,7 @@
                   </div>
                   {brandList.length > 0 && (
                     <div>
-                      <div className="text-xs font-bold uppercase text-slate-500 mb-2">Marque</div>
+                      <div className="text-xs font-bold uppercase text-slate-500 mb-2">{tr("brand")}</div>
                       <div className="flex flex-wrap gap-1.5">
                         {brandList.slice(0, 14).map(([b, n]) => (
                           <button key={b} onClick={() => setSelectedBrand(selectedBrand === b ? "all" : b)} className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${selectedBrand === b ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-700 border-slate-200 hover:border-blue-300"}`}>
@@ -664,7 +1057,7 @@
                     </div>
                   )}
                   <div>
-                    <div className="text-xs font-bold uppercase text-slate-500 mb-2">Prix (DA)</div>
+                    <div className="text-xs font-bold uppercase text-slate-500 mb-2">{tr("price")} (DA)</div>
                     <div className="flex gap-2">
                       <input type="number" min="0" value={priceMin} onChange={e => setPriceMin(e.target.value)} placeholder="Min" className="w-1/2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm" />
                       <input type="number" min="0" value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="Max" className="w-1/2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm" />
@@ -678,10 +1071,10 @@
                     </div>
                   </div>
                   <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                    <input type="checkbox" checked={onlyInStock} onChange={e => setOnlyInStock(e.target.checked)} /> En stock uniquement
+                    <input type="checkbox" checked={onlyInStock} onChange={e => setOnlyInStock(e.target.checked)} /> {tr("in_stock_only")}
                   </label>
                   <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                    <input type="checkbox" checked={onlyFavs} onChange={e => setOnlyFavs(e.target.checked)} /> ♥ Mes favoris ({favs.length})
+                    <input type="checkbox" checked={onlyFavs} onChange={e => setOnlyFavs(e.target.checked)} /> ♥ {tr("favs_only")} ({favs.length})
                   </label>
                 </aside>
 
@@ -692,9 +1085,9 @@
                       {selectedBrand !== "all" && <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{selectedBrand} ✕</span>}
                     </div>
                     <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-800">
-                      <option value="newest">Tri : Plus récents</option>
-                      <option value="price_asc">Prix : Croissant</option>
-                      <option value="price_desc">Prix : Décroissant</option>
+                      <option value="newest">{tr("sort_newest")}</option>
+                      <option value="price_asc">{tr("sort_p_asc")}</option>
+                      <option value="price_desc">{tr("sort_p_desc")}</option>
                       <option value="name">Nom : A → Z</option>
                       <option value="stock">Stock disponible</option>
                     </select>
@@ -703,8 +1096,8 @@
                   {filteredProducts.length === 0 ? (
                     <div className="card-light rounded-3xl p-12 text-center space-y-3">
                       <div className="text-4xl">🔍</div>
-                      <div className="font-bold text-slate-900">Aucun article ne correspond.</div>
-                      <button onClick={resetFilters} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">Effacer les filtres</button>
+                      <div className="font-bold text-slate-900">{tr("no_products")}</div>
+                      <button onClick={resetFilters} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">{tr("reset_filters")}</button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -723,7 +1116,7 @@
                   {visibleCount < filteredProducts.length && (
                     <div className="text-center pt-2">
                       <button onClick={() => setVisibleCount(v => v + 24)} className="px-8 py-3.5 rounded-2xl bg-white border border-slate-300 hover:border-blue-400 hover:text-blue-700 text-slate-800 font-bold text-sm transition">
-                        Afficher plus ({filteredProducts.length - visibleCount} restants)
+                        {tr("load_more")} ({filteredProducts.length - visibleCount})
                       </button>
                     </div>
                   )}
@@ -735,9 +1128,9 @@
             {tab === "kit" && (
               <div className="space-y-6">
                 <div className="card-light p-6 rounded-2xl">
-                  <h2 className="text-2xl font-extrabold text-slate-900">🛠 Configurateur de Kit CCTV</h2>
+                  <h2 className="text-2xl font-extrabold text-slate-900">{tr("kit_title")}</h2>
                   <p className="text-sm text-slate-500 mt-1">
-                    Composez votre pack surveillance complet avec vérification automatique de compatibilité.
+                    {tr("kit_sub")}
                   </p>
                 </div>
 
@@ -745,11 +1138,11 @@
                   <div className="grid lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-5">
                       {[
-                        { key: "cameras", title: "1. Caméras de Surveillance", list: kitData.cameras || [] },
-                        { key: "recorders", title: "2. Enregistreur DVR / XVR / NVR", list: kitData.recorders || [] },
-                        { key: "hdds", title: "3. Disque Dur Surveillance", list: kitData.hdds || [] },
-                        { key: "psus", title: "4. Alimentation 12V", list: kitData.psus || [] },
-                        { key: "accessories", title: "5. Connecteurs & Accessoires", list: [...(kitData.connectors || []), ...(kitData.accessories || [])] },
+                        { key: "cameras", title: tr("kit_cams"), list: kitData.cameras || [] },
+                        { key: "recorders", title: tr("kit_recorders"), list: kitData.recorders || [] },
+                        { key: "hdds", title: tr("kit_hdds"), list: kitData.hdds || [] },
+                        { key: "psus", title: tr("kit_psus"), list: kitData.psus || [] },
+                        { key: "accessories", title: tr("kit_accessories"), list: [...(kitData.connectors || []), ...(kitData.accessories || [])] },
                       ].map(section => (
                         <div key={section.key} className="card-light p-5 rounded-2xl space-y-3">
                           <h3 className="font-bold text-slate-900 text-base">{section.title}</h3>
@@ -776,7 +1169,7 @@
                     </div>
 
                     <div className="card-light p-6 rounded-2xl h-fit sticky top-24 space-y-4">
-                      <h3 className="text-lg font-extrabold text-slate-900">Résumé du Kit</h3>
+                      <h3 className="text-lg font-extrabold text-slate-900">{tr("kit_summary")}</h3>
                       {!kitEval ? (
                         <p className="text-sm text-slate-500">Sélectionnez vos équipements à gauche.</p>
                       ) : (
@@ -809,7 +1202,7 @@
                             }}
                             className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm"
                           >
-                            Ajouter le Kit au Panier →
+                            {tr("add_kit_cart")}
                           </button>
                         </>
                       )}
@@ -826,10 +1219,10 @@
               <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
                   <div className="card-light p-6 rounded-2xl space-y-4">
-                    <h2 className="text-2xl font-extrabold text-slate-900">🛒 Votre Panier</h2>
+                    <h2 className="text-2xl font-extrabold text-slate-900">{tr("cart_title")}</h2>
                     {cart.length === 0 ? (
                       <div className="py-8 text-center space-y-3">
-                        <p className="text-slate-500">Votre panier est vide.</p>
+                        <p className="text-slate-500">{tr("cart_empty")}</p>
                         <button onClick={() => setTab("catalog")} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">
                           Parcourir le catalogue
                         </button>
@@ -864,9 +1257,9 @@
                   )}
 
                   <div className="card-light p-6 rounded-2xl space-y-4">
-                    <h3 className="text-lg font-bold text-slate-900">🔍 Suivre une Commande</h3>
+                    <h3 className="text-lg font-bold text-slate-900">🔍 {tr("track_order")}</h3>
                     <div className="flex gap-2">
-                      <input type="text" value={trackUid} onChange={e => setTrackUid(e.target.value)} placeholder="Ex: WEB-20261114-CD085" className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm" />
+                      <input type="text" value={trackUid} onChange={e => setTrackUid(e.target.value)} placeholder={tr("track_uid_ph")} className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm" />
                       <button
                         onClick={async () => {
                           if (!trackUid.trim()) return;
@@ -876,7 +1269,7 @@
                         }}
                         className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm"
                       >
-                        Rechercher
+                        {tr("btn_track")}
                       </button>
                     </div>
                     {trackedOrder && (
@@ -890,25 +1283,25 @@
                 </div>
 
                 <form onSubmit={handleCheckout} className="card-light p-6 rounded-2xl space-y-4 h-fit">
-                  <h3 className="text-xl font-extrabold text-slate-900">Finaliser la Commande</h3>
-                  <input required placeholder="Nom complet *" value={checkoutForm.customer_name} onChange={e => setCheckoutForm({ ...checkoutForm, customer_name: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <input required placeholder="Téléphone *" value={checkoutForm.customer_phone} onChange={e => setCheckoutForm({ ...checkoutForm, customer_phone: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <input placeholder="Wilaya" value={checkoutForm.wilaya} onChange={e => setCheckoutForm({ ...checkoutForm, wilaya: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                  <input placeholder="Adresse de livraison" value={checkoutForm.delivery_address} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_address: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <h3 className="text-xl font-extrabold text-slate-900">{tr("checkout_title")}</h3>
+                  <input required placeholder={`${tr("cust_name")} *`} value={checkoutForm.customer_name} onChange={e => setCheckoutForm({ ...checkoutForm, customer_name: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <input required placeholder={`${tr("cust_phone")} *`} value={checkoutForm.customer_phone} onChange={e => setCheckoutForm({ ...checkoutForm, customer_phone: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <input placeholder={tr("wilaya")} value={checkoutForm.wilaya} onChange={e => setCheckoutForm({ ...checkoutForm, wilaya: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                  <input placeholder={tr("deliv_addr")} value={checkoutForm.delivery_address} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_address: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
                   <select value={checkoutForm.delivery_method} onChange={e => setCheckoutForm({ ...checkoutForm, delivery_method: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
-                    <option value="DELIVERY">Livraison à domicile</option>
-                    <option value="PICKUP">Retrait au magasin (Gratuit)</option>
+                    <option value="DELIVERY">{tr("deliv_home")}</option>
+                    <option value="PICKUP">{tr("deliv_pickup")}</option>
                   </select>
                   <select value={checkoutForm.payment_method} onChange={e => setCheckoutForm({ ...checkoutForm, payment_method: e.target.value })} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white">
-                    <option value="CASH_ON_DELIVERY">Paiement à la livraison</option>
+                    <option value="CASH_ON_DELIVERY">{tr("pay_cod")}</option>
                     <option value="PAY_AT_STORE">Paiement au comptoir</option>
                   </select>
                   <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Total Articles :</span>
+                    <span className="text-sm text-slate-600">{tr("total_items")}</span>
                     <span className="text-xl font-extrabold text-blue-600">{fmtMoney(cartSubtotal)}</span>
                   </div>
                   <button type="submit" disabled={cart.length === 0} className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-sm">
-                    ✓ Confirmer la Commande
+                    {tr("confirm_order")}
                   </button>
                 </form>
               </div>
@@ -933,21 +1326,21 @@
                           </a>
                         )}
                         <button onClick={() => { localStorage.removeItem("cctv_jwt"); setToken(""); setProfile(null); }} className="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-bold">
-                          Se déconnecter
+                          {tr("auth_logout")}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <>
                       <div className="flex gap-2">
-                        <button onClick={() => setAuthMode("login")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm ${authMode === "login" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>Connexion</button>
-                        <button onClick={() => setAuthMode("register")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm ${authMode === "register" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>Demander un Compte PRO</button>
+                        <button onClick={() => setAuthMode("login")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm ${authMode === "login" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>{tr("auth_login")}</button>
+                        <button onClick={() => setAuthMode("register")} className={`flex-1 py-2.5 rounded-xl font-bold text-sm ${authMode === "register" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>{tr("auth_register")}</button>
                       </div>
                       {authMode === "login" ? (
                         <form onSubmit={handleLogin} className="space-y-4">
-                          <input required placeholder="Nom d'utilisateur" value={loginForm.username} onChange={e => setLoginForm({ ...loginForm, username: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                          <input required type="password" placeholder="Mot de passe" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                          <button type="submit" className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-sm">Se connecter</button>
+                          <input required placeholder={tr("auth_username")} value={loginForm.username} onChange={e => setLoginForm({ ...loginForm, username: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                          <input required type="password" placeholder={tr("auth_password")} value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                          <button type="submit" className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-sm">{tr("auth_submit_login")}</button>
                         </form>
                       ) : (
                         <form onSubmit={handleRegister} className="space-y-3">
@@ -961,10 +1354,10 @@
                             <input required type="password" placeholder="Mot de passe *" value={regForm.password} onChange={e => setRegForm({ ...regForm, password: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <input required placeholder="Téléphone *" value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+                            <input required placeholder={`${tr("cust_phone")} *`} value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                             <input placeholder="Entreprise" value={regForm.company_name} onChange={e => setRegForm({ ...regForm, company_name: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                           </div>
-                          <button type="submit" className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm">Soumettre la demande</button>
+                          <button type="submit" className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm">{tr("auth_submit_register")}</button>
                         </form>
                       )}
                     </>
@@ -1014,19 +1407,19 @@
             <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setShowCompare(false)}>
               <div className="bg-white rounded-3xl p-6 max-w-5xl w-full max-h-[90vh] overflow-auto shadow-2xl" onClick={e => e.stopPropagation()} style={{ animation: "modalIn .35s cubic-bezier(.2,.8,.2,1)" }}>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-display text-2xl font-bold">Comparateur</h3>
+                  <h3 className="font-display text-2xl font-bold">{tr("comparator_title")}</h3>
                   <button onClick={() => setShowCompare(false)} className="w-9 h-9 rounded-full bg-slate-100 font-bold">✕</button>
                 </div>
                 <table className="w-full text-sm">
                   <tbody>
                     {[
                       ["", c => <img src={getProductImg(c)} alt="" className="h-28 mx-auto object-contain" />],
-                      ["Produit", c => <span className="font-bold">{c.name}</span>],
+                      [tr("product_label"), c => <span className="font-bold">{c.name}</span>],
                       ["Référence", c => <span className="font-mono text-xs">{c.reference}</span>],
                       ["Marque", c => c.brand_name || "—"],
                       ["Catégorie", c => c.category_name || "—"],
                       ["Prix", c => <span className="font-extrabold text-blue-600">{fmtMoney(c.effective_price)}</span>],
-                      ["Stock", c => c.in_stock ? <span className="text-emerald-600 font-semibold">{c.available_stock} dispo</span> : <span className="text-red-600">Rupture</span>],
+                      [tr("stock_label"), c => c.in_stock ? <span className="text-emerald-600 font-semibold">{c.available_stock} {tr("dispo")}</span> : <span className="text-red-600">Rupture</span>],
                       ["", c => <button onClick={() => addToCart(c, 1)} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">+ Panier</button>],
                     ].map(([label, fn], i) => (
                       <tr key={i} className={i % 2 ? "bg-slate-50" : ""}>
@@ -1062,7 +1455,7 @@
             <div className="max-w-7xl mx-auto px-4 py-12 grid md:grid-cols-4 gap-8 text-sm">
               <div className="md:col-span-2 space-y-3">
                 <div className="font-display text-2xl font-bold text-white">LOGISZ <span className="text-blue-500">CCTV</span> — INFOTECH ZEMRI</div>
-                <p className="max-w-md">Vidéosurveillance, alarmes, réseau et informatique. Stock synchronisé en direct avec notre caisse — ce que vous voyez est disponible.</p>
+                <p className="max-w-md">{tr("footer_desc")}</p>
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <a href="https://wa.me/213557882719" target="_blank" rel="noreferrer" className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center gap-1.5">
                     💬 WhatsApp : 0557 88 27 19
@@ -1073,13 +1466,13 @@
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="text-white font-semibold">Boutique</div>
+                <div className="text-white font-semibold">{tr("footer_shop")}</div>
                 <button onClick={() => { setTab("catalog"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="block hover:text-white">Catalogue</button>
                 <button onClick={() => { setTab("kit"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="block hover:text-white">Configurateur de kit</button>
                 <button onClick={() => { setTab("account"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="block hover:text-white">Espace pro</button>
               </div>
               <div className="space-y-2">
-                <div className="text-white font-semibold">Magasin & Contact</div>
+                <div className="text-white font-semibold">{tr("footer_contact")}</div>
                 <a href="tel:0557882719" className="block text-white font-bold hover:text-blue-400">📞 0557 88 27 19 (Principal)</a>
                 <a href="tel:0791476304" className="block hover:text-white">📞 0791 47 63 04</a>
                 <a href="https://wa.me/213557882719" target="_blank" rel="noreferrer" className="block text-emerald-400 hover:text-emerald-300 font-semibold">💬 WhatsApp : 0557 88 27 19</a>
@@ -1087,7 +1480,7 @@
                 <a href="https://share.google/RJzeDOo33739eINyd" target="_blank" rel="noreferrer" className="block hover:text-white">📍 INFOTECH ZEMRI — Google Maps</a>
               </div>
             </div>
-            <div className="border-t border-white/10 py-4 text-center text-xs">© {new Date().getFullYear()} LOGISZ CCTV — INFOTECH ZEMRI • Synchronisé avec votre logiciel de caisse</div>
+            <div className="border-t border-white/10 py-4 text-center text-xs">© {new Date().getFullYear()} LOGISZ CCTV — INFOTECH ZEMRI • {tr("footer_rights")}</div>
           </footer>
         </div>
       );
@@ -1116,7 +1509,7 @@
               <div className="relative h-52 bg-gradient-to-b from-slate-50 to-white overflow-hidden flex items-center justify-center">
                 <img src={getProductImg(p)} alt={p.name} loading="lazy" className="pop max-h-[85%] max-w-[85%] object-contain drop-shadow-xl transition duration-500" />
                 <span className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${p.in_stock ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
-                  {p.in_stock ? `En stock (${p.available_stock})` : "Rupture"}
+                  {p.in_stock ? `${tr("in_stock")} (${p.available_stock})` : tr("out_of_stock")}
                 </span>
                 {p.brand_name && <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider">{p.brand_name}</span>}
                 {onFav && (
@@ -1125,7 +1518,7 @@
                 )}
                 {onCompare && (
                   <button onClick={(e) => { e.stopPropagation(); onCompare(); }} title="Comparer"
-                    className={`absolute bottom-3 left-3 px-2.5 h-8 rounded-full border shadow-sm text-[11px] font-bold transition ${inCompare ? "bg-blue-600 border-blue-600 text-white" : "bg-white/90 border-slate-200 text-slate-600"}`}>⇄ {inCompare ? "Comparé" : "Comparer"}</button>
+                    className={`absolute bottom-3 left-3 px-2.5 h-8 rounded-full border shadow-sm text-[11px] font-bold transition ${inCompare ? "bg-blue-600 border-blue-600 text-white" : "bg-white/90 border-slate-200 text-slate-600"}`}>⇄ {inCompare ? tr("compared") : tr("compare")}</button>
                 )}
               </div>
               <div className="p-4 space-y-1 pop-sm">
@@ -1136,11 +1529,11 @@
             </div>
             <div className="px-4 pb-4 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 pop-sm">
               <div>
-                <div className="text-[10px] text-slate-400 uppercase">Prix ({p.applied_tier})</div>
+                <div className="text-[10px] text-slate-400 uppercase">{tr("price")} ({p.applied_tier})</div>
                 <div className="text-lg font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
               </div>
               <button onClick={onAdd} className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition hover:scale-105">
-                + Panier
+                {tr("add_cart")}
               </button>
             </div>
           </div>
@@ -1190,20 +1583,20 @@
               <p className="text-sm text-slate-600 leading-relaxed">{p.short_description || p.description || "Contactez-nous pour la fiche technique complète."}</p>
               <div className="mt-auto p-4 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
                 <div>
-                  <div className="text-xs text-slate-500">Prix ({tier})</div>
+                  <div className="text-xs text-slate-500">{tr("price")} ({tier})</div>
                   <div className="text-3xl font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
-                  <div className={`text-xs font-medium ${p.in_stock ? "text-emerald-600" : "text-red-600"}`}>{p.in_stock ? `${p.available_stock} en stock` : "Rupture de stock"}</div>
+                  <div className={`text-xs font-medium ${p.in_stock ? "text-emerald-600" : "text-red-600"}`}>{p.in_stock ? `${p.available_stock} ${tr("in_stock")}` : tr("out_of_stock")}</div>
                 </div>
-                <button onClick={onAdd} className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-sm transition hover:scale-105">+ Ajouter au panier</button>
+                <button onClick={onAdd} className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-sm transition hover:scale-105">{tr("add_to_cart_modal")}</button>
               </div>
               {waNum && (
                 <a href={`https://wa.me/${waNum}?text=${waMsg}`} target="_blank" rel="noreferrer" className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm text-center transition">
-                  💬 Commander / Demander via WhatsApp
+                  {tr("order_wa")}
                 </a>
               )}
               {related.length > 0 && (
                 <div className="pt-2">
-                  <div className="text-xs font-bold uppercase text-slate-500 mb-2">Produits similaires</div>
+                  <div className="text-xs font-bold uppercase text-slate-500 mb-2">{tr("similar_products")}</div>
                   <div className="grid grid-cols-4 gap-2">
                     {related.map(r => (
                       <button key={r.id} onClick={() => onPick && onPick(r)} className="group rounded-xl border border-slate-200 hover:border-blue-400 p-1.5 bg-white text-left">
@@ -1236,7 +1629,7 @@
       return (
         <form className="relative flex-1 max-w-md hidden md:block" onSubmit={e => { e.preventDefault(); if (q.trim()) { onSubmit(q.trim()); setOpen(false); } }}>
           <input value={q} onChange={e => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 180)}
-            placeholder="🔍  Rechercher une caméra, un XVR, une référence..."
+            placeholder={`🔍  ${tr("search_ph")}`}
             className="w-full px-4 py-2.5 rounded-2xl bg-slate-100/80 border border-transparent focus:bg-white focus:border-blue-500 text-sm outline-none transition" />
           {open && hits.length > 0 && (
             <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden z-50">
@@ -1291,8 +1684,8 @@
         <section className="reveal space-y-5">
           <div className="flex flex-wrap justify-between items-end gap-3">
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-blue-600">Venez nous voir</div>
-              <h2 className="font-display text-3xl font-bold text-slate-900">Notre magasin — {s.name}</h2>
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-600">{tr("store_heading")}</div>
+              <h2 className="font-display text-3xl font-bold text-slate-900">{tr("store_our_store")} — {s.name}</h2>
               {s.address && <p className="text-sm text-slate-500 mt-1">📍 {s.address}</p>}
             </div>
             <div className="flex flex-wrap gap-2.5">
@@ -1303,7 +1696,7 @@
                 🎵 TikTok @infotech.sz
               </a>
               <a href={s.maps_url} target="_blank" rel="noreferrer" className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5">
-                🧭 Itinéraire Google Maps
+                {tr("open_maps")}
               </a>
             </div>
           </div>
