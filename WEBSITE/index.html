@@ -1120,14 +1120,12 @@ if (typeof window !== "undefined") {
           <div class="footer">
             <div>Devis valable dans la limite des stocks disponibles. Matériel certifié d'origine.</div>
             <div style="font-weight:bold;color:#0f172a;">Cachet & Signature INFOTECH ZEMRI</div>
-          </div>
-          <script>window.onload = () => { window.print(); };</script>
-        </body>
-        </html>`;
+          </div>`;
         const w = window.open("", "_blank");
         if (w) {
           w.document.write(html);
           w.document.close();
+          setTimeout(() => { try { w.focus(); w.print(); } catch(e){} }, 350);
         }
       };
 
