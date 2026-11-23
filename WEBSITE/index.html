@@ -3754,14 +3754,14 @@ if (typeof window !== "undefined") {
     }
 
 
-        /* ---------- VILLA ULTRA-RÉALISTE 4K & VUE 3D 360° INTERACTIVE + ARTICLES EN DIRECT ---------- */
+            /* ---------- VILLA ARCHITECTURALE 3D RÉALISTE & SIMULATEUR CCTV INTERACTIF ---------- */
     function InteractiveVillaExplorer({ products = [], onSelectProduct, onAddToCart, onDirectOrder, onOpenCatalogZone, favs = [], onToggleFav, compare = [], onToggleCompare, showToast }) {
       const mountRef = React.useRef(null);
-      const [displayMode, setDisplayMode] = useState("photo"); // "photo" (4K Ultra-Réaliste) | "3d" (Three.js WebGL 360°)
+      const [displayMode, setDisplayMode] = useState("3d"); // "3d" (Moteur 3D temps réel par défaut) | "photo" (Vue Photo 4K)
       const [activeZone, setActiveZone] = useState("cameras"); // "cameras" | "alarm" | "digicode" | "wifi_ptz" | "xvr_hdd" | "power_poe"
-      const [nightVision, setNightVision] = useState(false); // Infrarouge / Mode Nuit Sécurité
+      const [nightVision, setNightVision] = useState(false);
       const [zoneSearch, setZoneSearch] = useState("");
-      const [viewOrbit, setViewOrbit] = useState(false); // 3D free orbit
+      const [viewOrbit, setViewOrbit] = useState(false); // Mode orbite 360° libre
 
       const stateRef = React.useRef({
         activeZone: "cameras",
@@ -3780,12 +3780,14 @@ if (typeof window !== "undefined") {
           id: "cameras",
           icon: "📹",
           shortLabel: "Caméras Façade",
-          title: "Caméras de Surveillance Extérieures (IP, HDCVI, 4K & ColorVu)",
-          badge: "Sous-Toit Façade & Garage",
+          title: "Caméras Extérieures Façade & Garage (Dahua 4K & ColorVu)",
+          badge: "Sous-Toit Façade & Parking 3D",
           color: "#38bdf8",
           bgBadge: "bg-sky-500/20 text-sky-300 border-sky-400/40",
-          desc: "Caméras haute définition sous la corniche en bois au-dessus du garage et de l'allée : vision nocturne 40m et technologie ColorVu couleur 24h/24.",
+          desc: "Caméra 3D haute définition installée sous la corniche en bois au-dessus du garage et de la voiture : vision nocturne 40m et technologie ColorVu 24h/24.",
           pinPos: { x: 25, y: 34 },
+          pos3D: [-4.6, 5.8, 2.7],
+          camTarget: { cam: [-6.8, 5.2, 10.8], look: [-4.4, 3.4, 2.8] },
           camInfo: "Champ 108° HFOV • 4K Ultra-HD • Détection Humains & Véhicules",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
@@ -3797,12 +3799,14 @@ if (typeof window !== "undefined") {
           id: "alarm",
           icon: "🚨",
           shortLabel: "Alarme & Sirène",
-          title: "Système d'Alarme Sans Fil, Sirène Flash & Détecteurs (Dahua / Ajax)",
-          badge: "Façade Haute • Anti-Intrusion",
+          title: "Système d'Alarme Sans Fil, Sirène Flash 110dB & Détecteurs",
+          badge: "Façade Haute • Anti-Intrusion 3D",
           color: "#ef4444",
           bgBadge: "bg-red-500/20 text-red-300 border-red-400/40",
-          desc: "Sirène extérieure flash 110dB montée sur la façade supérieure + détecteurs de mouvement et d'ouverture de portes/fenêtres sans fil.",
+          desc: "Sirène extérieure flash 110dB montée sur la façade supérieure en porte-à-faux + détecteurs d'ouverture et radars volumétriques sans fil.",
           pinPos: { x: 53, y: 24 },
+          pos3D: [1.65, 5.35, 2.95],
+          camTarget: { cam: [2.5, 5.8, 8.8], look: [1.65, 5.1, 2.8] },
           camInfo: "Sirène 110dB avec Flash Stroboscopique • Portée Radio 2000m • Anti-brouillage",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
@@ -3814,12 +3818,14 @@ if (typeof window !== "undefined") {
           id: "digicode",
           icon: "🔢",
           shortLabel: "Digicode Portail",
-          title: "Digicode, Clavier à Code, Bluetooth, Badge & Interphone",
-          badge: "Pilier Portail d'Entrée",
+          title: "Digicode, Clavier à Code, Bluetooth, Badge RFID & Interphone",
+          badge: "Pilier Portail d'Entrée 3D",
           color: "#10b981",
           bgBadge: "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
-          desc: "Clavier Digicode lumineux encastré sur le pilier d'entrée : ouverture par code PIN, badge RFID, empreinte digitale ou Bluetooth sur smartphone.",
+          desc: "Clavier Digicode lumineux encastré sur le pilier d'entrée : déverrouillage sécurisé par code PIN, badge RFID, empreinte ou Bluetooth smartphone.",
           pinPos: { x: 80, y: 69 },
+          pos3D: [6.45, 1.45, 7.85],
+          camTarget: { cam: [8.8, 2.6, 11.8], look: [6.3, 1.4, 7.6] },
           camInfo: "Boîtier Métallique Anti-Vandale IP68 • Clavier Rétroéclairé • Bluetooth",
           matchFn: (p) => {
             const hay = `${p.name || ""} ${p.reference || ""} ${p.category_name || ""}`.toLowerCase();
@@ -3831,11 +3837,13 @@ if (typeof window !== "undefined") {
           icon: "📡",
           shortLabel: "Dôme PTZ 360°",
           title: "Caméras Motorisées PTZ 360° & Wi-Fi Connectées",
-          badge: "Angle Toiture Supérieur",
+          badge: "Angle Toiture Supérieur 3D",
           color: "#a855f7",
           bgBadge: "bg-purple-500/20 text-purple-300 border-purple-400/40",
-          desc: "Dôme motorisé 360° installé sous l'angle de toiture : balayage panoramique complet couvrant le jardin, la piscine et l'allée avec suivi IA.",
+          desc: "Dôme motorisé 360° sous l'angle de toiture : balayage panoramique haute vitesse avec suivi automatique des intrus (Auto-Tracking IA).",
           pinPos: { x: 40, y: 21 },
+          pos3D: [5.2, 6.0, 2.7],
+          camTarget: { cam: [8.2, 6.2, 9.8], look: [4.8, 4.8, 2.8] },
           camInfo: "Rotation Pan 355° / Tilt 90° • Suivi Automatique des Intrus (Auto-Tracking)",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
@@ -3846,13 +3854,15 @@ if (typeof window !== "undefined") {
         xvr_hdd: {
           id: "xvr_hdd",
           icon: "💾",
-          shortLabel: "XVR & Disque",
+          shortLabel: "Centrale XVR & Disque",
           title: "Enregistreurs XVR / NVR IA & Disques Durs WD Purple 24/7",
-          badge: "Centrale Vidéo Salon",
+          badge: "Salon Vitré • Centrale Vidéo 3D",
           color: "#f59e0b",
           bgBadge: "bg-amber-500/20 text-amber-300 border-amber-400/40",
-          desc: "Enregistreur XVR/NVR Dahua connecté aux écrans du salon avec disque dur spécial vidéosurveillance WD Purple pour enregistrement continu 24h/24.",
+          desc: "Enregistreur XVR/NVR IA Dahua relié à l'écran du salon avec disque dur spécial vidéosurveillance WD Purple pour enregistrement 24h/24 continu.",
           pinPos: { x: 49, y: 55 },
+          pos3D: [1.3, 1.75, 1.8],
+          camTarget: { cam: [1.5, 2.8, 8.8], look: [1.3, 1.6, 1.8] },
           camInfo: "Compression Smart H.265+ • Enregistrement Continu 24/7 sans coupure",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
@@ -3864,12 +3874,14 @@ if (typeof window !== "undefined") {
           id: "power_poe",
           icon: "⚡",
           shortLabel: "Switch PoE & Alim",
-          title: "Alimentations 12V, Switchs PoE, Onduleurs & Câblage",
-          badge: "Coffret Technique Garage",
+          title: "Alimentations 12V Stabilisées, Switchs PoE & Onduleurs",
+          badge: "Garage & Coffret Technique 3D",
           color: "#3b82f6",
           bgBadge: "bg-blue-500/20 text-blue-300 border-blue-400/40",
-          desc: "Coffret technique centralisé dans le garage : switch PoE longue portée, alimentations régulées et connectiques BNC / RJ45 blindées.",
+          desc: "Coffret technique centralisé dans le garage : switch PoE longue distance (250m), alimentation secourue et répartiteurs RJ45 / BNC blindés.",
           pinPos: { x: 19, y: 63 },
+          pos3D: [-4.2, 1.8, 2.4],
+          camTarget: { cam: [-7.2, 2.9, 9.5], look: [-4.2, 1.6, 2.2] },
           camInfo: "Alimentation Électrique Secourue • Switch Gigabit PoE 250 mètres",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
@@ -3881,7 +3893,6 @@ if (typeof window !== "undefined") {
 
       const curZone = zones[activeZone] || zones.cameras;
 
-      // Calcul du nombre de produits par zone pour les pastilles radar
       const matchedCounts = useMemo(() => {
         const counts = {};
         Object.keys(zones).forEach(zk => {
@@ -3908,7 +3919,7 @@ if (typeof window !== "undefined") {
         setZoneSearch("");
       };
 
-      // ==================== MOTEUR 3D THREE.JS AMÉLIORÉ (VUE 3D 360°) ====================
+      // ==================== MOTEUR 3D ARCHITECTURAL THREE.JS RÉALISTE ====================
       useEffect(() => {
         if (displayMode !== "3d") return;
         const el = mountRef.current;
@@ -3919,7 +3930,7 @@ if (typeof window !== "undefined") {
         const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
 
         const renderer = new T.WebGLRenderer({
-          antialias: !isMobile,
+          antialias: true,
           alpha: false,
           powerPreference: "high-performance",
           precision: isMobile ? "mediump" : "highp"
@@ -3928,75 +3939,93 @@ if (typeof window !== "undefined") {
         renderer.setSize(W(), H());
         if (T.ACESFilmicToneMapping) {
           renderer.toneMapping = T.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.25;
+          renderer.toneMappingExposure = 1.35;
         }
-        if (T.SRGBColorSpace) {
-          renderer.outputColorSpace = T.SRGBColorSpace;
+        if (T.sRGBEncoding) {
+          renderer.outputEncoding = T.sRGBEncoding;
         }
         renderer.shadowMap.enabled = !isMobile;
         if (!isMobile && T.PCFSoftShadowMap) {
           renderer.shadowMap.type = T.PCFSoftShadowMap;
         }
-        renderer.setClearColor(0x0b152c, 1);
+        renderer.setClearColor(0x071126, 1);
         el.innerHTML = "";
         el.appendChild(renderer.domElement);
 
         const scene = new T.Scene();
-        scene.fog = new T.FogExp2(0x0b152c, 0.016);
+        scene.fog = new T.FogExp2(0x071126, 0.015);
 
         const camera = new T.PerspectiveCamera(40, W() / H(), 0.1, 200);
         camera.position.set(13, 8.5, 16.5);
 
-        // Éclairage Crépusculaire Réaliste
-        const hemi = new T.HemisphereLight(0x93c5fd, 0x1e293b, 0.8);
+        // Éclairage Crépusculaire Architectural "Blue Hour" & Golden Sunset
+        const hemi = new T.HemisphereLight(0xa5b4fc, 0x1e293b, 0.85);
         scene.add(hemi);
 
-        const sun = new T.DirectionalLight(0xe0f2fe, 1.05);
-        sun.position.set(15, 22, 14);
+        // Soleil couchant doré
+        const sun = new T.DirectionalLight(0xffedd5, 1.25);
+        sun.position.set(16, 24, 15);
         if (!isMobile) {
           sun.castShadow = true;
           sun.shadow.mapSize.width = 1024;
           sun.shadow.mapSize.height = 1024;
+          sun.shadow.bias = -0.0005;
         }
         scene.add(sun);
 
-        // Lumières intérieures chaleureuses
-        const warmInterior1 = new T.PointLight(0xffb74d, 2.4, 14);
-        warmInterior1.position.set(1.2, 2.0, 0.5);
-        scene.add(warmInterior1);
+        // Lumière douce de remplissage bleu nuit
+        const fillLight = new T.DirectionalLight(0x38bdf8, 0.45);
+        fillLight.position.set(-14, 16, -12);
+        scene.add(fillLight);
 
-        const warmInterior2 = new T.PointLight(0xffcc80, 1.9, 12);
-        warmInterior2.position.set(0.5, 4.8, 0.2);
-        scene.add(warmInterior2);
+        // Lumières intérieures chaleureuses de la villa (donne vie à l'intérieur à travers les baies vitrées)
+        const warmSalon = new T.PointLight(0xffb74d, 2.6, 15);
+        warmSalon.position.set(1.4, 2.2, 0.8);
+        scene.add(warmSalon);
 
-        const garageWarmLight = new T.PointLight(0xffa726, 1.7, 9);
-        garageWarmLight.position.set(-4.2, 2.4, 2.8);
-        scene.add(garageWarmLight);
+        const warmUpper = new T.PointLight(0xffcc80, 2.2, 14);
+        warmUpper.position.set(0.6, 5.0, 0.4);
+        scene.add(warmUpper);
 
-        // Gyrophares Alarme
-        const alarmStrobeRed = new T.PointLight(0xef4444, 0, 22);
-        alarmStrobeRed.position.set(1.8, 5.3, 3.2);
+        const garageLight = new T.PointLight(0xffa726, 1.8, 10);
+        garageLight.position.set(-4.2, 2.4, 2.6);
+        scene.add(garageLight);
+
+        // Éclairage piscine turquoise immersif
+        const poolGlowLight = new T.PointLight(0x06b6d4, 2.0, 9);
+        poolGlowLight.position.set(1.2, 0.4, 6.2);
+        scene.add(poolGlowLight);
+
+        // Gyrophares Sirène Flash Alarme
+        const alarmStrobeRed = new T.PointLight(0xef4444, 0, 24);
+        alarmStrobeRed.position.set(1.8, 5.4, 3.2);
         scene.add(alarmStrobeRed);
-        const alarmStrobeBlue = new T.PointLight(0x3b82f6, 0, 22);
-        alarmStrobeBlue.position.set(2.4, 5.3, 3.2);
+        const alarmStrobeBlue = new T.PointLight(0x3b82f6, 0, 24);
+        alarmStrobeBlue.position.set(2.4, 5.4, 3.2);
         scene.add(alarmStrobeBlue);
 
         const villa = new T.Group();
         scene.add(villa);
 
-        // Création de textures procédurales sans aucune requête réseau
-        const createProceduralWood = () => {
+        // ==================== GÉNÉRATEURS DE TEXTURES PROCÉDURALES ====================
+        // 1. Bardage Bois Cèdre avec rainures horizontales
+        const createWoodCanvasTexture = () => {
           try {
             const cvs = document.createElement("canvas");
-            cvs.width = 256; cvs.height = 256;
+            cvs.width = 512; cvs.height = 512;
             const ctx = cvs.getContext("2d");
-            ctx.fillStyle = "#8a4b1f";
-            ctx.fillRect(0, 0, 256, 256);
-            for (let y = 0; y < 256; y += 16) {
-              ctx.fillStyle = y % 32 === 0 ? "#733d16" : "#9c5826";
-              ctx.fillRect(0, y, 256, 14);
-              ctx.fillStyle = "rgba(0,0,0,0.18)";
-              ctx.fillRect(0, y + 14, 256, 2);
+            ctx.fillStyle = "#8d481b";
+            ctx.fillRect(0, 0, 512, 512);
+            for (let y = 0; y < 512; y += 24) {
+              const grad = ctx.createLinearGradient(0, y, 0, y + 24);
+              grad.addColorStop(0, "#a25925");
+              grad.addColorStop(0.5, "#8d481b");
+              grad.addColorStop(0.9, "#753913");
+              grad.addColorStop(1, "#3c1b06"); // rainure sombre
+              ctx.fillStyle = grad;
+              ctx.fillRect(0, y, 512, 23);
+              ctx.fillStyle = "#261103";
+              ctx.fillRect(0, y + 23, 512, 1);
             }
             const tex = new T.CanvasTexture(cvs);
             tex.wrapS = T.RepeatWrapping;
@@ -4006,93 +4035,194 @@ if (typeof window !== "undefined") {
           } catch(e) { return null; }
         };
 
-        const woodTex = createProceduralWood();
+        // 2. Grandes dalles en pierre calcaire moderne pour terrasse et allées
+        const createPaverCanvasTexture = () => {
+          try {
+            const cvs = document.createElement("canvas");
+            cvs.width = 512; cvs.height = 512;
+            const ctx = cvs.getContext("2d");
+            ctx.fillStyle = "#334155";
+            ctx.fillRect(0, 0, 512, 512);
+            for (let x = 0; x < 512; x += 128) {
+              for (let y = 0; y < 512; y += 64) {
+                const shift = ((y / 64) % 2) * 64;
+                const px = (x + shift) % 512;
+                ctx.fillStyle = (x + y) % 3 === 0 ? "#3b4d66" : "#2f3d50";
+                ctx.fillRect(px, y, 126, 62);
+                ctx.fillStyle = "#1e293b"; // joint
+                ctx.fillRect(px + 126, y, 2, 64);
+                ctx.fillRect(px, y + 62, 128, 2);
+              }
+            }
+            const tex = new T.CanvasTexture(cvs);
+            tex.wrapS = T.RepeatWrapping;
+            tex.wrapT = T.RepeatWrapping;
+            tex.repeat.set(4, 4);
+            return tex;
+          } catch(e) { return null; }
+        };
 
-        // Matériaux Réalistes
-        const matStuccoWhite = new T.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.05 });
+        // 3. Écran CCTV 4 Caméras dans le salon
+        const createCctvMonitorTexture = () => {
+          try {
+            const cvs = document.createElement("canvas");
+            cvs.width = 256; cvs.height = 128;
+            const ctx = cvs.getContext("2d");
+            ctx.fillStyle = "#020617";
+            ctx.fillRect(0, 0, 256, 128);
+            // 4 quadrants
+            const colors = ["#0c4a6e", "#1e3a8a", "#0f766e", "#1e293b"];
+            for (let i = 0; i < 4; i++) {
+              const qx = (i % 2) * 128;
+              const qy = Math.floor(i / 2) * 64;
+              ctx.fillStyle = colors[i];
+              ctx.fillRect(qx + 2, qy + 2, 124, 60);
+              ctx.fillStyle = "#38bdf8";
+              ctx.font = "bold 9px monospace";
+              ctx.fillText(`CAM 0${i+1} • DAHUA 4K`, qx + 6, qy + 14);
+              ctx.fillStyle = "#22c55e";
+              ctx.beginPath();
+              ctx.arc(qx + 118, qy + 10, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            return new T.CanvasTexture(cvs);
+          } catch(e) { return null; }
+        };
+
+        const woodTex = createWoodCanvasTexture();
+        const paverTex = createPaverCanvasTexture();
+        const cctvTex = createCctvMonitorTexture();
+
+        // ==================== MATÉRIAUX ARCHITECTURAUX PBR ====================
+        const matStuccoWhite = new T.MeshStandardMaterial({
+          color: 0xf8fafc,
+          roughness: 0.35,
+          metalness: 0.05
+        });
         const matCedarWood = new T.MeshStandardMaterial({
           color: 0x9a5822,
-          roughness: 0.5,
+          roughness: 0.45,
           metalness: 0.1,
           map: woodTex || undefined
         });
-        const matAnthracite = new T.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.45 });
-        const matConcrete = new T.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7, metalness: 0.1 });
-        const matPavement = new T.MeshStandardMaterial({ color: 0x334155, roughness: 0.65, metalness: 0.15 });
-        const matLawn = new T.MeshStandardMaterial({ color: 0x0f3923, roughness: 0.88 });
-        const matHedge = new T.MeshStandardMaterial({ color: 0x14532d, roughness: 0.85 });
+        const matAnthracite = new T.MeshStandardMaterial({
+          color: 0x1e293b,
+          roughness: 0.3,
+          metalness: 0.5
+        });
+        const matConcrete = new T.MeshStandardMaterial({
+          color: 0x94a3b8,
+          roughness: 0.7,
+          metalness: 0.15
+        });
+        const matPavement = new T.MeshStandardMaterial({
+          color: 0x334155,
+          roughness: 0.6,
+          metalness: 0.15,
+          map: paverTex || undefined
+        });
+        const matLawn = new T.MeshStandardMaterial({
+          color: 0x14532d,
+          roughness: 0.85
+        });
+        const matHedge = new T.MeshStandardMaterial({
+          color: 0x166534,
+          roughness: 0.88
+        });
         const matGlassWarm = new T.MeshStandardMaterial({
           color: 0xfef08a,
           emissive: 0xf59e0b,
           emissiveIntensity: 0.65,
           roughness: 0.1,
-          metalness: 0.2,
+          metalness: 0.25,
           transparent: true,
           opacity: 0.88
         });
         const matBalconyGlass = new T.MeshStandardMaterial({
           color: 0xbae6fd,
           roughness: 0.05,
-          metalness: 0.3,
+          metalness: 0.4,
           transparent: true,
-          opacity: 0.35
+          opacity: 0.38
         });
 
-        // Sol, pelouse & piscine
-        const ground = new T.Mesh(new T.PlaneGeometry(42, 36), matPavement);
+        // ==================== 1. SOL, TERRASSE & PISCINE MODERNE ====================
+        const ground = new T.Mesh(new T.PlaneGeometry(44, 38), matPavement);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         villa.add(ground);
 
+        // Pelouse avant avec bordure nette
         const lawn = new T.Mesh(new T.BoxGeometry(16, 0.12, 11), matLawn);
         lawn.position.set(2.5, 0.06, 4.8);
         lawn.receiveShadow = true;
         villa.add(lawn);
 
-        const poolBorder = new T.Mesh(new T.BoxGeometry(5.8, 0.22, 3.4), matStuccoWhite);
-        poolBorder.position.set(1.2, 0.11, 6.2);
+        // Piscine miroir avec eau turquoise lumineuse
+        const poolBorder = new T.Mesh(new T.BoxGeometry(5.8, 0.24, 3.4), matStuccoWhite);
+        poolBorder.position.set(1.2, 0.12, 6.2);
+        poolBorder.receiveShadow = true;
         villa.add(poolBorder);
-        const poolWater = new T.Mesh(
-          new T.BoxGeometry(5.3, 0.25, 2.9),
-          new T.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 0.55, roughness: 0.1 })
-        );
-        poolWater.position.set(1.2, 0.12, 6.2);
+
+        const poolWaterMat = new T.MeshStandardMaterial({
+          color: 0x06b6d4,
+          emissive: 0x0891b2,
+          emissiveIntensity: 0.55,
+          roughness: 0.08,
+          metalness: 0.35,
+          transparent: true,
+          opacity: 0.92
+        });
+        const poolWater = new T.Mesh(new T.BoxGeometry(5.3, 0.26, 2.9), poolWaterMat);
+        poolWater.position.set(1.2, 0.13, 6.2);
         villa.add(poolWater);
 
-        // Allée piétonne dalles
+        // Chaises longues au bord de la piscine
+        const matLounger = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+        [-0.8, 0.2].forEach(lx => {
+          const lounger = new T.Mesh(new T.BoxGeometry(0.7, 0.18, 1.8), matLounger);
+          lounger.position.set(3.8, 0.2, 6.8 + lx);
+          lounger.rotation.y = -Math.PI / 2;
+          villa.add(lounger);
+        });
+
+        // Allée piétonne dalles pas japonais vers la porte d'entrée
         for (let i = 0; i < 6; i++) {
-          const stepSlab = new T.Mesh(new T.BoxGeometry(1.5, 0.15, 0.85), matConcrete);
+          const stepSlab = new T.Mesh(new T.BoxGeometry(1.55, 0.14, 0.85), matConcrete);
           stepSlab.position.set(5.4, 0.08, 3.2 + i * 1.15);
+          stepSlab.receiveShadow = true;
           villa.add(stepSlab);
         }
 
-        // Haies & Arbres
-        const frontHedge = new T.Mesh(new T.BoxGeometry(7.2, 0.95, 0.85), matHedge);
+        // Haies paysagères modernes taillées au carré
+        const frontHedge = new T.Mesh(new T.BoxGeometry(7.4, 0.95, 0.85), matHedge);
         frontHedge.position.set(0.8, 0.5, 3.7);
         frontHedge.castShadow = true;
         villa.add(frontHedge);
 
-        [-8.5, 8.8, 9.8].forEach((tx, idx) => {
-          const trunk = new T.Mesh(new T.CylinderGeometry(0.18, 0.24, 1.6, 12), matCedarWood);
-          trunk.position.set(tx, 0.8, idx === 0 ? 1.5 : -1.5 + idx * 2.5);
+        // Arbres méditerranéens (cyprès / olivier)
+        [-8.8, 8.8, 9.8].forEach((tx, idx) => {
+          const trunk = new T.Mesh(new T.CylinderGeometry(0.18, 0.25, 1.8, 12), matCedarWood);
+          trunk.position.set(tx, 0.9, idx === 0 ? 1.5 : -1.5 + idx * 2.5);
           villa.add(trunk);
-          const foliage = new T.Mesh(new T.SphereGeometry(1.25, 20, 20), matHedge);
+          const foliage = new T.Mesh(new T.SphereGeometry(1.35, 18, 18), matHedge);
           foliage.scale.y = 1.45;
-          foliage.position.set(tx, 2.5, idx === 0 ? 1.5 : -1.5 + idx * 2.5);
+          foliage.position.set(tx, 2.7, idx === 0 ? 1.5 : -1.5 + idx * 2.5);
           foliage.castShadow = true;
           villa.add(foliage);
         });
 
-        // Volume Garage (Gauche)
+        // ==================== 2. GARAGE (GAUCHE) & VOITURE BERLINE / SUV ====================
         const garageBlock = new T.Mesh(new T.BoxGeometry(5.6, 3.2, 5.8), matStuccoWhite);
         garageBlock.position.set(-4.2, 1.6, -0.2);
         garageBlock.castShadow = true;
         garageBlock.receiveShadow = true;
         villa.add(garageBlock);
 
+        // Porte de garage sectionnelle anthracite
         const garageDoor = new T.Mesh(
           new T.BoxGeometry(4.2, 2.35, 0.12),
-          new T.MeshStandardMaterial({ color: 0x78716c, roughness: 0.45, metalness: 0.35 })
+          new T.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.4 })
         );
         garageDoor.position.set(-4.2, 1.18, 2.72);
         villa.add(garageDoor);
@@ -4102,16 +4232,68 @@ if (typeof window !== "undefined") {
           villa.add(line);
         }
 
+        // Coffret Technique PoE & Alimentation dans le garage (Gauche)
+        const poeCabinet = new T.Mesh(
+          new T.BoxGeometry(0.55, 0.75, 0.22),
+          new T.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.6, roughness: 0.3 })
+        );
+        poeCabinet.position.set(-6.8, 1.6, 2.2);
+        villa.add(poeCabinet);
+        // LEDs réseau du switch PoE
+        const poeLed = new T.Mesh(new T.SphereGeometry(0.06, 8, 8), new T.MeshBasicMaterial({ color: 0x22c55e }));
+        poeLed.position.set(-6.8, 1.8, 2.33);
+        villa.add(poeLed);
+
+        // Balcon vitré au-dessus du garage
         const terraceGlass = new T.Mesh(new T.BoxGeometry(5.4, 0.85, 0.08), matBalconyGlass);
         terraceGlass.position.set(-4.2, 3.65, 2.65);
         villa.add(terraceGlass);
 
-        // Corps Central & Salon Vitré
+        // VOITURE SUV MODERNE STATIONNÉE DEVANT LE GARAGE
+        const car = new T.Group();
+        const matCarPaint = new T.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.15 });
+        const matCarGlass = new T.MeshStandardMaterial({ color: 0x020617, metalness: 0.95, roughness: 0.05 });
+        const carLower = new T.Mesh(new T.BoxGeometry(2.1, 0.72, 4.45), matCarPaint);
+        carLower.position.y = 0.58;
+        carLower.castShadow = true;
+        car.add(carLower);
+        const carUpper = new T.Mesh(new T.BoxGeometry(1.75, 0.6, 2.35), matCarGlass);
+        carUpper.position.set(0, 1.18, -0.15);
+        car.add(carUpper);
+
+        // 4 Roues avec jantes alliage
+        const wheelGeo = new T.CylinderGeometry(0.38, 0.38, 0.28, 24);
+        const wheelMat = new T.MeshStandardMaterial({ color: 0x020617, roughness: 0.6 });
+        const rimMat = new T.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+        [[-1.02, 0.38, 1.35], [1.02, 0.38, 1.35], [-1.02, 0.38, -1.35], [1.02, 0.38, -1.35]].forEach(wp => {
+          const w = new T.Mesh(wheelGeo, wheelMat);
+          w.rotation.z = Math.PI / 2;
+          w.position.set(wp[0], wp[1], wp[2]);
+          const rim = new T.Mesh(new T.CylinderGeometry(0.25, 0.25, 0.29, 16), rimMat);
+          rim.rotation.z = Math.PI / 2;
+          rim.position.set(wp[0], wp[1], wp[2]);
+          car.add(w);
+          car.add(rim);
+        });
+        // Phares LED avant ice-blue et feux arrière rouges
+        const hlMat = new T.MeshBasicMaterial({ color: 0x38bdf8 });
+        const tlMat = new T.MeshBasicMaterial({ color: 0xef4444 });
+        const hl1 = new T.Mesh(new T.BoxGeometry(0.42, 0.12, 0.08), hlMat); hl1.position.set(-0.72, 0.62, 2.24); car.add(hl1);
+        const hl2 = new T.Mesh(new T.BoxGeometry(0.42, 0.12, 0.08), hlMat); hl2.position.set(0.72, 0.62, 2.24); car.add(hl2);
+        const tl1 = new T.Mesh(new T.BoxGeometry(0.44, 0.12, 0.08), tlMat); tl1.position.set(-0.72, 0.66, -2.24); car.add(tl1);
+        const tl2 = new T.Mesh(new T.BoxGeometry(0.44, 0.12, 0.08), tlMat); tl2.position.set(0.72, 0.66, -2.24); car.add(tl2);
+
+        car.position.set(-4.6, 0, 6.2);
+        car.rotation.y = 0.26;
+        villa.add(car);
+
+        // ==================== 3. SALON VITRÉ & CENTRALE VIDÉO XVR ====================
         const mainGroundFloor = new T.Mesh(new T.BoxGeometry(8.6, 3.3, 6.2), matCedarWood);
         mainGroundFloor.position.set(2.4, 1.65, -0.6);
         mainGroundFloor.castShadow = true;
         villa.add(mainGroundFloor);
 
+        // Grande baie vitrée coulissante
         const livingWindow = new T.Mesh(new T.BoxGeometry(4.8, 2.6, 0.14), matGlassWarm);
         livingWindow.position.set(1.3, 1.45, 2.52);
         villa.add(livingWindow);
@@ -4121,23 +4303,34 @@ if (typeof window !== "undefined") {
           villa.add(mullion);
         });
 
-        const tvScreen = new T.Mesh(
-          new T.BoxGeometry(1.5, 0.9, 0.1),
-          new T.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 1.1 })
-        );
+        // ÉCRAN SURVEILLANCE CCTV 4K DU SALON
+        const tvMat = new T.MeshStandardMaterial({
+          map: cctvTex || undefined,
+          color: 0x38bdf8,
+          emissive: 0x0284c7,
+          emissiveIntensity: 1.15
+        });
+        const tvScreen = new T.Mesh(new T.BoxGeometry(1.65, 0.95, 0.1), tvMat);
         tvScreen.position.set(1.3, 1.75, 1.8);
         villa.add(tvScreen);
 
-        // Porte d'entrée
+        // Boîtier Enregistreur XVR/NVR sous l'écran
+        const xvrBox = new T.Mesh(
+          new T.BoxGeometry(0.85, 0.18, 0.45),
+          new T.MeshStandardMaterial({ color: 0x020617, metalness: 0.8, roughness: 0.2 })
+        );
+        xvrBox.position.set(1.3, 1.15, 1.8);
+        villa.add(xvrBox);
+
+        // Porte d'entrée contemporaine en bois noble (Droite)
         const entranceFrame = new T.Mesh(new T.BoxGeometry(1.8, 2.7, 0.18), matAnthracite);
-        entranceFrame.position.set(5.4, 1.4, 2.51);
         entranceFrame.position.set(5.4, 1.4, 2.51);
         villa.add(entranceFrame);
         const entranceDoor = new T.Mesh(new T.BoxGeometry(1.15, 2.5, 0.22), matCedarWood);
         entranceDoor.position.set(5.4, 1.35, 2.53);
         villa.add(entranceDoor);
 
-        // Étage Supérieur
+        // ==================== 4. ÉTAGE SUPÉRIEUR (CUBE BLANC MODERNE EN PORTE-À-FAUX) ====================
         const upperWoodBlock = new T.Mesh(new T.BoxGeometry(9.2, 3.0, 5.8), matCedarWood);
         upperWoodBlock.position.set(0.6, 4.7, -0.7);
         upperWoodBlock.castShadow = true;
@@ -4148,66 +4341,37 @@ if (typeof window !== "undefined") {
         upperWhiteCube.castShadow = true;
         villa.add(upperWhiteCube);
 
+        // Baies vitrées illuminées de l'étage
         const upWinLeft = new T.Mesh(new T.BoxGeometry(2.6, 2.1, 0.14), matGlassWarm);
         upWinLeft.position.set(-1.6, 4.65, 2.22);
         villa.add(upWinLeft);
-        const upWinNarrow = new T.Mesh(new T.BoxGeometry(0.75, 2.1, 0.14), matGlassWarm);
-        upWinNarrow.position.set(0.65, 4.75, 2.97);
-        villa.add(upWinNarrow);
         const upWinCorner = new T.Mesh(new T.BoxGeometry(1.85, 1.55, 0.14), matGlassWarm);
         upWinCorner.position.set(3.05, 5.0, 2.97);
         villa.add(upWinCorner);
 
-        // Toiture Débordante Contemporaine
+        // Toiture débordante avec sous-face bois et spots LED
         const mainRoof = new T.Mesh(new T.BoxGeometry(12.6, 0.28, 7.6), matAnthracite);
         mainRoof.position.set(0.3, 6.45, -0.1);
         mainRoof.rotation.z = 0.03;
         mainRoof.castShadow = true;
         villa.add(mainRoof);
+
         const roofSoffitWood = new T.Mesh(new T.BoxGeometry(12.2, 0.12, 7.2), matCedarWood);
         roofSoffitWood.position.set(0.3, 6.28, -0.1);
         roofSoffitWood.rotation.z = 0.03;
         villa.add(roofSoffitWood);
 
+        // Spots LED chauds encastrés sous la toiture
         [-4.5, -2.5, -0.5, 1.5, 3.5, 5.2].forEach(sx => {
           const spot = new T.Mesh(
-            new T.SphereGeometry(0.11, 12, 12),
+            new T.SphereGeometry(0.12, 12, 12),
             new T.MeshBasicMaterial({ color: 0xfef08a })
           );
           spot.position.set(sx, 6.22, 2.85);
           villa.add(spot);
         });
 
-        // Voiture moderne garée devant le garage
-        const car = new T.Group();
-        const matCarPaint = new T.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85, roughness: 0.18 });
-        const matCarGlass = new T.MeshStandardMaterial({ color: 0x090d16, metalness: 0.9, roughness: 0.08 });
-        const carLower = new T.Mesh(new T.BoxGeometry(2.05, 0.68, 4.4), matCarPaint);
-        carLower.position.y = 0.56;
-        carLower.castShadow = true;
-        car.add(carLower);
-        const carUpper = new T.Mesh(new T.BoxGeometry(1.72, 0.56, 2.3), matCarGlass);
-        carUpper.position.set(0, 1.12, -0.15);
-        car.add(carUpper);
-        const wheelGeo = new T.CylinderGeometry(0.38, 0.38, 0.26, 24);
-        const wheelMat = new T.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
-        [[-1.02, 0.38, 1.35], [1.02, 0.38, 1.35], [-1.02, 0.38, -1.35], [1.02, 0.38, -1.35]].forEach(wp => {
-          const w = new T.Mesh(wheelGeo, wheelMat);
-          w.rotation.z = Math.PI / 2;
-          w.position.set(wp[0], wp[1], wp[2]);
-          car.add(w);
-        });
-        const hlMat = new T.MeshBasicMaterial({ color: 0x38bdf8 });
-        const tlMat = new T.MeshBasicMaterial({ color: 0xef4444 });
-        const hl1 = new T.Mesh(new T.BoxGeometry(0.38, 0.14, 0.08), hlMat); hl1.position.set(-0.68, 0.62, 2.21); car.add(hl1);
-        const hl2 = new T.Mesh(new T.BoxGeometry(0.38, 0.14, 0.08), hlMat); hl2.position.set(0.68, 0.62, 2.21); car.add(hl2);
-        const tl1 = new T.Mesh(new T.BoxGeometry(0.42, 0.14, 0.08), tlMat); tl1.position.set(-0.68, 0.65, -2.21); car.add(tl1);
-        const tl2 = new T.Mesh(new T.BoxGeometry(0.42, 0.14, 0.08), tlMat); tl2.position.set(0.68, 0.65, -2.21); car.add(tl2);
-        car.position.set(-4.6, 0, 6.2);
-        car.rotation.y = 0.28;
-        villa.add(car);
-
-        // Pilier Digicode & Portail
+        // ==================== 5. PILIER PORTAIL & VRAI DIGICODE 3D ====================
         const gatePillar = new T.Mesh(new T.BoxGeometry(0.95, 2.35, 0.95), matConcrete);
         gatePillar.position.set(6.45, 1.18, 7.6);
         gatePillar.castShadow = true;
@@ -4217,9 +4381,10 @@ if (typeof window !== "undefined") {
         gatePillarLeft.position.set(4.15, 1.18, 7.6);
         villa.add(gatePillarLeft);
 
+        // Clavier Digicode 3D
         const digicodeBox = new T.Mesh(
           new T.BoxGeometry(0.34, 0.56, 0.12),
-          new T.MeshStandardMaterial({ color: 0x020617, metalness: 0.8, roughness: 0.15 })
+          new T.MeshStandardMaterial({ color: 0x020617, metalness: 0.85, roughness: 0.15 })
         );
         digicodeBox.position.set(6.45, 1.42, 8.1);
         villa.add(digicodeBox);
@@ -4231,6 +4396,7 @@ if (typeof window !== "undefined") {
         digicodeGlow.position.set(6.45, 1.42, 8.11);
         villa.add(digicodeGlow);
 
+        // Halo lumineux au sol autour du pilier Digicode
         const digiRing = new T.Mesh(
           new T.RingGeometry(0.85, 1.05, 32),
           new T.MeshBasicMaterial({ color: 0x10b981, side: T.DoubleSide })
@@ -4239,7 +4405,7 @@ if (typeof window !== "undefined") {
         digiRing.position.set(6.45, 0.05, 7.6);
         villa.add(digiRing);
 
-        // Sirène d'Alarme
+        // ==================== 6. VRAIE SIRÈNE D'ALARME 3D FLASH ====================
         const sirenBox = new T.Mesh(
           new T.BoxGeometry(0.48, 0.68, 0.22),
           new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
@@ -4254,7 +4420,7 @@ if (typeof window !== "undefined") {
         sirenBeacon.position.set(1.65, 5.18, 3.02);
         villa.add(sirenBeacon);
 
-        // Caméras 3D
+        // ==================== 7. CAMÉRAS 3D & CÔNES LASER VOLUMÉTRIQUES ====================
         const make3DCam = (x, y, z, rotY, colorHex) => {
           const g = new T.Group();
           g.position.set(x, y, z);
@@ -4267,7 +4433,7 @@ if (typeof window !== "undefined") {
           const coneMat = new T.MeshBasicMaterial({
             color: colorHex,
             transparent: true,
-            opacity: 0.22,
+            opacity: 0.24,
             side: T.DoubleSide,
             depthWrite: false
           });
@@ -4282,12 +4448,74 @@ if (typeof window !== "undefined") {
         const camFacade = make3DCam(-4.6, 6.05, 2.8, -0.15, 0x38bdf8);
         const camPtz = make3DCam(5.2, 6.22, 2.8, 0.25, 0xa855f7);
 
-        // Gestes rotation
+        // ==================== 8. PINS HOTSPOTS FLOTTANTS DANS L'ESPACE 3D ====================
+        const hotspotObjects = [];
+        Object.values(zones).forEach(z => {
+          const pinGroup = new T.Group();
+          pinGroup.position.set(z.pos3D[0], z.pos3D[1] + 0.65, z.pos3D[2]);
+          pinGroup.userData = { zoneId: z.id };
+
+          // Anneau extérieur radar pulsant
+          const outerRingGeo = new T.RingGeometry(0.4, 0.48, 32);
+          const outerRingMat = new T.MeshBasicMaterial({
+            color: new T.Color(z.color),
+            side: T.DoubleSide,
+            transparent: true,
+            opacity: 0.85
+          });
+          const outerRing = new T.Mesh(outerRingGeo, outerRingMat);
+          pinGroup.add(outerRing);
+
+          // Disque intérieur avec pastille colorée
+          const innerCircleGeo = new T.CircleGeometry(0.32, 32);
+          const innerCircleMat = new T.MeshBasicMaterial({
+            color: 0x020617,
+            side: T.DoubleSide
+          });
+          const innerCircle = new T.Mesh(innerCircleGeo, innerCircleMat);
+          pinGroup.add(innerCircle);
+
+          // Point central brillant
+          const dotGeo = new T.SphereGeometry(0.14, 16, 16);
+          const dotMat = new T.MeshBasicMaterial({ color: new T.Color(z.color) });
+          const dot = new T.Mesh(dotGeo, dotMat);
+          pinGroup.add(dot);
+
+          villa.add(pinGroup);
+          hotspotObjects.push({ group: pinGroup, ring: outerRing, zoneId: z.id });
+        });
+
+        // ==================== INTERACTION TACTILE MOBILE & SOURIS ====================
         let isDragging = false;
         let is3DTouch = false;
         let isScrollTouch = false;
         let prevX = 0, prevY = 0;
         let startX = 0, startY = 0;
+
+        // Raycaster pour cliquer directement sur les objets ou pins 3D
+        const raycaster = new T.Raycaster();
+        const mouseVec = new T.Vector2();
+
+        const checkRaycastClick = (clientX, clientY) => {
+          const rect = el.getBoundingClientRect();
+          mouseVec.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+          mouseVec.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+          raycaster.setFromCamera(mouseVec, camera);
+
+          const clickableMeshes = [];
+          hotspotObjects.forEach(h => clickableMeshes.push(...h.group.children));
+          const intersects = raycaster.intersectObjects(clickableMeshes, false);
+
+          if (intersects.length > 0) {
+            let p = intersects[0].object.parent;
+            while (p && !p.userData.zoneId) p = p.parent;
+            if (p && p.userData.zoneId) {
+              selectZone(p.userData.zoneId);
+              return true;
+            }
+          }
+          return false;
+        };
 
         const onDown = (e) => {
           const pt = e.touches ? e.touches[0] : e;
@@ -4299,8 +4527,6 @@ if (typeof window !== "undefined") {
           is3DTouch = false;
           if (!e.touches) {
             isDragging = true;
-            stateRef.current.viewOrbit = true;
-            setViewOrbit(true);
           }
         };
 
@@ -4313,10 +4539,12 @@ if (typeof window !== "undefined") {
             if (!is3DTouch && !isScrollTouch) {
               const totalDx = Math.abs(pt.clientX - startX);
               const totalDy = Math.abs(pt.clientY - startY);
+              // Si le geste est vertical, on laisse défiler la page naturellement
               if (totalDy > totalDx && totalDy > 7) {
                 isScrollTouch = true;
                 return;
               } else if (totalDx > 7) {
+                // Si horizontal, on pivote la villa 3D
                 is3DTouch = true;
                 stateRef.current.viewOrbit = true;
                 setViewOrbit(true);
@@ -4328,6 +4556,8 @@ if (typeof window !== "undefined") {
               stateRef.current.userRotX = Math.max(-0.35, Math.min(0.65, stateRef.current.userRotX + dy * 0.005));
             }
           } else if (isDragging) {
+            stateRef.current.viewOrbit = true;
+            setViewOrbit(true);
             stateRef.current.userRotY -= dx * 0.007;
             stateRef.current.userRotX = Math.max(-0.35, Math.min(0.65, stateRef.current.userRotX + dy * 0.005));
           }
@@ -4336,7 +4566,12 @@ if (typeof window !== "undefined") {
           prevY = pt.clientY;
         };
 
-        const onUp = () => {
+        const onUp = (e) => {
+          const totalDist = Math.hypot(prevX - startX, prevY - startY);
+          if (totalDist < 6) {
+            // Clic direct : vérifier si l'utilisateur a cliqué sur un pin 3D
+            checkRaycastClick(startX, startY);
+          }
           isDragging = false;
           is3DTouch = false;
           isScrollTouch = false;
@@ -4357,20 +4592,12 @@ if (typeof window !== "undefined") {
         };
         window.addEventListener("resize", onResize);
 
-        const zoneTargets = {
-          cameras:  { cam: [-6.2, 5.2, 11.5], look: [-4.4, 3.2, 3.8] },
-          alarm:    { cam: [2.2, 6.2, 9.8],   look: [1.65, 5.1, 2.8] },
-          digicode: { cam: [8.8, 2.8, 12.2],  look: [6.2, 1.4, 7.6] },
-          wifi_ptz: { cam: [8.5, 6.4, 10.8],  look: [4.8, 4.8, 2.8] },
-          xvr_hdd:  { cam: [1.5, 3.0, 9.5],   look: [1.3, 1.6, 1.8] },
-          power_poe:{ cam: [-7.5, 3.2, 10.2], look: [-4.2, 1.5, 2.5] }
-        };
-
         let raf = null;
         let isElementVisible = true;
         const clock = new T.Clock();
         const curLook = new T.Vector3(0, 2.2, 1.5);
 
+        // Optimisation Mobile majeure : pause le rendu quand hors écran
         const io = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             isElementVisible = entry.isIntersecting;
@@ -4390,37 +4617,53 @@ if (typeof window !== "undefined") {
           const t = clock.getElapsedTime();
           const st = stateRef.current;
 
+          // Animation eau de piscine (vaguelettes)
+          poolWater.scale.y = 1 + Math.sin(t * 3.5) * 0.08;
+
+          // Animation rotation des caméras 3D
           camFacade.group.rotation.y = -0.15 + Math.sin(t * 0.9) * 0.22;
           camPtz.group.rotation.y = 0.25 + Math.cos(t * 1.1) * 0.35;
-          camFacade.coneMat.opacity = st.activeZone === "cameras" ? 0.38 : 0.16;
-          camPtz.coneMat.opacity = st.activeZone === "wifi_ptz" ? 0.38 : 0.16;
+          camFacade.coneMat.opacity = st.activeZone === "cameras" ? 0.42 : 0.16;
+          camPtz.coneMat.opacity = st.activeZone === "wifi_ptz" ? 0.42 : 0.16;
 
+          // Animation halo Digicode
           digiRing.scale.setScalar(1 + Math.sin(t * 4) * 0.15);
 
+          // Animation gyrophares alarme
           if (st.activeZone === "alarm") {
             const flash = Math.sin(t * 14) > 0;
-            alarmStrobeRed.intensity = flash ? 4.5 : 0.4;
-            alarmStrobeBlue.intensity = !flash ? 4.5 : 0.4;
+            alarmStrobeRed.intensity = flash ? 5.5 : 0.4;
+            alarmStrobeBlue.intensity = !flash ? 5.5 : 0.4;
             sirenBeacon.material.color.setHex(flash ? 0xef4444 : 0x3b82f6);
           } else {
-            alarmStrobeRed.intensity = (Math.sin(t * 3) > 0.7) ? 1.2 : 0;
+            alarmStrobeRed.intensity = (Math.sin(t * 3) > 0.7) ? 1.4 : 0;
             alarmStrobeBlue.intensity = 0;
             sirenBeacon.material.color.setHex(0xef4444);
           }
 
+          // Animation et orientation des Pins Hotspots 3D (Billboard vers la caméra)
+          hotspotObjects.forEach(h => {
+            h.group.lookAt(camera.position);
+            const isSel = st.activeZone === h.zoneId;
+            const pulse = 1 + Math.sin(t * 4) * (isSel ? 0.22 : 0.12);
+            h.ring.scale.setScalar(pulse);
+            h.group.scale.setScalar(isSel ? 1.25 : 0.9);
+          });
+
+          // Cibles de caméra 3D fluides (Glide cinématique)
           let desiredCam = { x: 13, y: 7.5, z: 16.5 };
           let desiredLook = { x: 0.5, y: 2.4, z: 1.5 };
 
-          if (!st.viewOrbit && zoneTargets[st.activeZone]) {
-            const zt = zoneTargets[st.activeZone];
+          if (!st.viewOrbit && curZone.camTarget) {
+            const zt = curZone.camTarget;
             desiredCam = {
-              x: zt.cam[0] + Math.sin(t * 0.5) * 0.45,
+              x: zt.cam[0] + Math.sin(t * 0.4) * 0.35,
               y: zt.cam[1],
               z: zt.cam[2]
             };
             desiredLook = { x: zt.look[0], y: zt.look[1], z: zt.look[2] };
           } else {
-            const a = t * 0.14 + st.userRotY;
+            const a = t * 0.12 + st.userRotY;
             const r = 18.5;
             desiredCam = {
               x: Math.sin(a) * r,
@@ -4460,47 +4703,47 @@ if (typeof window !== "undefined") {
 
       return (
         <section className="rounded-[2.25rem] bg-slate-950 text-white border border-blue-500/30 shadow-[0_30px_80px_-25px_rgba(37,99,235,0.45)] overflow-hidden">
-          {/* En-tête de la Villa : Titre, Sélecteur de Mode (Photo 4K vs 3D) et Pastilles */}
+          {/* En-tête : Titre, Sélecteur de Mode et Pastille Stock */}
           <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-white/10 bg-slate-900/80 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 max-w-full">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                <span>Simulateur Vidéosurveillance &amp; Sécurité Villa • Stock Direct</span>
+                <span>Simulateur Villa 3D Temps Réel • Équipements &amp; Stock Magasin</span>
               </div>
               <h2 className="font-display text-xl sm:text-3xl font-extrabold text-white mt-1.5 flex flex-wrap items-center gap-2">
-                <span>Villa Sécurisée Interactive</span>
-                <span className="text-gradient-hero">&amp; Équipements Réels</span>
+                <span>Villa Sécurisée Interactive 3D</span>
+                <span className="text-gradient-hero">&amp; Articles en Direct</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Cliquez sur un équipement (Caméras, Alarme, Digicode...) pour cibler son emplacement et commander les <strong>articles en stock</strong>.
+                Pivotez la villa en 3D ou cliquez sur un équipement : la caméra 3D zoome dessus et affiche ses <strong>articles en stock</strong>.
               </p>
             </div>
 
-            {/* Commutateur de Mode : [📸 Vue Ultra-Réaliste 4K] ou [🎮 Vue 3D 360°] */}
+            {/* Commutateur de Mode : [🎮 Vue 3D 360° (Défaut)] ou [📸 Vue Photo 4K] */}
             <div className="flex items-center gap-2 bg-slate-950/90 p-1.5 rounded-2xl border border-white/15 shadow-inner flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setDisplayMode("photo")}
-                className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                  displayMode === "photo"
-                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/30 ring-2 ring-cyan-400/40"
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <span>📸</span>
-                <span>Vue Ultra-Réaliste 4K</span>
-              </button>
               <button
                 type="button"
                 onClick={() => setDisplayMode("3d")}
                 className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
                   displayMode === "3d"
-                    ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-400/40"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/30 ring-2 ring-cyan-400/40"
                     : "text-slate-300 hover:text-white hover:bg-white/10"
                 }`}
               >
                 <span>🎮</span>
-                <span>Vue 3D 360°</span>
+                <span>Vue 3D 360° (Interactive)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDisplayMode("photo")}
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                  displayMode === "photo"
+                    ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-400/40"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <span>📸</span>
+                <span>Vue Photo 4K</span>
               </button>
             </div>
           </div>
@@ -4532,7 +4775,7 @@ if (typeof window !== "undefined") {
               <button
                 type="button"
                 onClick={() => setViewOrbit(v => !v)}
-                className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
+                className={`ml-auto px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
                   viewOrbit
                     ? "bg-emerald-600 border-emerald-300 text-white shadow-lg ring-2 ring-emerald-400/40 scale-[1.02]"
                     : "bg-slate-900/90 hover:bg-white/15 border-white/15 text-cyan-300"
@@ -4551,125 +4794,37 @@ if (typeof window !== "undefined") {
                     ? "bg-emerald-700/80 border-emerald-400 text-emerald-100 ring-2 ring-emerald-400/50"
                     : "bg-slate-900/90 border-white/15 text-slate-300 hover:text-white"
                 }`}
-                title="Basculer le mode vision nocturne infrarouge"
               >
                 <span>{nightVision ? "🌙 Nuit IR Activée" : "☀️ Crépuscule"}</span>
               </button>
             )}
           </div>
 
-          {/* GRILLE PRINCIPALE : VILLA À GAUCHE (7 cols) + ARTICLES EN DIRECT À DROITE (5 cols) */}
+          {/* GRILLE PRINCIPALE : VILLA 3D À GAUCHE (7 cols) + ARTICLES EN DIRECT À DROITE (5 cols) */}
           <div className="grid lg:grid-cols-12 gap-4 sm:gap-6 p-3 sm:p-8 items-start w-full max-w-full overflow-hidden">
-            {/* CONTAINER VISUEL : PHOTO 4K ULTRA-RÉALISTE OU MOTEUR 3D */}
+            {/* CONTAINER VISUEL : MOTEUR 3D ARCHITECTURAL (DÉFAUT) OU VUE PHOTO 4K */}
             <div className="lg:col-span-7 space-y-3 w-full min-w-0 max-w-full overflow-hidden">
-              {displayMode === "photo" ? (
-                /* ==================== VUE PHOTO ULTRA-RÉALISTE 4K AVEC HOTSPOTS RADAR ==================== */
-                <div className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-slate-950 shadow-2xl select-none w-full max-w-full aspect-[16/9] min-h-[260px] sm:min-h-[440px]">
-                  {/* Photo Haute Définition de la Villa Architecturale */}
-                  <img
-                    src="/media/villa/smart_villa_security.webp"
-                    alt="Villa intelligente moderne sécurisée"
-                    onError={(e) => {
-                      if (!e.target.dataset.triedFallback) {
-                        e.target.dataset.triedFallback = "1";
-                        e.target.src = "media/villa/smart_villa_security.webp";
-                      } else if (!e.target.dataset.triedJpg) {
-                        e.target.dataset.triedJpg = "1";
-                        e.target.src = "/media/villa/smart_villa_security.jpg";
-                      }
-                    }}
-                    className={`w-full h-full object-cover transition duration-700 ${
-                      nightVision ? "brightness-110 contrast-125 saturate-50 hue-rotate-[95deg] filter" : ""
-                    }`}
-                  />
+              {displayMode === "3d" ? (
+                /* ==================== VUE 3D ARCHITECTURALE THREE.JS ==================== */
+                <div
+                  style={{ touchAction: "pan-y" }}
+                  className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-[#071126] h-[300px] sm:h-[480px] shadow-2xl cursor-grab active:cursor-grabbing select-none w-full max-w-full"
+                >
+                  <div ref={mountRef} className="absolute inset-0 w-full h-full" />
 
-                  {/* Gradient de profondeur et ambiance */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40 pointer-events-none" />
-
-                  {/* Effet Scanner / Vision Nocturne HUD si activé */}
-                  {nightVision && (
-                    <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_40%,rgba(6,78,59,0.4)_100%)] border-2 border-emerald-500/40 shadow-inner">
-                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[10px] sm:text-xs font-mono font-black flex items-center gap-1.5 animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        <span>IR NIGHT VISION ON • SÉCURITÉ ACTIVE</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Badge statut HUD en haut à gauche */}
-                  <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2 pointer-events-none z-20">
-                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/40 text-[11px] sm:text-xs font-extrabold text-white flex items-center gap-2 shadow-lg">
+                  {/* Boutons flottants posés sur la scène 3D */}
+                  <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-20 pointer-events-none">
+                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/30 text-[11px] sm:text-xs font-extrabold text-white flex items-center gap-2 shadow-lg">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span>Équipement ciblé : <strong className="text-cyan-300">{curZone.shortLabel}</strong></span>
+                      <span>3D Focus : <strong className="text-cyan-300">{viewOrbit ? "Rotation 360° Libre" : curZone.shortLabel}</strong></span>
                     </div>
-                    <div className="hidden sm:inline-flex px-2.5 py-1 rounded-xl bg-slate-950/75 backdrop-blur-md border border-white/15 text-[10px] text-slate-300 font-semibold">
-                      <span>📍 Cliquez sur les pastilles radar</span>
+                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] text-slate-300 font-semibold shadow-lg">
+                      <span className="hidden sm:inline">🖱️ Glissez pour tourner • Cliquez sur un pin 3D</span>
+                      <span className="sm:hidden text-cyan-300 font-bold">👆 Glissez ↔ pivoter • ↕ défiler</span>
                     </div>
                   </div>
 
-                  {/* PINS HOTSPOTS RADAR SUR LA VILLA */}
-                  {Object.values(zones).map(z => {
-                    const isSelected = activeZone === z.id;
-                    return (
-                      <button
-                        key={z.id}
-                        type="button"
-                        onClick={() => selectZone(z.id)}
-                        style={{ left: `${z.pinPos.x}%`, top: `${z.pinPos.y}%` }}
-                        className={`absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer transition-all duration-300 z-10 p-1 ${
-                          isSelected ? "scale-110 z-30" : "hover:scale-105"
-                        }`}
-                        title={`${z.title} (${matchedCounts[z.id]} en stock)`}
-                      >
-                        {/* Radar Ripple animé */}
-                        <span
-                          className={`absolute inset-0 rounded-full animate-ping opacity-75 ${
-                            isSelected ? "bg-cyan-400" : "bg-sky-400/60"
-                          }`}
-                        />
-
-                        {/* Pastille Icone Hotspot */}
-                        <div
-                          className={`relative flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full shadow-2xl border-2 transition-all ${
-                            isSelected
-                              ? "bg-gradient-to-tr from-blue-600 to-cyan-400 border-white text-white shadow-cyan-500/60 ring-4 ring-cyan-400/50 scale-105"
-                              : "bg-slate-950/90 border-cyan-400/70 text-white hover:bg-blue-600 hover:border-white shadow-black/80"
-                          }`}
-                        >
-                          <span className="text-sm sm:text-lg select-none">{z.icon}</span>
-                        </div>
-
-                        {/* Étiquette descriptive sous le pin */}
-                        <div
-                          className={`mt-1 -translate-x-1/4 sm:-translate-x-1/3 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-extrabold whitespace-nowrap shadow-lg border backdrop-blur-md transition flex items-center gap-1 ${
-                            isSelected
-                              ? "bg-slate-950/95 text-cyan-300 border-cyan-400/70 ring-1 ring-cyan-400/30"
-                              : "bg-slate-950/80 text-slate-200 border-white/20 group-hover:bg-slate-900 group-hover:border-cyan-300"
-                          }`}
-                        >
-                          <span>{z.shortLabel}</span>
-                          {matchedCounts[z.id] > 0 && (
-                            <span className="px-1 rounded-full bg-emerald-500/25 text-emerald-300 text-[8px] sm:text-[9px] font-mono-num font-black">
-                              {matchedCounts[z.id]}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-
-                  {/* Réticule de ciblage animé sur la zone sélectionnée */}
-                  <div
-                    style={{
-                      left: `${curZone.pinPos.x}%`,
-                      top: `${curZone.pinPos.y}%`
-                    }}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 w-20 h-20 sm:w-28 sm:h-28 rounded-full border border-dashed border-cyan-400/60 pointer-events-none animate-spin-slow z-20 flex items-center justify-center"
-                  >
-                    <div className="w-3 h-3 rounded-full border border-cyan-300/80"></div>
-                  </div>
-
-                  {/* Bandeau d'information technique de l'équipement sélectionné au bas de la photo */}
+                  {/* Bandeau descriptif de l'équipement sélectionné */}
                   <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 pointer-events-none">
                     <div className="p-2 sm:p-2.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 shadow-xl flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
@@ -4691,57 +4846,67 @@ if (typeof window !== "undefined") {
                   </div>
                 </div>
               ) : (
-                /* ==================== VUE 3D THREE.JS 360° ==================== */
-                <div
-                  style={{ touchAction: "pan-y" }}
-                  className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-[#0b152c] h-[290px] sm:h-[480px] shadow-2xl cursor-grab active:cursor-grabbing select-none w-full max-w-full"
-                >
-                  <div ref={mountRef} className="absolute inset-0 w-full h-full" />
+                /* ==================== VUE PHOTO ULTRA-RÉALISTE 4K ==================== */
+                <div className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-slate-950 shadow-2xl select-none w-full max-w-full aspect-[16/9] min-h-[260px] sm:min-h-[440px]">
+                  <img
+                    src="/media/villa/smart_villa_security.webp"
+                    alt="Villa intelligente moderne sécurisée"
+                    onError={(e) => {
+                      if (!e.target.dataset.triedFallback) {
+                        e.target.dataset.triedFallback = "1";
+                        e.target.src = "media/villa/smart_villa_security.webp";
+                      } else if (!e.target.dataset.triedJpg) {
+                        e.target.dataset.triedJpg = "1";
+                        e.target.src = "/media/villa/smart_villa_security.jpg";
+                      }
+                    }}
+                    className={`w-full h-full object-cover transition duration-700 ${
+                      nightVision ? "brightness-110 contrast-125 saturate-50 hue-rotate-[95deg] filter" : ""
+                    }`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40 pointer-events-none" />
 
-                  {/* Boutons flottants posés sur la scène 3D */}
-                  <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-20 pointer-events-none">
-                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/30 text-[11px] sm:text-xs font-extrabold text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span>3D Focus : <strong className="text-sky-300">{viewOrbit ? "Rotation Libre 360°" : curZone.shortLabel}</strong></span>
-                    </div>
-                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] text-slate-300 font-semibold">
-                      <span className="hidden sm:inline">🖱️ Glissez pour tourner la Villa en 3D</span>
-                      <span className="sm:hidden text-cyan-300 font-bold">👆 Glissez ↔ pivoter • ↕ défiler</span>
-                    </div>
-                  </div>
-
-                  {/* Barre de sélection rapide en bas de la Villa 3D */}
-                  <div className="absolute bottom-2.5 left-2 right-2 flex justify-center items-center z-20 pointer-events-auto">
-                    <div className="flex gap-1.5 bg-slate-950/95 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-2xl overflow-x-auto no-scrollbar w-full max-w-full justify-start sm:justify-center">
-                      {[
-                        { id: "cameras", icon: "📹", label: "Caméras" },
-                        { id: "alarm", icon: "🚨", label: "Alarme" },
-                        { id: "digicode", icon: "🔢", label: "Digicode" },
-                        { id: "wifi_ptz", icon: "📡", label: "PTZ 360°" },
-                        { id: "xvr_hdd", icon: "💾", label: "XVR / Disque" },
-                        { id: "power_poe", icon: "⚡", label: "PoE / Alim" }
-                      ].map(b => (
-                        <button
-                          key={b.id}
-                          type="button"
-                          onClick={() => selectZone(b.id)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer ${
-                            activeZone === b.id && !viewOrbit
-                              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md ring-2 ring-cyan-400/50"
-                              : "text-slate-300 hover:bg-white/15 hover:text-white"
-                          }`}
-                        >
-                          <span className="text-sm">{b.icon}</span>
-                          <span>{b.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Pins Hotspots sur la photo */}
+                  {Object.values(zones).map(z => {
+                    const isSelected = activeZone === z.id;
+                    return (
+                      <button
+                        key={z.id}
+                        type="button"
+                        onClick={() => selectZone(z.id)}
+                        style={{ left: `${z.pinPos.x}%`, top: `${z.pinPos.y}%` }}
+                        className={`absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer transition-all duration-300 z-10 p-1 ${
+                          isSelected ? "scale-110 z-30" : "hover:scale-105"
+                        }`}
+                      >
+                        <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isSelected ? "bg-cyan-400" : "bg-sky-400/60"}`} />
+                        <div className={`relative flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full shadow-2xl border-2 transition-all ${
+                          isSelected
+                            ? "bg-gradient-to-tr from-blue-600 to-cyan-400 border-white text-white ring-4 ring-cyan-400/50 scale-105"
+                            : "bg-slate-950/90 border-cyan-400/70 text-white hover:bg-blue-600"
+                        }`}>
+                          <span className="text-sm sm:text-lg">{z.icon}</span>
+                        </div>
+                        <div className={`mt-1 -translate-x-1/4 sm:-translate-x-1/3 px-2 py-0.5 rounded-lg text-[9px] sm:text-[11px] font-extrabold whitespace-nowrap shadow-lg border backdrop-blur-md ${
+                          isSelected
+                            ? "bg-slate-950/95 text-cyan-300 border-cyan-400/70 ring-1 ring-cyan-400/30"
+                            : "bg-slate-950/80 text-slate-200 border-white/20"
+                        }`}>
+                          <span>{z.shortLabel}</span>
+                          {matchedCounts[z.id] > 0 && (
+                            <span className="ml-1 px-1 rounded-full bg-emerald-500/25 text-emerald-300 text-[8px] sm:text-[9px] font-mono font-black">
+                              {matchedCounts[z.id]}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            {/* COLONNE DROITE (5 cols) : RECHERCHE & ARTICLES DE LA ZONE SÉLECTIONNÉE */}
+            {/* COLONNE DROITE (5 cols) : ARTICLES DE LA ZONE SÉLECTIONNÉE */}
             <div className="lg:col-span-5 bg-slate-900/95 p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/15 space-y-3.5 sm:space-y-4 shadow-2xl w-full min-w-0 max-w-full overflow-hidden">
               <div>
                 <div className="flex items-center justify-between gap-2">
@@ -4761,7 +4926,7 @@ if (typeof window !== "undefined") {
                 </p>
               </div>
 
-              {/* Barre de recherche directe dans les articles de cet équipement */}
+              {/* Barre de recherche directe */}
               <div className="relative">
                 <input
                   type="text"
@@ -4781,7 +4946,7 @@ if (typeof window !== "undefined") {
                 )}
               </div>
 
-              {/* Liste directe des articles avec Photo, Prix, + Panier et Commander */}
+              {/* Liste directe des articles avec Photo, Prix, Panier et Commander */}
               <div className="space-y-2 max-h-[260px] sm:max-h-[300px] overflow-y-auto pr-1">
                 {matchedProducts.length === 0 ? (
                   <div className="p-5 sm:p-6 rounded-2xl bg-slate-950/60 border border-white/10 text-center space-y-2">
