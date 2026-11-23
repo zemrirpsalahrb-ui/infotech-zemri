@@ -3754,12 +3754,14 @@ if (typeof window !== "undefined") {
     }
 
 
-    /* ---------- VILLA 3D RÉALISTE INTERACTIVE (Three.js WebGL) + ARTICLES EN DIRECT ---------- */
+        /* ---------- VILLA ULTRA-RÉALISTE 4K & VUE 3D 360° INTERACTIVE + ARTICLES EN DIRECT ---------- */
     function InteractiveVillaExplorer({ products = [], onSelectProduct, onAddToCart, onDirectOrder, onOpenCatalogZone, favs = [], onToggleFav, compare = [], onToggleCompare, showToast }) {
       const mountRef = React.useRef(null);
+      const [displayMode, setDisplayMode] = useState("photo"); // "photo" (4K Ultra-Réaliste) | "3d" (Three.js WebGL 360°)
       const [activeZone, setActiveZone] = useState("cameras"); // "cameras" | "alarm" | "digicode" | "wifi_ptz" | "xvr_hdd" | "power_poe"
+      const [nightVision, setNightVision] = useState(false); // Infrarouge / Mode Nuit Sécurité
       const [zoneSearch, setZoneSearch] = useState("");
-      const [viewOrbit, setViewOrbit] = useState(false); // false = focus on selected 3D device, true = free 360 drone orbit
+      const [viewOrbit, setViewOrbit] = useState(false); // 3D free orbit
 
       const stateRef = React.useRef({
         activeZone: "cameras",
@@ -3777,12 +3779,14 @@ if (typeof window !== "undefined") {
         cameras: {
           id: "cameras",
           icon: "📹",
-          shortLabel: "Caméras Façade & Parking",
-          title: "Caméras de Surveillance (IP, HDCVI, 4K & ColorVu)",
-          badge: "Sous-Toit Façade & Garage 3D",
+          shortLabel: "Caméras Façade",
+          title: "Caméras de Surveillance Extérieures (IP, HDCVI, 4K & ColorVu)",
+          badge: "Sous-Toit Façade & Garage",
           color: "#38bdf8",
           bgBadge: "bg-sky-500/20 text-sky-300 border-sky-400/40",
-          desc: "Caméras 3D installées sous la corniche en bois au-dessus du garage et de la voiture : vision nocturne 40m et ColorVu couleur 24h/24.",
+          desc: "Caméras haute définition sous la corniche en bois au-dessus du garage et de l'allée : vision nocturne 40m et technologie ColorVu couleur 24h/24.",
+          pinPos: { x: 25, y: 34 },
+          camInfo: "Champ 108° HFOV • 4K Ultra-HD • Détection Humains & Véhicules",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3794,10 +3798,12 @@ if (typeof window !== "undefined") {
           icon: "🚨",
           shortLabel: "Alarme & Sirène",
           title: "Système d'Alarme Sans Fil, Sirène Flash & Détecteurs (Dahua / Ajax)",
-          badge: "Façade Haute • Anti-Intrusion 3D",
+          badge: "Façade Haute • Anti-Intrusion",
           color: "#ef4444",
           bgBadge: "bg-red-500/20 text-red-300 border-red-400/40",
-          desc: "Sirène extérieure flash 110dB montée sur la façade blanche supérieure + détecteurs de mouvement et d'ouverture sans fil.",
+          desc: "Sirène extérieure flash 110dB montée sur la façade supérieure + détecteurs de mouvement et d'ouverture de portes/fenêtres sans fil.",
+          pinPos: { x: 53, y: 24 },
+          camInfo: "Sirène 110dB avec Flash Stroboscopique • Portée Radio 2000m • Anti-brouillage",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3807,12 +3813,14 @@ if (typeof window !== "undefined") {
         digicode: {
           id: "digicode",
           icon: "🔢",
-          shortLabel: "Digicode & Accès Portail",
-          title: "Digicode, Clavier à Code, Bluetooth, Badge & Pointeuse",
-          badge: "Pilier Portail d'Entrée 3D",
+          shortLabel: "Digicode Portail",
+          title: "Digicode, Clavier à Code, Bluetooth, Badge & Interphone",
+          badge: "Pilier Portail d'Entrée",
           color: "#10b981",
           bgBadge: "bg-emerald-500/20 text-emerald-300 border-emerald-400/40",
-          desc: "Clavier Digicode lumineux encastré sur le pilier en béton du portail d'entrée : déverrouillage par code PIN, badge RFID, empreinte ou Bluetooth.",
+          desc: "Clavier Digicode lumineux encastré sur le pilier d'entrée : ouverture par code PIN, badge RFID, empreinte digitale ou Bluetooth sur smartphone.",
+          pinPos: { x: 80, y: 69 },
+          camInfo: "Boîtier Métallique Anti-Vandale IP68 • Clavier Rétroéclairé • Bluetooth",
           matchFn: (p) => {
             const hay = `${p.name || ""} ${p.reference || ""} ${p.category_name || ""}`.toLowerCase();
             return /digi\s*code|digicode|ep7612|epa10k|bleuthot|pointeuse|zk|interphone|visiophone|clavier|serrure|badge/i.test(hay);
@@ -3821,12 +3829,14 @@ if (typeof window !== "undefined") {
         wifi_ptz: {
           id: "wifi_ptz",
           icon: "📡",
-          shortLabel: "Dôme PTZ 360° & Wi-Fi",
+          shortLabel: "Dôme PTZ 360°",
           title: "Caméras Motorisées PTZ 360° & Wi-Fi Connectées",
-          badge: "Angle Toiture Supérieur 3D",
+          badge: "Angle Toiture Supérieur",
           color: "#a855f7",
           bgBadge: "bg-purple-500/20 text-purple-300 border-purple-400/40",
-          desc: "Dôme motorisé 360° sous l'angle droit de la toiture : couvre l'entrée, la piscine et le jardin avec suivi automatique IA.",
+          desc: "Dôme motorisé 360° installé sous l'angle de toiture : balayage panoramique complet couvrant le jardin, la piscine et l'allée avec suivi IA.",
+          pinPos: { x: 40, y: 21 },
+          camInfo: "Rotation Pan 355° / Tilt 90° • Suivi Automatique des Intrus (Auto-Tracking)",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3836,12 +3846,14 @@ if (typeof window !== "undefined") {
         xvr_hdd: {
           id: "xvr_hdd",
           icon: "💾",
-          shortLabel: "XVR / NVR & Disque Dur",
-          title: "Enregistreurs XVR / NVR IA & Disques Durs Surveillance 24/7",
-          badge: "Salon Vitré • Centrale Vidéo 3D",
+          shortLabel: "XVR & Disque",
+          title: "Enregistreurs XVR / NVR IA & Disques Durs WD Purple 24/7",
+          badge: "Centrale Vidéo Salon",
           color: "#f59e0b",
           bgBadge: "bg-amber-500/20 text-amber-300 border-amber-400/40",
-          desc: "Enregistreur XVR/NVR relié à l'écran du salon avec disque dur WD Purple enregistrant toutes les caméras 24h/24.",
+          desc: "Enregistreur XVR/NVR Dahua connecté aux écrans du salon avec disque dur spécial vidéosurveillance WD Purple pour enregistrement continu 24h/24.",
+          pinPos: { x: 49, y: 55 },
+          camInfo: "Compression Smart H.265+ • Enregistrement Continu 24/7 sans coupure",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3851,12 +3863,14 @@ if (typeof window !== "undefined") {
         power_poe: {
           id: "power_poe",
           icon: "⚡",
-          shortLabel: "Switch PoE, Alim & Câbles",
+          shortLabel: "Switch PoE & Alim",
           title: "Alimentations 12V, Switchs PoE, Onduleurs & Câblage",
-          badge: "Garage & Coffret Technique 3D",
+          badge: "Coffret Technique Garage",
           color: "#3b82f6",
           bgBadge: "bg-blue-500/20 text-blue-300 border-blue-400/40",
-          desc: "Coffret technique dans le garage : switch PoE, alimentation 12V stabilisée et bobines de câble reliant tous les équipements de la villa.",
+          desc: "Coffret technique centralisé dans le garage : switch PoE longue portée, alimentations régulées et connectiques BNC / RJ45 blindées.",
+          pinPos: { x: 19, y: 63 },
+          camInfo: "Alimentation Électrique Secourue • Switch Gigabit PoE 250 mètres",
           matchFn: (p) => {
             const cat = String(p.category_name || "").toLowerCase();
             const hay = `${p.name || ""} ${p.reference || ""} ${cat}`.toLowerCase();
@@ -3866,6 +3880,15 @@ if (typeof window !== "undefined") {
       };
 
       const curZone = zones[activeZone] || zones.cameras;
+
+      // Calcul du nombre de produits par zone pour les pastilles radar
+      const matchedCounts = useMemo(() => {
+        const counts = {};
+        Object.keys(zones).forEach(zk => {
+          counts[zk] = (products || []).filter(zones[zk].matchFn).length;
+        });
+        return counts;
+      }, [products]);
 
       const matchedProducts = useMemo(() => {
         let list = (products || []).filter(curZone.matchFn);
@@ -3885,14 +3908,14 @@ if (typeof window !== "undefined") {
         setZoneSearch("");
       };
 
-      // ==================== MOTEUR 3D THREE.JS : VILLA ARCHITECTURALE RÉALISTE ====================
+      // ==================== MOTEUR 3D THREE.JS AMÉLIORÉ (VUE 3D 360°) ====================
       useEffect(() => {
+        if (displayMode !== "3d") return;
         const el = mountRef.current;
         if (!el || !window.THREE) return;
         const T = window.THREE;
         const W = () => el.clientWidth || 750;
         const H = () => el.clientHeight || 470;
-
         const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
 
         const renderer = new T.WebGLRenderer({
@@ -3903,8 +3926,15 @@ if (typeof window !== "undefined") {
         });
         renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
         renderer.setSize(W(), H());
+        if (T.ACESFilmicToneMapping) {
+          renderer.toneMapping = T.ACESFilmicToneMapping;
+          renderer.toneMappingExposure = 1.25;
+        }
+        if (T.SRGBColorSpace) {
+          renderer.outputColorSpace = T.SRGBColorSpace;
+        }
         renderer.shadowMap.enabled = !isMobile;
-        if (!isMobile) {
+        if (!isMobile && T.PCFSoftShadowMap) {
           renderer.shadowMap.type = T.PCFSoftShadowMap;
         }
         renderer.setClearColor(0x0b152c, 1);
@@ -3912,40 +3942,38 @@ if (typeof window !== "undefined") {
         el.appendChild(renderer.domElement);
 
         const scene = new T.Scene();
-        scene.fog = new T.FogExp2(0x0b152c, 0.018);
+        scene.fog = new T.FogExp2(0x0b152c, 0.016);
 
         const camera = new T.PerspectiveCamera(40, W() / H(), 0.1, 200);
         camera.position.set(13, 8.5, 16.5);
 
-        // Éclairage Crépusculaire Réaliste (Blue Hour + Lumières Chaudes Architecte)
-        const hemi = new T.HemisphereLight(0x93c5fd, 0x1e293b, 0.75);
+        // Éclairage Crépusculaire Réaliste
+        const hemi = new T.HemisphereLight(0x93c5fd, 0x1e293b, 0.8);
         scene.add(hemi);
 
-        const sun = new T.DirectionalLight(0xe0f2fe, 0.95);
+        const sun = new T.DirectionalLight(0xe0f2fe, 1.05);
         sun.position.set(15, 22, 14);
         if (!isMobile) {
           sun.castShadow = true;
           sun.shadow.mapSize.width = 1024;
           sun.shadow.mapSize.height = 1024;
-        } else {
-          sun.castShadow = false;
         }
         scene.add(sun);
 
-        // Lumières intérieures chaudes de la villa
-        const warmInterior1 = new T.PointLight(0xffb74d, 2.2, 14);
+        // Lumières intérieures chaleureuses
+        const warmInterior1 = new T.PointLight(0xffb74d, 2.4, 14);
         warmInterior1.position.set(1.2, 2.0, 0.5);
         scene.add(warmInterior1);
 
-        const warmInterior2 = new T.PointLight(0xffcc80, 1.8, 12);
+        const warmInterior2 = new T.PointLight(0xffcc80, 1.9, 12);
         warmInterior2.position.set(0.5, 4.8, 0.2);
         scene.add(warmInterior2);
 
-        const garageWarmLight = new T.PointLight(0xffa726, 1.6, 9);
+        const garageWarmLight = new T.PointLight(0xffa726, 1.7, 9);
         garageWarmLight.position.set(-4.2, 2.4, 2.8);
         scene.add(garageWarmLight);
 
-        // Gyrophares Alarme (S'activent quand la zone 'alarm' est sélectionnée)
+        // Gyrophares Alarme
         const alarmStrobeRed = new T.PointLight(0xef4444, 0, 22);
         alarmStrobeRed.position.set(1.8, 5.3, 3.2);
         scene.add(alarmStrobeRed);
@@ -3956,13 +3984,42 @@ if (typeof window !== "undefined") {
         const villa = new T.Group();
         scene.add(villa);
 
-        // Matériaux Architecturaux Réalistes
-        const matStuccoWhite = new T.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.4, metalness: 0.05 });
-        const matCedarWood = new T.MeshStandardMaterial({ color: 0x9a5822, roughness: 0.55, metalness: 0.1 });
-        const matAnthracite = new T.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.45 });
+        // Création de textures procédurales sans aucune requête réseau
+        const createProceduralWood = () => {
+          try {
+            const cvs = document.createElement("canvas");
+            cvs.width = 256; cvs.height = 256;
+            const ctx = cvs.getContext("2d");
+            ctx.fillStyle = "#8a4b1f";
+            ctx.fillRect(0, 0, 256, 256);
+            for (let y = 0; y < 256; y += 16) {
+              ctx.fillStyle = y % 32 === 0 ? "#733d16" : "#9c5826";
+              ctx.fillRect(0, y, 256, 14);
+              ctx.fillStyle = "rgba(0,0,0,0.18)";
+              ctx.fillRect(0, y + 14, 256, 2);
+            }
+            const tex = new T.CanvasTexture(cvs);
+            tex.wrapS = T.RepeatWrapping;
+            tex.wrapT = T.RepeatWrapping;
+            tex.repeat.set(3, 2);
+            return tex;
+          } catch(e) { return null; }
+        };
+
+        const woodTex = createProceduralWood();
+
+        // Matériaux Réalistes
+        const matStuccoWhite = new T.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.05 });
+        const matCedarWood = new T.MeshStandardMaterial({
+          color: 0x9a5822,
+          roughness: 0.5,
+          metalness: 0.1,
+          map: woodTex || undefined
+        });
+        const matAnthracite = new T.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.45 });
         const matConcrete = new T.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7, metalness: 0.1 });
         const matPavement = new T.MeshStandardMaterial({ color: 0x334155, roughness: 0.65, metalness: 0.15 });
-        const matLawn = new T.MeshStandardMaterial({ color: 0x0f3923, roughness: 0.9 });
+        const matLawn = new T.MeshStandardMaterial({ color: 0x0f3923, roughness: 0.88 });
         const matHedge = new T.MeshStandardMaterial({ color: 0x14532d, roughness: 0.85 });
         const matGlassWarm = new T.MeshStandardMaterial({
           color: 0xfef08a,
@@ -3981,7 +4038,7 @@ if (typeof window !== "undefined") {
           opacity: 0.35
         });
 
-        // 1. Terrain, Pelouse, Allée Pavée & Piscine Lumineuse
+        // Sol, pelouse & piscine
         const ground = new T.Mesh(new T.PlaneGeometry(42, 36), matPavement);
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
@@ -3992,7 +4049,6 @@ if (typeof window !== "undefined") {
         lawn.receiveShadow = true;
         villa.add(lawn);
 
-        // Piscine moderne éclairée devant le salon
         const poolBorder = new T.Mesh(new T.BoxGeometry(5.8, 0.22, 3.4), matStuccoWhite);
         poolBorder.position.set(1.2, 0.11, 6.2);
         villa.add(poolBorder);
@@ -4003,14 +4059,14 @@ if (typeof window !== "undefined") {
         poolWater.position.set(1.2, 0.12, 6.2);
         villa.add(poolWater);
 
-        // Allée piétonne en dalles vers la porte d'entrée
+        // Allée piétonne dalles
         for (let i = 0; i < 6; i++) {
           const stepSlab = new T.Mesh(new T.BoxGeometry(1.5, 0.15, 0.85), matConcrete);
           stepSlab.position.set(5.4, 0.08, 3.2 + i * 1.15);
           villa.add(stepSlab);
         }
 
-        // Haies végétales & Arbres paysagers
+        // Haies & Arbres
         const frontHedge = new T.Mesh(new T.BoxGeometry(7.2, 0.95, 0.85), matHedge);
         frontHedge.position.set(0.8, 0.5, 3.7);
         frontHedge.castShadow = true;
@@ -4027,7 +4083,7 @@ if (typeof window !== "undefined") {
           villa.add(foliage);
         });
 
-        // 2. Volume Garage (Gauche) + Porte Sectionnelle + Spots Muraux
+        // Volume Garage (Gauche)
         const garageBlock = new T.Mesh(new T.BoxGeometry(5.6, 3.2, 5.8), matStuccoWhite);
         garageBlock.position.set(-4.2, 1.6, -0.2);
         garageBlock.castShadow = true;
@@ -4040,36 +4096,31 @@ if (typeof window !== "undefined") {
         );
         garageDoor.position.set(-4.2, 1.18, 2.72);
         villa.add(garageDoor);
-        // Lignes horizontales de la porte de garage
         for (let i = 0; i < 4; i++) {
           const line = new T.Mesh(new T.BoxGeometry(4.22, 0.04, 0.15), matAnthracite);
           line.position.set(-4.2, 0.55 + i * 0.55, 2.73);
           villa.add(line);
         }
 
-        // Garde-corps vitré terrasse au-dessus du garage
         const terraceGlass = new T.Mesh(new T.BoxGeometry(5.4, 0.85, 0.08), matBalconyGlass);
         terraceGlass.position.set(-4.2, 3.65, 2.65);
         villa.add(terraceGlass);
 
-        // 3. Corps Central & Salon Vitré (Rez-de-chaussée) + Façade Bois Cèdre
+        // Corps Central & Salon Vitré
         const mainGroundFloor = new T.Mesh(new T.BoxGeometry(8.6, 3.3, 6.2), matCedarWood);
         mainGroundFloor.position.set(2.4, 1.65, -0.6);
         mainGroundFloor.castShadow = true;
         villa.add(mainGroundFloor);
 
-        // Grande Baie Vitrée Salon Illuminé
         const livingWindow = new T.Mesh(new T.BoxGeometry(4.8, 2.6, 0.14), matGlassWarm);
         livingWindow.position.set(1.3, 1.45, 2.52);
         villa.add(livingWindow);
-        // Cadres métalliques anthracites de la baie vitrée
         [-1.1, 1.3, 3.7].forEach(wx => {
           const mullion = new T.Mesh(new T.BoxGeometry(0.12, 2.65, 0.2), matAnthracite);
           mullion.position.set(wx, 1.45, 2.54);
           villa.add(mullion);
         });
 
-        // Écran XVR 4K visible à l'intérieur du salon
         const tvScreen = new T.Mesh(
           new T.BoxGeometry(1.5, 0.9, 0.1),
           new T.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 1.1 })
@@ -4077,15 +4128,16 @@ if (typeof window !== "undefined") {
         tvScreen.position.set(1.3, 1.75, 1.8);
         villa.add(tvScreen);
 
-        // Porte d'entrée principale en bois noble (Droite)
+        // Porte d'entrée
         const entranceFrame = new T.Mesh(new T.BoxGeometry(1.8, 2.7, 0.18), matAnthracite);
+        entranceFrame.position.set(5.4, 1.4, 2.51);
         entranceFrame.position.set(5.4, 1.4, 2.51);
         villa.add(entranceFrame);
         const entranceDoor = new T.Mesh(new T.BoxGeometry(1.15, 2.5, 0.22), matCedarWood);
         entranceDoor.position.set(5.4, 1.35, 2.53);
         villa.add(entranceDoor);
 
-        // 4. Étage Supérieur (Cube Blanc Moderne en Porte-à-faux + Bardage Bois)
+        // Étage Supérieur
         const upperWoodBlock = new T.Mesh(new T.BoxGeometry(9.2, 3.0, 5.8), matCedarWood);
         upperWoodBlock.position.set(0.6, 4.7, -0.7);
         upperWoodBlock.castShadow = true;
@@ -4096,32 +4148,27 @@ if (typeof window !== "undefined") {
         upperWhiteCube.castShadow = true;
         villa.add(upperWhiteCube);
 
-        // Fenêtres de l'étage illuminées
         const upWinLeft = new T.Mesh(new T.BoxGeometry(2.6, 2.1, 0.14), matGlassWarm);
         upWinLeft.position.set(-1.6, 4.65, 2.22);
         villa.add(upWinLeft);
-
         const upWinNarrow = new T.Mesh(new T.BoxGeometry(0.75, 2.1, 0.14), matGlassWarm);
         upWinNarrow.position.set(0.65, 4.75, 2.97);
         villa.add(upWinNarrow);
-
         const upWinCorner = new T.Mesh(new T.BoxGeometry(1.85, 1.55, 0.14), matGlassWarm);
         upWinCorner.position.set(3.05, 5.0, 2.97);
         villa.add(upWinCorner);
 
-        // 5. Toiture Débordante Contemporaine avec Sous-Face Bois & Spots LED Encastrés
+        // Toiture Débordante Contemporaine
         const mainRoof = new T.Mesh(new T.BoxGeometry(12.6, 0.28, 7.6), matAnthracite);
         mainRoof.position.set(0.3, 6.45, -0.1);
         mainRoof.rotation.z = 0.03;
         mainRoof.castShadow = true;
         villa.add(mainRoof);
-
         const roofSoffitWood = new T.Mesh(new T.BoxGeometry(12.2, 0.12, 7.2), matCedarWood);
         roofSoffitWood.position.set(0.3, 6.28, -0.1);
         roofSoffitWood.rotation.z = 0.03;
         villa.add(roofSoffitWood);
 
-        // Petits spots LED chauds encastrés sous la toiture
         [-4.5, -2.5, -0.5, 1.5, 3.5, 5.2].forEach(sx => {
           const spot = new T.Mesh(
             new T.SphereGeometry(0.11, 12, 12),
@@ -4131,7 +4178,7 @@ if (typeof window !== "undefined") {
           villa.add(spot);
         });
 
-        // 6. Voiture Berline Réaliste 3D garée devant le garage (Gauche)
+        // Voiture moderne garée devant le garage
         const car = new T.Group();
         const matCarPaint = new T.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85, roughness: 0.18 });
         const matCarGlass = new T.MeshStandardMaterial({ color: 0x090d16, metalness: 0.9, roughness: 0.08 });
@@ -4142,7 +4189,6 @@ if (typeof window !== "undefined") {
         const carUpper = new T.Mesh(new T.BoxGeometry(1.72, 0.56, 2.3), matCarGlass);
         carUpper.position.set(0, 1.12, -0.15);
         car.add(carUpper);
-        // 4 Roues avec jantes
         const wheelGeo = new T.CylinderGeometry(0.38, 0.38, 0.26, 24);
         const wheelMat = new T.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
         [[-1.02, 0.38, 1.35], [1.02, 0.38, 1.35], [-1.02, 0.38, -1.35], [1.02, 0.38, -1.35]].forEach(wp => {
@@ -4151,19 +4197,17 @@ if (typeof window !== "undefined") {
           w.position.set(wp[0], wp[1], wp[2]);
           car.add(w);
         });
-        // Phares LED & Feux arrière
         const hlMat = new T.MeshBasicMaterial({ color: 0x38bdf8 });
         const tlMat = new T.MeshBasicMaterial({ color: 0xef4444 });
         const hl1 = new T.Mesh(new T.BoxGeometry(0.38, 0.14, 0.08), hlMat); hl1.position.set(-0.68, 0.62, 2.21); car.add(hl1);
         const hl2 = new T.Mesh(new T.BoxGeometry(0.38, 0.14, 0.08), hlMat); hl2.position.set(0.68, 0.62, 2.21); car.add(hl2);
         const tl1 = new T.Mesh(new T.BoxGeometry(0.42, 0.14, 0.08), tlMat); tl1.position.set(-0.68, 0.65, -2.21); car.add(tl1);
         const tl2 = new T.Mesh(new T.BoxGeometry(0.42, 0.14, 0.08), tlMat); tl2.position.set(0.68, 0.65, -2.21); car.add(tl2);
-
         car.position.set(-4.6, 0, 6.2);
         car.rotation.y = 0.28;
         villa.add(car);
 
-        // 7. Pilier Béton du Portail d'Entrée (Droite) + VRAI DIGICODE 3D LUMINEUX
+        // Pilier Digicode & Portail
         const gatePillar = new T.Mesh(new T.BoxGeometry(0.95, 2.35, 0.95), matConcrete);
         gatePillar.position.set(6.45, 1.18, 7.6);
         gatePillar.castShadow = true;
@@ -4173,7 +4217,6 @@ if (typeof window !== "undefined") {
         gatePillarLeft.position.set(4.15, 1.18, 7.6);
         villa.add(gatePillarLeft);
 
-        // Boîtier Digicode 3D encastré sur le pilier droit
         const digicodeBox = new T.Mesh(
           new T.BoxGeometry(0.34, 0.56, 0.12),
           new T.MeshStandardMaterial({ color: 0x020617, metalness: 0.8, roughness: 0.15 })
@@ -4188,7 +4231,6 @@ if (typeof window !== "undefined") {
         digicodeGlow.position.set(6.45, 1.42, 8.11);
         villa.add(digicodeGlow);
 
-        // Halo 3D au sol autour du pilier Digicode
         const digiRing = new T.Mesh(
           new T.RingGeometry(0.85, 1.05, 32),
           new T.MeshBasicMaterial({ color: 0x10b981, side: T.DoubleSide })
@@ -4197,7 +4239,7 @@ if (typeof window !== "undefined") {
         digiRing.position.set(6.45, 0.05, 7.6);
         villa.add(digiRing);
 
-        // 8. VRAIE SIRÈNE D'ALARME 3D EXTERIEURE (Sur le cube blanc supérieur)
+        // Sirène d'Alarme
         const sirenBox = new T.Mesh(
           new T.BoxGeometry(0.48, 0.68, 0.22),
           new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
@@ -4212,7 +4254,7 @@ if (typeof window !== "undefined") {
         sirenBeacon.position.set(1.65, 5.18, 3.02);
         villa.add(sirenBeacon);
 
-        // 9. VRAIES CAMÉRAS 3D + CÔNES LASER VOLUMÉTRIQUES
+        // Caméras 3D
         const make3DCam = (x, y, z, rotY, colorHex) => {
           const g = new T.Group();
           g.position.set(x, y, z);
@@ -4237,12 +4279,10 @@ if (typeof window !== "undefined") {
           return { group: g, coneMat };
         };
 
-        // Caméra Façade / Garage (Gauche)
         const camFacade = make3DCam(-4.6, 6.05, 2.8, -0.15, 0x38bdf8);
-        // Caméra PTZ 360° (Angle supérieur droit)
         const camPtz = make3DCam(5.2, 6.22, 2.8, 0.25, 0xa855f7);
 
-        // Contrôle Rotation Souris / Doigt Mobile Fluide (Sans bloquer le scroll)
+        // Gestes rotation
         let isDragging = false;
         let is3DTouch = false;
         let isScrollTouch = false;
@@ -4273,12 +4313,10 @@ if (typeof window !== "undefined") {
             if (!is3DTouch && !isScrollTouch) {
               const totalDx = Math.abs(pt.clientX - startX);
               const totalDy = Math.abs(pt.clientY - startY);
-              // Si le geste de l'utilisateur est vertical, on laisse défiler la page naturellement !
               if (totalDy > totalDx && totalDy > 7) {
                 isScrollTouch = true;
                 return;
               } else if (totalDx > 7) {
-                // Si le geste est horizontal, l'utilisateur tourne la villa en 3D
                 is3DTouch = true;
                 stateRef.current.viewOrbit = true;
                 setViewOrbit(true);
@@ -4319,7 +4357,6 @@ if (typeof window !== "undefined") {
         };
         window.addEventListener("resize", onResize);
 
-        // Cibles de caméra 3D pour chaque équipement cliqué !
         const zoneTargets = {
           cameras:  { cam: [-6.2, 5.2, 11.5], look: [-4.4, 3.2, 3.8] },
           alarm:    { cam: [2.2, 6.2, 9.8],   look: [1.65, 5.1, 2.8] },
@@ -4334,7 +4371,6 @@ if (typeof window !== "undefined") {
         const clock = new T.Clock();
         const curLook = new T.Vector3(0, 2.2, 1.5);
 
-        // Optimisation Mobile majeure : pause le rendu 3D quand l'élément est hors de l'écran
         const io = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             isElementVisible = entry.isIntersecting;
@@ -4354,16 +4390,13 @@ if (typeof window !== "undefined") {
           const t = clock.getElapsedTime();
           const st = stateRef.current;
 
-          // Animation des cônes des caméras 3D
           camFacade.group.rotation.y = -0.15 + Math.sin(t * 0.9) * 0.22;
           camPtz.group.rotation.y = 0.25 + Math.cos(t * 1.1) * 0.35;
           camFacade.coneMat.opacity = st.activeZone === "cameras" ? 0.38 : 0.16;
           camPtz.coneMat.opacity = st.activeZone === "wifi_ptz" ? 0.38 : 0.16;
 
-          // Animation du Digicode 3D
           digiRing.scale.setScalar(1 + Math.sin(t * 4) * 0.15);
 
-          // Animation Sirène d'Alarme 3D (Flash Rouge / Bleu)
           if (st.activeZone === "alarm") {
             const flash = Math.sin(t * 14) > 0;
             alarmStrobeRed.intensity = flash ? 4.5 : 0.4;
@@ -4375,7 +4408,6 @@ if (typeof window !== "undefined") {
             sirenBeacon.material.color.setHex(0xef4444);
           }
 
-          // Déplacement fluide de la caméra 3D (Soit Focus sur l'équipement cliqué, soit Vue Globale 360°)
           let desiredCam = { x: 13, y: 7.5, z: 16.5 };
           let desiredLook = { x: 0.5, y: 2.4, z: 1.5 };
 
@@ -4424,107 +4456,289 @@ if (typeof window !== "undefined") {
           window.removeEventListener("resize", onResize);
           renderer.dispose();
         };
-      }, []);
+      }, [displayMode]);
 
       return (
         <section className="rounded-[2.25rem] bg-slate-950 text-white border border-blue-500/30 shadow-[0_30px_80px_-25px_rgba(37,99,235,0.45)] overflow-hidden">
-          {/* En-tête de la Villa 3D Interactive */}
-          <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-white/10 bg-slate-900/75 flex flex-wrap items-center justify-between gap-3">
-            <div>
+          {/* En-tête de la Villa : Titre, Sélecteur de Mode (Photo 4K vs 3D) et Pastilles */}
+          <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-white/10 bg-slate-900/80 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 max-w-full">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold uppercase tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                <span>Villa 3D Réaliste Temps Réel • Cliquez sur Caméras, Alarme ou Digicode</span>
+                <span>Simulateur Vidéosurveillance &amp; Sécurité Villa • Stock Direct</span>
               </div>
-              <h2 className="font-display text-xl sm:text-3xl font-extrabold text-white mt-1.5">
-                Villa 3D Interactive &amp; <span className="text-gradient-hero">Articles en Direct</span>
+              <h2 className="font-display text-xl sm:text-3xl font-extrabold text-white mt-1.5 flex flex-wrap items-center gap-2">
+                <span>Villa Sécurisée Interactive</span>
+                <span className="text-gradient-hero">&amp; Équipements Réels</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Cliquez sur un équipement : la caméra 3D zoome dessus et affiche les <strong>articles en stock</strong>.
+                Cliquez sur un équipement (Caméras, Alarme, Digicode...) pour cibler son emplacement et commander les <strong>articles en stock</strong>.
               </p>
             </div>
 
-            {/* Boutons 3D directs défilables au doigt sur mobile */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1.5 max-w-full w-full">
-              {Object.values(zones).map(z => (
-                <button
-                  key={z.id}
-                  type="button"
-                  onClick={() => selectZone(z.id)}
-                  className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
-                    activeZone === z.id && !viewOrbit
-                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-blue-600/35 ring-2 ring-cyan-400/40 scale-[1.02]"
-                      : "bg-slate-900/90 hover:bg-white/15 border-white/20 text-slate-200"
-                  }`}
-                >
-                  <span className="text-base">{z.icon}</span>
-                  <span>{z.shortLabel}</span>
-                </button>
-              ))}
+            {/* Commutateur de Mode : [📸 Vue Ultra-Réaliste 4K] ou [🎮 Vue 3D 360°] */}
+            <div className="flex items-center gap-2 bg-slate-950/90 p-1.5 rounded-2xl border border-white/15 shadow-inner flex-shrink-0">
               <button
                 type="button"
-                onClick={() => setViewOrbit(v => !v)}
-                className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
-                  viewOrbit
-                    ? "bg-emerald-600 border-emerald-300 text-white shadow-lg ring-2 ring-emerald-400/40 scale-[1.02]"
-                    : "bg-slate-900/90 hover:bg-white/15 border-white/20 text-cyan-300"
+                onClick={() => setDisplayMode("photo")}
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                  displayMode === "photo"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/30 ring-2 ring-cyan-400/40"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
                 }`}
               >
-                <span className="text-base">🚁</span>
-                <span>Vue 360°</span>
+                <span>📸</span>
+                <span>Vue Ultra-Réaliste 4K</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDisplayMode("3d")}
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                  displayMode === "3d"
+                    ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-400/40"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <span>🎮</span>
+                <span>Vue 3D 360°</span>
               </button>
             </div>
           </div>
 
-          {/* GRILLE PRINCIPALE : VILLA 3D À GAUCHE (7 cols) + ARTICLES EN DIRECT À DROITE (5 cols) */}
-          <div className="grid lg:grid-cols-12 gap-4 sm:gap-6 p-3 sm:p-8 items-start w-full max-w-full overflow-hidden">
-            {/* SCÈNE 3D WEBGL DE LA VILLA */}
-            <div className="lg:col-span-7 space-y-3 w-full min-w-0 max-w-full overflow-hidden">
-              <div
-                style={{ touchAction: "pan-y" }}
-                className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-[#0b152c] h-[290px] sm:h-[480px] shadow-2xl cursor-grab active:cursor-grabbing select-none w-full max-w-full"
+          {/* Barre d'accès rapide aux 6 équipements */}
+          <div className="px-4 sm:px-8 py-2.5 bg-slate-900/50 border-b border-white/5 flex gap-2 overflow-x-auto no-scrollbar w-full max-w-full items-center">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0 hidden sm:inline">Équipements :</span>
+            {Object.values(zones).map(z => (
+              <button
+                key={z.id}
+                type="button"
+                onClick={() => selectZone(z.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
+                  activeZone === z.id && (!viewOrbit || displayMode === "photo")
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-blue-600/35 ring-2 ring-cyan-400/40 scale-[1.02]"
+                    : "bg-slate-900/90 hover:bg-white/15 border-white/15 text-slate-200"
+                }`}
               >
-                <div ref={mountRef} className="absolute inset-0 w-full h-full" />
+                <span className="text-sm">{z.icon}</span>
+                <span>{z.shortLabel}</span>
+                {matchedCounts[z.id] > 0 && (
+                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono-num font-black">
+                    {matchedCounts[z.id]}
+                  </span>
+                )}
+              </button>
+            ))}
+            {displayMode === "3d" && (
+              <button
+                type="button"
+                onClick={() => setViewOrbit(v => !v)}
+                className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
+                  viewOrbit
+                    ? "bg-emerald-600 border-emerald-300 text-white shadow-lg ring-2 ring-emerald-400/40 scale-[1.02]"
+                    : "bg-slate-900/90 hover:bg-white/15 border-white/15 text-cyan-300"
+                }`}
+              >
+                <span>🚁</span>
+                <span>Vue 360° Libre</span>
+              </button>
+            )}
+            {displayMode === "photo" && (
+              <button
+                type="button"
+                onClick={() => setNightVision(v => !v)}
+                className={`ml-auto px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
+                  nightVision
+                    ? "bg-emerald-700/80 border-emerald-400 text-emerald-100 ring-2 ring-emerald-400/50"
+                    : "bg-slate-900/90 border-white/15 text-slate-300 hover:text-white"
+                }`}
+                title="Basculer le mode vision nocturne infrarouge"
+              >
+                <span>{nightVision ? "🌙 Nuit IR Activée" : "☀️ Crépuscule"}</span>
+              </button>
+            )}
+          </div>
 
-                {/* Boutons flottants cliquables posés sur la scène 3D */}
-                <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-20 pointer-events-none">
-                  <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/30 text-[11px] sm:text-xs font-extrabold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Focus : <strong className="text-sky-300">{viewOrbit ? "Rotation Libre 360°" : curZone.shortLabel}</strong></span>
-                  </div>
-                  <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] text-slate-300 font-semibold">
-                    <span className="hidden sm:inline">🖱️ Glissez pour tourner la Villa en 3D</span>
-                    <span className="sm:hidden text-cyan-300 font-bold">👆 Glissez ↔ pivoter • ↕ défiler</span>
-                  </div>
-                </div>
+          {/* GRILLE PRINCIPALE : VILLA À GAUCHE (7 cols) + ARTICLES EN DIRECT À DROITE (5 cols) */}
+          <div className="grid lg:grid-cols-12 gap-4 sm:gap-6 p-3 sm:p-8 items-start w-full max-w-full overflow-hidden">
+            {/* CONTAINER VISUEL : PHOTO 4K ULTRA-RÉALISTE OU MOTEUR 3D */}
+            <div className="lg:col-span-7 space-y-3 w-full min-w-0 max-w-full overflow-hidden">
+              {displayMode === "photo" ? (
+                /* ==================== VUE PHOTO ULTRA-RÉALISTE 4K AVEC HOTSPOTS RADAR ==================== */
+                <div className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-slate-950 shadow-2xl select-none w-full max-w-full aspect-[16/9] min-h-[260px] sm:min-h-[440px]">
+                  {/* Photo Haute Définition de la Villa Architecturale */}
+                  <img
+                    src="/media/villa/smart_villa_security.webp"
+                    alt="Villa intelligente moderne sécurisée"
+                    onError={(e) => {
+                      if (!e.target.dataset.triedFallback) {
+                        e.target.dataset.triedFallback = "1";
+                        e.target.src = "media/villa/smart_villa_security.webp";
+                      } else if (!e.target.dataset.triedJpg) {
+                        e.target.dataset.triedJpg = "1";
+                        e.target.src = "/media/villa/smart_villa_security.jpg";
+                      }
+                    }}
+                    className={`w-full h-full object-cover transition duration-700 ${
+                      nightVision ? "brightness-110 contrast-125 saturate-50 hue-rotate-[95deg] filter" : ""
+                    }`}
+                  />
 
-                {/* Barre de sélection rapide en bas de la Villa 3D */}
-                <div className="absolute bottom-2.5 left-2 right-2 flex justify-center items-center z-20 pointer-events-auto">
-                  <div className="flex gap-1.5 bg-slate-950/95 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-2xl overflow-x-auto no-scrollbar w-full max-w-full justify-start sm:justify-center">
-                    {[
-                      { id: "cameras", icon: "📹", label: "Caméras" },
-                      { id: "alarm", icon: "🚨", label: "Alarme" },
-                      { id: "digicode", icon: "🔢", label: "Digicode" },
-                      { id: "wifi_ptz", icon: "📡", label: "PTZ 360°" },
-                      { id: "xvr_hdd", icon: "💾", label: "XVR / Disque" },
-                      { id: "power_poe", icon: "⚡", label: "PoE / Alim" }
-                    ].map(b => (
+                  {/* Gradient de profondeur et ambiance */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40 pointer-events-none" />
+
+                  {/* Effet Scanner / Vision Nocturne HUD si activé */}
+                  {nightVision && (
+                    <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_40%,rgba(6,78,59,0.4)_100%)] border-2 border-emerald-500/40 shadow-inner">
+                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-400 text-emerald-300 text-[10px] sm:text-xs font-mono font-black flex items-center gap-1.5 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>IR NIGHT VISION ON • SÉCURITÉ ACTIVE</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Badge statut HUD en haut à gauche */}
+                  <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2 pointer-events-none z-20">
+                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/40 text-[11px] sm:text-xs font-extrabold text-white flex items-center gap-2 shadow-lg">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span>Équipement ciblé : <strong className="text-cyan-300">{curZone.shortLabel}</strong></span>
+                    </div>
+                    <div className="hidden sm:inline-flex px-2.5 py-1 rounded-xl bg-slate-950/75 backdrop-blur-md border border-white/15 text-[10px] text-slate-300 font-semibold">
+                      <span>📍 Cliquez sur les pastilles radar</span>
+                    </div>
+                  </div>
+
+                  {/* PINS HOTSPOTS RADAR SUR LA VILLA */}
+                  {Object.values(zones).map(z => {
+                    const isSelected = activeZone === z.id;
+                    return (
                       <button
-                        key={b.id}
+                        key={z.id}
                         type="button"
-                        onClick={() => selectZone(b.id)}
-                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer ${
-                          activeZone === b.id && !viewOrbit
-                            ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md ring-2 ring-cyan-400/50"
-                            : "text-slate-300 hover:bg-white/15 hover:text-white"
+                        onClick={() => selectZone(z.id)}
+                        style={{ left: `${z.pinPos.x}%`, top: `${z.pinPos.y}%` }}
+                        className={`absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer transition-all duration-300 z-10 p-1 ${
+                          isSelected ? "scale-110 z-30" : "hover:scale-105"
                         }`}
+                        title={`${z.title} (${matchedCounts[z.id]} en stock)`}
                       >
-                        <span className="text-sm">{b.icon}</span>
-                        <span>{b.label}</span>
+                        {/* Radar Ripple animé */}
+                        <span
+                          className={`absolute inset-0 rounded-full animate-ping opacity-75 ${
+                            isSelected ? "bg-cyan-400" : "bg-sky-400/60"
+                          }`}
+                        />
+
+                        {/* Pastille Icone Hotspot */}
+                        <div
+                          className={`relative flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full shadow-2xl border-2 transition-all ${
+                            isSelected
+                              ? "bg-gradient-to-tr from-blue-600 to-cyan-400 border-white text-white shadow-cyan-500/60 ring-4 ring-cyan-400/50 scale-105"
+                              : "bg-slate-950/90 border-cyan-400/70 text-white hover:bg-blue-600 hover:border-white shadow-black/80"
+                          }`}
+                        >
+                          <span className="text-sm sm:text-lg select-none">{z.icon}</span>
+                        </div>
+
+                        {/* Étiquette descriptive sous le pin */}
+                        <div
+                          className={`mt-1 -translate-x-1/4 sm:-translate-x-1/3 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] sm:text-[11px] font-extrabold whitespace-nowrap shadow-lg border backdrop-blur-md transition flex items-center gap-1 ${
+                            isSelected
+                              ? "bg-slate-950/95 text-cyan-300 border-cyan-400/70 ring-1 ring-cyan-400/30"
+                              : "bg-slate-950/80 text-slate-200 border-white/20 group-hover:bg-slate-900 group-hover:border-cyan-300"
+                          }`}
+                        >
+                          <span>{z.shortLabel}</span>
+                          {matchedCounts[z.id] > 0 && (
+                            <span className="px-1 rounded-full bg-emerald-500/25 text-emerald-300 text-[8px] sm:text-[9px] font-mono-num font-black">
+                              {matchedCounts[z.id]}
+                            </span>
+                          )}
+                        </div>
                       </button>
-                    ))}
+                    );
+                  })}
+
+                  {/* Réticule de ciblage animé sur la zone sélectionnée */}
+                  <div
+                    style={{
+                      left: `${curZone.pinPos.x}%`,
+                      top: `${curZone.pinPos.y}%`
+                    }}
+                    className="absolute -translate-x-1/2 -translate-y-1/2 w-20 h-20 sm:w-28 sm:h-28 rounded-full border border-dashed border-cyan-400/60 pointer-events-none animate-spin-slow z-20 flex items-center justify-center"
+                  >
+                    <div className="w-3 h-3 rounded-full border border-cyan-300/80"></div>
+                  </div>
+
+                  {/* Bandeau d'information technique de l'équipement sélectionné au bas de la photo */}
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 pointer-events-none">
+                    <div className="p-2 sm:p-2.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 shadow-xl flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-lg sm:text-xl flex-shrink-0">{curZone.icon}</span>
+                        <div className="min-w-0">
+                          <div className="text-[11px] sm:text-xs font-extrabold text-white truncate flex items-center gap-1.5">
+                            <span>{curZone.title}</span>
+                            <span className="hidden sm:inline-block px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 text-[10px] font-semibold border border-sky-400/30">{curZone.badge}</span>
+                          </div>
+                          <div className="text-[10px] sm:text-[11px] text-cyan-300/90 font-mono-num truncate">
+                            {curZone.camInfo}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0 px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] sm:text-xs font-mono font-black">
+                        {matchedProducts.length} en stock
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* ==================== VUE 3D THREE.JS 360° ==================== */
+                <div
+                  style={{ touchAction: "pan-y" }}
+                  className="relative rounded-3xl overflow-hidden border-2 border-cyan-500/35 bg-[#0b152c] h-[290px] sm:h-[480px] shadow-2xl cursor-grab active:cursor-grabbing select-none w-full max-w-full"
+                >
+                  <div ref={mountRef} className="absolute inset-0 w-full h-full" />
+
+                  {/* Boutons flottants posés sur la scène 3D */}
+                  <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-20 pointer-events-none">
+                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md border border-cyan-400/30 text-[11px] sm:text-xs font-extrabold text-white flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span>3D Focus : <strong className="text-sky-300">{viewOrbit ? "Rotation Libre 360°" : curZone.shortLabel}</strong></span>
+                    </div>
+                    <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] text-slate-300 font-semibold">
+                      <span className="hidden sm:inline">🖱️ Glissez pour tourner la Villa en 3D</span>
+                      <span className="sm:hidden text-cyan-300 font-bold">👆 Glissez ↔ pivoter • ↕ défiler</span>
+                    </div>
+                  </div>
+
+                  {/* Barre de sélection rapide en bas de la Villa 3D */}
+                  <div className="absolute bottom-2.5 left-2 right-2 flex justify-center items-center z-20 pointer-events-auto">
+                    <div className="flex gap-1.5 bg-slate-950/95 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-2xl overflow-x-auto no-scrollbar w-full max-w-full justify-start sm:justify-center">
+                      {[
+                        { id: "cameras", icon: "📹", label: "Caméras" },
+                        { id: "alarm", icon: "🚨", label: "Alarme" },
+                        { id: "digicode", icon: "🔢", label: "Digicode" },
+                        { id: "wifi_ptz", icon: "📡", label: "PTZ 360°" },
+                        { id: "xvr_hdd", icon: "💾", label: "XVR / Disque" },
+                        { id: "power_poe", icon: "⚡", label: "PoE / Alim" }
+                      ].map(b => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => selectZone(b.id)}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer ${
+                            activeZone === b.id && !viewOrbit
+                              ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md ring-2 ring-cyan-400/50"
+                              : "text-slate-300 hover:bg-white/15 hover:text-white"
+                          }`}
+                        >
+                          <span className="text-sm">{b.icon}</span>
+                          <span>{b.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* COLONNE DROITE (5 cols) : RECHERCHE & ARTICLES DE LA ZONE SÉLECTIONNÉE */}
@@ -4536,7 +4750,7 @@ if (typeof window !== "undefined") {
                     <span>{curZone.badge}</span>
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono-num text-xs font-extrabold">
-                    {matchedProducts.length} articles
+                    {matchedProducts.length} articles en stock
                   </span>
                 </div>
                 <h3 className="font-display text-lg sm:text-xl font-extrabold text-white mt-2 leading-snug">
@@ -4568,7 +4782,7 @@ if (typeof window !== "undefined") {
               </div>
 
               {/* Liste directe des articles avec Photo, Prix, + Panier et Commander */}
-              <div className="space-y-2 max-h-[260px] sm:max-h-[280px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[260px] sm:max-h-[300px] overflow-y-auto pr-1">
                 {matchedProducts.length === 0 ? (
                   <div className="p-5 sm:p-6 rounded-2xl bg-slate-950/60 border border-white/10 text-center space-y-2">
                     <div className="text-2xl">{curZone.icon}</div>
@@ -4594,7 +4808,7 @@ if (typeof window !== "undefined") {
                             {p.name}
                           </div>
                           <div className="text-[10px] sm:text-[11px] text-slate-400 font-mono-num truncate">
-                            Réf: {p.reference} • {p.in_stock ? <span className="text-emerald-400">En stock</span> : <span className="text-rose-400">Rupture</span>}
+                            Réf: {p.reference} • {p.in_stock ? <span className="text-emerald-400 font-semibold">En stock</span> : <span className="text-rose-400">Rupture</span>}
                           </div>
                           <div className="text-xs sm:text-sm font-black font-mono-num text-sky-400 mt-0.5 truncate">
                             {fmtMoney(p.effective_price)}
@@ -4631,15 +4845,15 @@ if (typeof window !== "undefined") {
                   const kw = activeZone === "digicode" ? "digi" : activeZone === "alarm" ? "alarm" : activeZone === "wifi_ptz" ? "wifi" : activeZone === "xvr_hdd" ? "xvr" : activeZone === "power_poe" ? "switch" : "camera";
                   onOpenCatalogZone(zoneSearch.trim() || kw);
                 }}
-                className="w-full py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                className="w-full py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
-                <span>🔍 Voir les {matchedProducts.length} articles ({curZone.shortLabel})</span>
+                <span>🔍 Voir tous les {matchedProducts.length} articles ({curZone.shortLabel})</span>
                 <span>→</span>
               </button>
             </div>
           </div>
 
-          {/* GRILLE D'ARTICLES DE LA ZONE SÉLECTIONNÉE - Visible sur grand écran (desktop) pour ne pas encombrer le téléphone */}
+          {/* GRILLE D'ARTICLES DE LA ZONE SÉLECTIONNÉE - Visible sur grand écran (desktop) */}
           {matchedProducts.length > 0 && (
             <div className="hidden lg:block px-5 sm:px-8 pb-8 pt-2 border-t border-white/10 space-y-4 bg-slate-900/40">
               <div className="flex flex-wrap items-center justify-between gap-2 pt-3">
@@ -4649,7 +4863,7 @@ if (typeof window !== "undefined") {
                     Articles recommandés pour : <span className="text-sky-400">{curZone.shortLabel}</span>
                   </h3>
                 </div>
-                <span className="text-xs text-slate-400">Cliquez sur un article pour voir sa fiche ou commander</span>
+                <span className="text-xs text-slate-400">Cliquez sur un article pour voir sa fiche ou commander directement</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
                 {matchedProducts.slice(0, 8).map(p => (
