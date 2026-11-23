@@ -2594,31 +2594,31 @@ if (typeof window !== "undefined") {
           </div>
 
           {/* BARRE DE NAVIGATION MOBILE TYPE APPLICATION */}
-          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 flex justify-around items-center shadow-2xl safe-area-bottom">
-            <button onClick={() => goTab("home")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "home" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 py-1.5 flex justify-around items-center shadow-2xl safe-area-bottom">
+            <button onClick={() => goTab("home")} className={`flex flex-col items-center py-1.5 px-3 rounded-xl transition-all active:scale-90 ${tab === "home" ? "bg-blue-50 text-blue-600 font-extrabold shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
               <span className="text-xl">🏠</span>
-              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_home")}</span>
+              <span className="text-[11px] mt-0.5 font-bold tracking-tight">{tr("nav_home")}</span>
             </button>
-            <button onClick={() => goTab("catalog")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "catalog" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+            <button onClick={() => goTab("catalog")} className={`flex flex-col items-center py-1.5 px-3 rounded-xl transition-all active:scale-90 ${tab === "catalog" ? "bg-blue-50 text-blue-600 font-extrabold shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
               <span className="text-xl">📦</span>
-              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_catalog")}</span>
+              <span className="text-[11px] mt-0.5 font-bold tracking-tight">{tr("nav_catalog")}</span>
             </button>
-            <button onClick={() => goTab("kit")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "kit" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+            <button onClick={() => goTab("kit")} className={`flex flex-col items-center py-1.5 px-3 rounded-xl transition-all active:scale-90 ${tab === "kit" ? "bg-blue-50 text-blue-600 font-extrabold shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
               <span className="text-xl">🛠</span>
-              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_kit")}</span>
+              <span className="text-[11px] mt-0.5 font-bold tracking-tight">{tr("nav_kit")}</span>
             </button>
-            <button onClick={() => goTab("cart")} className={`relative flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "cart" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+            <button onClick={() => goTab("cart")} className={`relative flex flex-col items-center py-1.5 px-3 rounded-xl transition-all active:scale-90 ${tab === "cart" ? "bg-blue-50 text-blue-600 font-extrabold shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
               <span className="text-xl">🛒</span>
               {cart.length > 0 && (
-                <span className="absolute top-0.5 right-1.5 w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute top-0.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shadow">
                   {cart.reduce((s, i) => s + i.quantity, 0)}
                 </span>
               )}
-              <span className="text-[10px] mt-0.5 font-semibold">{tr("nav_cart")}</span>
+              <span className="text-[11px] mt-0.5 font-bold tracking-tight">{tr("nav_cart")}</span>
             </button>
-            <button onClick={() => goTab("account")} className={`flex flex-col items-center py-1 px-2.5 rounded-xl transition ${tab === "account" ? "text-blue-600 font-extrabold" : "text-slate-500"}`}>
+            <button onClick={() => goTab("account")} className={`flex flex-col items-center py-1.5 px-3 rounded-xl transition-all active:scale-90 ${tab === "account" ? "bg-blue-50 text-blue-600 font-extrabold shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
               <span className="text-xl">👤</span>
-              <span className="text-[10px] mt-0.5 font-semibold">{profile ? profile.username.slice(0, 6) : tr("nav_account")}</span>
+              <span className="text-[11px] mt-0.5 font-bold tracking-tight">{profile ? profile.username.slice(0, 6) : tr("nav_account")}</span>
             </button>
           </nav>
 
@@ -2750,19 +2750,23 @@ if (typeof window !== "undefined") {
                 </div>
                 <span className="text-[10px] text-emerald-600 font-bold hidden sm:inline">🚚 NOEST</span>
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-0.5">
                 <button
+                  type="button"
                   onClick={onAdd}
-                  className="py-2 px-2 rounded-xl bg-slate-100 hover:bg-slate-900 text-slate-800 hover:text-white text-[11px] sm:text-xs font-extrabold transition flex items-center justify-center gap-1"
+                  className="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-900 active:bg-slate-800 text-slate-800 hover:text-white active:scale-95 text-xs font-bold transition flex items-center justify-center gap-1 border border-slate-200 shadow-sm"
+                  title="Ajouter au panier"
                 >
-                  <span>🛒</span>
-                  <span>{tr("add_cart")}</span>
+                  <span className="text-sm">🛒</span>
+                  <span>+ Panier</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => onDirectOrder ? onDirectOrder(p) : onAdd()}
-                  className="py-2 px-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[11px] sm:text-xs font-extrabold transition shadow-sm hover:shadow-blue-500/25 flex items-center justify-center gap-1"
+                  className="py-2.5 px-2 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white text-xs font-black transition shadow-md shadow-blue-600/20 hover:shadow-blue-500/35 flex items-center justify-center gap-1"
+                  title="Commander directement"
                 >
-                  <span>⚡</span>
+                  <span className="text-sm">⚡</span>
                   <span>Commander</span>
                 </button>
               </div>
@@ -2812,18 +2816,20 @@ if (typeof window !== "undefined") {
                 <button onClick={onClose} className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">{p.short_description || p.description || "Contactez-nous pour la fiche technique complète."}</p>
-              <div className="mt-auto p-4 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+              <div className="mt-auto p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                  <div className="text-xs text-slate-500">{tr("price")} ({tier})</div>
-                  <div className="text-3xl font-extrabold text-slate-900">{fmtMoney(p.effective_price)}</div>
-                  <div className={`text-xs font-medium ${p.in_stock ? "text-emerald-600" : "text-red-600"}`}>{p.in_stock ? `${p.available_stock} ${tr("in_stock")}` : tr("out_of_stock")}</div>
+                  <div className="text-xs text-slate-500 font-semibold">{tr("price")} ({tier})</div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono-num text-slate-900">{fmtMoney(p.effective_price)}</div>
+                  <div className={`text-xs font-bold mt-0.5 ${p.in_stock ? "text-emerald-600" : "text-red-600"}`}>{p.in_stock ? `● ${p.available_stock} ${tr("in_stock")}` : `● ${tr("out_of_stock")}`}</div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={onAdd} className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition hover:scale-105">
-                    {tr("add_to_cart_modal")}
+                <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                  <button onClick={onAdd} className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-white font-bold text-xs sm:text-sm transition active:scale-95 text-center flex items-center justify-center gap-1.5 shadow">
+                    <span>🛒</span>
+                    <span>+ Panier</span>
                   </button>
-                  <button onClick={() => onDirectOrder ? onDirectOrder(p) : onAdd()} className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm transition hover:scale-105 shadow-md">
-                    ⚡ Commander direct
+                  <button onClick={() => onDirectOrder ? onDirectOrder(p) : onAdd()} className="py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm transition active:scale-95 shadow-md shadow-blue-500/25 text-center flex items-center justify-center gap-1.5">
+                    <span>⚡</span>
+                    <span>Commander</span>
                   </button>
                 </div>
               </div>
@@ -4439,32 +4445,32 @@ if (typeof window !== "undefined") {
             </div>
 
             {/* Boutons 3D directs défilables au doigt sur mobile */}
-            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 max-w-full w-full">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1.5 max-w-full w-full">
               {Object.values(zones).map(z => (
                 <button
                   key={z.id}
                   type="button"
                   onClick={() => selectZone(z.id)}
-                  className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 ${
+                  className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
                     activeZone === z.id && !viewOrbit
-                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-blue-600/30 scale-105"
-                      : "bg-white/5 hover:bg-white/15 border-white/10 text-slate-300"
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 border-cyan-300 text-white shadow-lg shadow-blue-600/35 ring-2 ring-cyan-400/40 scale-[1.02]"
+                      : "bg-slate-900/90 hover:bg-white/15 border-white/20 text-slate-200"
                   }`}
                 >
-                  <span>{z.icon}</span>
+                  <span className="text-base">{z.icon}</span>
                   <span>{z.shortLabel}</span>
                 </button>
               ))}
               <button
                 type="button"
                 onClick={() => setViewOrbit(v => !v)}
-                className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 ${
+                className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 border whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer shadow-sm ${
                   viewOrbit
-                    ? "bg-emerald-600 border-emerald-300 text-white shadow-lg"
-                    : "bg-white/10 hover:bg-white/20 border-white/20 text-cyan-300"
+                    ? "bg-emerald-600 border-emerald-300 text-white shadow-lg ring-2 ring-emerald-400/40 scale-[1.02]"
+                    : "bg-slate-900/90 hover:bg-white/15 border-white/20 text-cyan-300"
                 }`}
               >
-                <span>🚁</span>
+                <span className="text-base">🚁</span>
                 <span>Vue 360°</span>
               </button>
             </div>
@@ -4493,8 +4499,8 @@ if (typeof window !== "undefined") {
                 </div>
 
                 {/* Barre de sélection rapide en bas de la Villa 3D */}
-                <div className="absolute bottom-2 left-2 right-2 flex justify-center items-center z-20 pointer-events-auto">
-                  <div className="flex gap-1 bg-slate-950/90 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-white/15 overflow-x-auto no-scrollbar w-full max-w-full justify-start sm:justify-center">
+                <div className="absolute bottom-2.5 left-2 right-2 flex justify-center items-center z-20 pointer-events-auto">
+                  <div className="flex gap-1.5 bg-slate-950/95 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-2xl overflow-x-auto no-scrollbar w-full max-w-full justify-start sm:justify-center">
                     {[
                       { id: "cameras", icon: "📹", label: "Caméras" },
                       { id: "alarm", icon: "🚨", label: "Alarme" },
@@ -4507,13 +4513,13 @@ if (typeof window !== "undefined") {
                         key={b.id}
                         type="button"
                         onClick={() => selectZone(b.id)}
-                        className={`px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition flex items-center gap-1 whitespace-nowrap flex-shrink-0 ${
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 active:scale-95 cursor-pointer ${
                           activeZone === b.id && !viewOrbit
-                            ? "bg-blue-600 text-white shadow"
-                            : "text-slate-300 hover:bg-white/10 hover:text-white"
+                            ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md ring-2 ring-cyan-400/50"
+                            : "text-slate-300 hover:bg-white/15 hover:text-white"
                         }`}
                       >
-                        <span>{b.icon}</span>
+                        <span className="text-sm">{b.icon}</span>
                         <span>{b.label}</span>
                       </button>
                     ))}
@@ -4597,21 +4603,22 @@ if (typeof window !== "undefined") {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => onAddToCart && onAddToCart(p)}
                           title="Ajouter au panier"
-                          className="px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition"
+                          className="h-9 w-9 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 text-white text-xs font-bold transition flex items-center justify-center border border-white/15 active:scale-95 shadow-sm"
                         >
-                          🛒
+                          <span className="text-sm">🛒</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => onDirectOrder && onDirectOrder(p)}
-                          className="px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-[10px] sm:text-xs font-extrabold shadow transition whitespace-nowrap"
+                          className="h-9 px-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 active:scale-95 text-white text-xs font-black shadow-md shadow-blue-500/25 transition flex items-center justify-center gap-1.5 whitespace-nowrap"
                         >
-                          <span>⚡</span><span className="hidden xs:inline sm:inline"> Commander</span>
+                          <span className="text-sm">⚡</span>
+                          <span>Commander</span>
                         </button>
                       </div>
                     </div>
