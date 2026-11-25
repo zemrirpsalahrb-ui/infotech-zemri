@@ -109,7 +109,11 @@
       const [token, setToken] = useState(() => localStorage.getItem("cctv_jwt") || "");
       const [profile, setProfile] = useState(null);
       const [authChecked, setAuthChecked] = useState(false);
-      const [loginForm, setLoginForm] = useState({ username: "admin", password: "admin123" });
+      const [loginForm, setLoginForm] = useState({ username: "admin", password: "" });
+      const [showCode, setShowCode] = useState(false);
+      const [mustChange, setMustChange] = useState(false);
+      const [codeModal, setCodeModal] = useState(false);
+      const [codeForm, setCodeForm] = useState({ current: "", next: "", confirm: "" });
 
       const [section, setSection] = useState("products"); // products, orders, accounts, store
       const [products, setProducts] = useState([]);
@@ -243,9 +247,34 @@
           localStorage.setItem("cctv_jwt", data.access);
           setToken(data.access);
           setProfile(data.profile);
+          if (data.must_change_code) {
+            setMustChange(true);
+            setCodeForm({ current: loginForm.password, next: "", confirm: "" });
+            setCodeModal(true);
+          }
+          setLoginForm({ username: "admin", password: "" });
           showToast("Bienvenue dans votre espace propriétaire !", "success");
         } else {
           showToast(data.error || "Identifiants incorrects", "error");
+        }
+      };
+
+      const handleChangeCode = async (e) => {
+        e.preventDefault();
+        if (codeForm.next !== codeForm.confirm) { showToast("Les deux codes ne sont pas identiques.", "error"); return; }
+        const res = await fetch(`${API_BASE}/auth/change-code/`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ current: codeForm.current, new: codeForm.next })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setMustChange(false);
+          setCodeModal(false);
+          setCodeForm({ current: "", next: "", confirm: "" });
+          showToast("Votre code secret a été changé ✓", "success");
+        } else {
+          showToast(d.error || "Impossible de changer le code.", "error");
         }
       };
 
@@ -508,7 +537,7 @@
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Mon Dashboard Mobile</h1>
                 <p className="text-xs text-slate-500">
-                  Connectez-vous pour prendre des photos et modifier les prix directement depuis votre smartphone.
+                  Accès privé : entrez votre code pour modifier prix, descriptions et photos.
                 </p>
               </div>
 
@@ -520,34 +549,27 @@
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Nom d'utilisateur</label>
-                  <input
-                    required
-                    value={loginForm.username}
-                    onChange={e => setLoginForm({ ...loginForm, username: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">🔒 Votre code secret</label>
+                  <div className="relative">
+                    <input
+                      required
+                      autoFocus
+                      type={showCode ? "text" : "password"}
+                      autoComplete="current-password"
+                      placeholder="Entrez votre code"
+                      value={loginForm.password}
+                      onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
+                      className="w-full px-4 py-4 pr-14 rounded-xl border border-slate-300 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button type="button" onClick={() => setShowCode(!showCode)} className="absolute right-1 top-1 bottom-1 px-3 text-lg" aria-label="Afficher le code">{showCode ? "🙈" : "👁️"}</button>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Mot de passe</label>
-                  <input
-                    required
-                    type="password"
-                    placeholder="••••••••"
-                    value={loginForm.password}
-                    onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <button type="submit" className="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm shadow-md btn-touch">
-                  Accéder à mon Dashboard →
+                <button type="submit" className="w-full py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-base shadow-md btn-touch">
+                  Entrer →
                 </button>
               </form>
 
-              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-1">
-                <div className="font-bold text-blue-800">🔑 Identifiants Admin par défaut :</div>
-                <div>Utilisateur : <strong className="font-mono text-slate-900">admin</strong> | Mot de passe : <strong className="font-mono text-slate-900">admin123</strong></div>
-              </div>
+              <p className="text-center text-[11px] text-slate-400">Accès privé réservé au propriétaire.</p>
 
               <div className="text-center pt-2 border-t border-slate-100">
                 <a href="/" className="text-xs text-blue-600 hover:underline font-bold">← Ouvrir la vitrine publique du site</a>
@@ -604,6 +626,13 @@
                 >
                   <span className={loading ? "animate-spin inline-block" : ""}>↻</span>
                   <span className="hidden sm:inline">Actualiser</span>
+                </button>
+                <button
+                  onClick={() => { setCodeForm({ current: "", next: "", confirm: "" }); setCodeModal(true); }}
+                  className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-bold"
+                  title="Changer mon code secret"
+                >
+                  🔑
                 </button>
                 <button
                   onClick={() => { localStorage.removeItem("cctv_jwt"); setToken(""); setProfile(null); }}
@@ -1472,6 +1501,11 @@
                   <input value={editForm.short_description} onChange={e => setEditForm({ ...editForm, short_description: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-300" />
                 </div>
 
+                <div className="text-xs">
+                  <label className="font-bold text-slate-700 block mb-1">Description complète (affichée sur la fiche produit)</label>
+                  <textarea rows={6} value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm leading-relaxed" />
+                </div>
+
                 <div className="flex flex-wrap gap-3 text-xs pt-1">
                   <label className="flex items-center gap-1.5 font-bold cursor-pointer">
                     <input type="checkbox" checked={editForm.is_active} onChange={e => setEditForm({ ...editForm, is_active: e.target.checked })} />
@@ -1490,6 +1524,23 @@
                   <button type="submit" className="btn-touch py-3 rounded-xl bg-slate-900 text-white font-extrabold text-xs shadow-md">
                     ✓ Enregistrer
                   </button>
+                </div>
+              </form>
+            </div>
+          )}
+          {codeModal && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { if (!mustChange) setCodeModal(false); }}>
+              <form onSubmit={handleChangeCode} className="card w-full sm:max-w-md p-5 space-y-3 rounded-t-3xl sm:rounded-2xl" onClick={e => e.stopPropagation()}>
+                <h3 className="text-base font-extrabold text-slate-900">🔑 {mustChange ? "Choisissez votre code secret" : "Changer mon code secret"}</h3>
+                {mustChange && <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-2.5">Pour protéger votre site, remplacez le code par défaut par un code que vous seul connaissez.</p>}
+                {!mustChange && (
+                  <input type="password" required placeholder="Code actuel" value={codeForm.current} onChange={e => setCodeForm({ ...codeForm, current: e.target.value })} className="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-base" />
+                )}
+                <input type="password" required minLength={6} placeholder="Nouveau code (6 caractères minimum)" value={codeForm.next} onChange={e => setCodeForm({ ...codeForm, next: e.target.value })} className="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-base" />
+                <input type="password" required minLength={6} placeholder="Répétez le nouveau code" value={codeForm.confirm} onChange={e => setCodeForm({ ...codeForm, confirm: e.target.value })} className="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-base" />
+                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                  {!mustChange ? <button type="button" onClick={() => setCodeModal(false)} className="btn-touch py-3 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm">Annuler</button> : <span></span>}
+                  <button type="submit" className="btn-touch py-3 rounded-xl bg-slate-900 text-white font-extrabold text-sm">✓ Enregistrer</button>
                 </div>
               </form>
             </div>

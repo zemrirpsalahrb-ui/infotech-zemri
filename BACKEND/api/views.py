@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -534,8 +535,18 @@ class RegisterView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class LoginRateThrottle(AnonRateThrottle):
+    """Anti brute-force : 8 tentatives de connexion par minute et par adresse IP."""
+    scope = "login"
+    rate = "8/min"
+
+
+DEFAULT_OWNER_CODES = ("admin123", "pro12345", "gros12345")
+
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginRateThrottle]
 
     def post(self, request):
         username = str(request.data.get("username", "")).strip()
@@ -561,11 +572,32 @@ class LoginView(APIView):
             return Response({"error": "Ce compte a été suspendu par l'administrateur."}, status=status.HTTP_403_FORBIDDEN)
 
         refresh = RefreshToken.for_user(user)
+        must_change = bool((user.is_staff or user.is_superuser) and any(user.check_password(c) for c in DEFAULT_OWNER_CODES))
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
             "profile": CustomerProfileSerializer(profile).data,
+            "must_change_code": must_change,
         })
+
+
+class ChangeOwnerCodeView(APIView):
+    """Le proprietaire change son code secret (mot de passe) depuis le dashboard."""
+    permission_classes = [IsAdminOrStaff]
+
+    def post(self, request):
+        current = str(request.data.get("current", ""))
+        new = str(request.data.get("new", "")).strip()
+        user = request.user
+        if not user.check_password(current):
+            return Response({"error": "Code actuel incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+        if len(new) < 6:
+            return Response({"error": "Le nouveau code doit contenir au moins 6 caracteres."}, status=status.HTTP_400_BAD_REQUEST)
+        if new in DEFAULT_OWNER_CODES or new == current:
+            return Response({"error": "Choisissez un code different et personnel."}, status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(new)
+        user.save()
+        return Response({"ok": True})
 
 
 class MeView(APIView):

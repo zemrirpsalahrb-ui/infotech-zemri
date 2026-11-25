@@ -8,6 +8,7 @@ from .views import (
     KitBuilderEvaluateView,
     RegisterView,
     LoginView,
+    ChangeOwnerCodeView,
     MeView,
     CheckoutOrderView,
     OrderTrackView,
@@ -46,6 +47,7 @@ urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="auth-login"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
     path("auth/me/", MeView.as_view(), name="auth-me"),
+    path("auth/change-code/", ChangeOwnerCodeView.as_view(), name="auth-change-code"),
 
     # Delivery Partner (NOEST) Endpoints
     path("delivery/wilayas/", DeliveryWilayasView.as_view(), name="delivery-wilayas"),
