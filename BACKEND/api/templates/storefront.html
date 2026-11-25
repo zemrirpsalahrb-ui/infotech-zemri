@@ -3761,12 +3761,13 @@ if (typeof window !== "undefined") {
       const [viewMode, setViewMode] = useState("photo360"); // "photo360" (4K Ultra-Réaliste 3D 360°) | "mesh3d" (Modèle Architectural 3D)
       const [activeZone, setActiveZone] = useState("cameras"); // "cameras" | "alarm" | "digicode" | "wifi_ptz" | "xvr_hdd" | "power_poe"
       const [nightVision, setNightVision] = useState(false);
-      const [autoRotate, setAutoRotate] = useState(false);
+      const [autoRotate, setAutoRotate] = useState(true); // la villa tourne toute seule à 360° dès l'ouverture
       const [zoneSearch, setZoneSearch] = useState("");
 
       const stateRef = React.useRef({
         activeZone: "cameras",
-        autoRotate: false,
+        autoRotate: true,
+          lastInteract: 0,
         viewMode: "photo360",
         nightVision: false,
         lon: -60,
@@ -4073,6 +4074,7 @@ if (typeof window !== "undefined") {
         const onPointerDown = (e) => {
           const pt = e.touches ? e.touches[0] : e;
           isUserInteracting = true;
+          stateRef.current.lastInteract = performance.now();
           is3DTouch = false;
           isScrollTouch = false;
           onPointerDownPointerX = pt.clientX;
@@ -4099,7 +4101,6 @@ if (typeof window !== "undefined") {
               } else if (absDx > 8) {
                 // Si horizontal, l'utilisateur tourne dans la vue 360°
                 is3DTouch = true;
-                setAutoRotate(false);
               }
             }
             if (isScrollTouch) return;
@@ -4120,6 +4121,7 @@ if (typeof window !== "undefined") {
             }
           }
           isUserInteracting = false;
+          stateRef.current.lastInteract = performance.now();
           is3DTouch = false;
           isScrollTouch = false;
         };
@@ -4171,8 +4173,9 @@ if (typeof window !== "undefined") {
           const st = stateRef.current;
 
           // Rotation automatique drone 360° si activée
-          if (st.autoRotate && !isUserInteracting) {
-            st.targetLon += 0.14;
+          // Reprend automatiquement le tour 360° 3 secondes après que le visiteur a lâché la villa
+          if (st.autoRotate && !isUserInteracting && performance.now() - st.lastInteract > 3000) {
+            st.targetLon += 0.25;
           }
 
           // Interpolation fluide vers la cible (Glissement de caméra cinématique)
