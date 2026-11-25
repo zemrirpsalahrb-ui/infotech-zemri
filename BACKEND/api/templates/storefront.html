@@ -3758,7 +3758,8 @@ if (typeof window !== "undefined") {
                 /* ---------- VILLA ULTRA-RÉALISTE 4K EN VUE 3D 360° INTERACTIVE (Three.js WebGL) ---------- */
     function InteractiveVillaExplorer({ products = [], onSelectProduct, onAddToCart, onDirectOrder, onOpenCatalogZone, favs = [], onToggleFav, compare = [], onToggleCompare, showToast }) {
       const mountRef = React.useRef(null);
-      const [viewMode, setViewMode] = useState("photo360"); // "photo360" (4K Ultra-Réaliste 3D 360°) | "mesh3d" (Modèle Architectural 3D)
+      const ctlRef = React.useRef(null);
+      const [viewMode, setViewMode] = useState("orbit3d"); // "orbit3d" (orbite autour de la villa façon Google Earth) | "photo360" (panorama photo 4K) // "photo360" (4K Ultra-Réaliste 3D 360°) | "mesh3d" (Modèle Architectural 3D)
       const [activeZone, setActiveZone] = useState("cameras"); // "cameras" | "alarm" | "digicode" | "wifi_ptz" | "xvr_hdd" | "power_poe"
       const [nightVision, setNightVision] = useState(false);
       const [autoRotate, setAutoRotate] = useState(true); // la villa tourne toute seule à 360° dès l'ouverture
@@ -3768,7 +3769,8 @@ if (typeof window !== "undefined") {
         activeZone: "cameras",
         autoRotate: true,
           lastInteract: 0,
-        viewMode: "photo360",
+        viewMode: "orbit3d",
+        focusNonce: 0,
         nightVision: false,
         lon: -60,
         lat: 8,
@@ -3927,6 +3929,8 @@ if (typeof window !== "undefined") {
 
       const selectZone = (zid) => {
         setActiveZone(zid);
+        stateRef.current.activeZone = zid;
+        stateRef.current.focusNonce = (stateRef.current.focusNonce || 0) + 1;
         setAutoRotate(false);
         setZoneSearch("");
         const z = zones[zid];
@@ -3939,6 +3943,7 @@ if (typeof window !== "undefined") {
 
       // ==================== MOTEUR THREE.JS : VUE 3D 360° ULTRA-RÉALISTE ====================
       useEffect(() => {
+        if (viewMode !== "photo360") return;
         const el = mountRef.current;
         if (!el || !window.THREE) return;
         const T = window.THREE;
@@ -4224,6 +4229,443 @@ if (typeof window !== "undefined") {
           window.removeEventListener("resize", onResize);
           renderer.dispose();
         };
+
+      }, [viewMode]);
+
+      // ==================== VUE ORBITALE 3D FAÇON GOOGLE EARTH : ON TOURNE AUTOUR DE LA VILLA ====================
+      useEffect(() => {
+        if (viewMode !== "orbit3d") return;
+        const el = mountRef.current;
+        if (!el || !window.THREE) return;
+        const T = window.THREE;
+        const W = () => el.clientWidth || 750;
+        const H = () => el.clientHeight || 470;
+        const isMobile = typeof window !== "undefined" && (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+        const st = stateRef.current;
+
+        const renderer = new T.WebGLRenderer({ antialias: !isMobile, alpha: false, powerPreference: "high-performance" });
+        renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
+        renderer.setSize(W(), H());
+        if (!isMobile) {
+          renderer.shadowMap.enabled = true;
+          renderer.shadowMap.type = T.PCFSoftShadowMap;
+        }
+        if (T.sRGBEncoding) renderer.outputEncoding = T.sRGBEncoding;
+        if (T.ACESFilmicToneMapping) {
+          renderer.toneMapping = T.ACESFilmicToneMapping;
+          renderer.toneMappingExposure = 0.82;
+        }
+        el.innerHTML = "";
+        el.appendChild(renderer.domElement);
+
+        const scene = new T.Scene();
+        const camera = new T.PerspectiveCamera(45, W() / H(), 0.1, 400);
+
+        // ---------- Lumières ----------
+        const hemi = new T.HemisphereLight(0xdbeafe, 0x3b4a32, 0.6);
+        scene.add(hemi);
+        const sun = new T.DirectionalLight(0xfff2d6, 1.0);
+        sun.position.set(22, 34, 18);
+        if (!isMobile) {
+          sun.castShadow = true;
+          sun.shadow.mapSize.set(2048, 2048);
+          const sc = sun.shadow.camera;
+          sc.left = -26; sc.right = 26; sc.top = 26; sc.bottom = -26; sc.near = 5; sc.far = 90;
+          sun.shadow.bias = -0.0004;
+        }
+        scene.add(sun);
+
+        const mat = (c, r = 0.65, m = 0.05) => new T.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
+        const world = new T.Group();
+        scene.add(world);
+        const box = (w, h, d, m, x, y, z, parent = world, shadow = true) => {
+          const mesh = new T.Mesh(new T.BoxGeometry(w, h, d), m);
+          mesh.position.set(x, y, z);
+          mesh.castShadow = shadow;
+          mesh.receiveShadow = true;
+          parent.add(mesh);
+          return mesh;
+        };
+
+        // ---------- Terrain, parcelle, allée ----------
+        const ground = new T.Mesh(new T.CircleGeometry(110, 72), mat(0x2d5a2e, 0.95, 0));
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        world.add(ground);
+        box(25, 0.1, 19, mat(0x8f968b, 0.9, 0), 0, 0.05, 0, world, false);
+        box(6.4, 0.06, 6.6, mat(0x3a3d42, 0.95, 0), 5, 0.12, 6.0, world, false);
+        box(1.6, 0.06, 5.8, mat(0xc9c2b4, 0.9, 0), 0.4, 0.12, 6.2, world, false);
+
+        // ---------- Villa moderne ----------
+        const wallA = mat(0xf2f0ea, 0.8, 0.02);
+        const wallB = mat(0xe7e2d6, 0.8, 0.02);
+        const roofM = mat(0x2a2e35, 0.5, 0.3);
+        const woodM = mat(0x9a6a3c, 0.7, 0.05);
+        const frameM = mat(0x1f2937, 0.4, 0.5);
+        const glassM = new T.MeshStandardMaterial({ color: 0x7ab8e8, roughness: 0.08, metalness: 0.6, transparent: true, opacity: 0.55, emissive: 0x1d4ed8, emissiveIntensity: 0.05 });
+
+        box(8, 3.2, 7, wallA, -2, 1.6, 0);                  // rez-de-chaussée
+        box(6, 3.0, 5.6, wallB, -3, 4.7, -0.4);             // étage
+        box(2.4, 3.0, 0.12, woodM, -1.2, 4.7, 2.44);        // bardage bois étage
+        box(8.6, 0.3, 7.6, roofM, -2, 3.35, 0.1);           // dalle toit RDC
+        box(6.6, 0.3, 6.2, roofM, -3, 6.35, -0.4);          // toit étage
+        box(6, 3.0, 6.4, wallB, 5, 1.5, 0.2);               // garage
+        box(6.6, 0.3, 7.0, roofM, 5, 3.15, 0.2);            // toit garage
+        box(4.4, 2.4, 0.1, woodM, 5, 1.2, 3.42);            // porte garage
+        for (let i = 0; i < 5; i++) box(4.4, 0.04, 0.12, frameM, 5, 0.4 + i * 0.5, 3.46, world, false);
+
+        // Fenêtres, porte, cadres
+        box(4.2, 2.3, 0.05, frameM, -3.5, 1.6, 3.5, world, false);
+        const winSalon = box(4.0, 2.1, 0.08, glassM, -3.5, 1.6, 3.54, world, false);
+        box(1.3, 2.3, 0.12, frameM, 0.4, 1.15, 3.52, world, false);
+        box(3.8, 1.9, 0.05, frameM, -3.2, 4.7, 2.42, world, false);
+        const winUp = box(3.6, 1.7, 0.08, glassM, -3.2, 4.7, 2.46, world, false);
+        // Intérieur du salon visible à travers la vitre : écran de surveillance + enregistreur
+        const monitor = box(2.2, 1.2, 0.08, new T.MeshStandardMaterial({ color: 0x0b1530, emissive: 0x1e40af, emissiveIntensity: 0.9 }), -3.5, 1.6, 1.0, world, false);
+        const xvrBox = box(0.9, 0.18, 0.5, new T.MeshStandardMaterial({ color: 0x111827, emissive: 0xf59e0b, emissiveIntensity: 0.55 }), -5.2, 0.7, 2.7, world, false);
+
+        // Portail, piliers, clôture
+        const stone = mat(0x6b6e73, 0.9, 0.05);
+        const lampM = new T.MeshStandardMaterial({ color: 0xfff1b8, emissive: 0xfbbf24, emissiveIntensity: 0.9 });
+        box(0.6, 2.0, 0.6, stone, 2.2, 1.0, 9, world);
+        box(0.6, 2.0, 0.6, stone, 8.2, 1.0, 9, world);
+        [2.2, 8.2].forEach(x => { const l = new T.Mesh(new T.SphereGeometry(0.2, 16, 16), lampM); l.position.set(x, 2.25, 9); world.add(l); });
+        box(5.4, 1.5, 0.1, frameM, 5.2, 0.85, 9, world);
+        for (let i = 0; i < 12; i++) box(0.05, 1.4, 0.12, mat(0x9ca3af, 0.4, 0.7), 2.6 + i * 0.47, 0.85, 9.02, world, false);
+        const fenceM = mat(0x374151, 0.5, 0.5);
+        box(14.2, 1.2, 0.12, fenceM, -4.9, 0.6, 9);
+        box(3.8, 1.2, 0.12, fenceM, 10.1, 0.6, 9);
+        box(0.12, 1.2, 18, fenceM, -12, 0.6, 0);
+        box(0.12, 1.2, 18, fenceM, 12, 0.6, 0);
+        box(24, 1.2, 0.12, fenceM, 0, 0.6, -9);
+
+        // Arbres et buissons
+        const leaf = mat(0x2f6b34, 0.9, 0);
+        const trunkM = mat(0x5b4030, 0.9, 0);
+        const tree = (x, z, s = 1) => {
+          const g = new T.Group();
+          const tr = new T.Mesh(new T.CylinderGeometry(0.18 * s, 0.26 * s, 2.2 * s, 10), trunkM);
+          tr.position.y = 1.1 * s; tr.castShadow = true; g.add(tr);
+          [[0, 3.1, 0, 1.25], [0.5, 2.6, 0.2, 0.9], [-0.5, 2.7, -0.2, 0.95]].forEach(a => {
+            const c = new T.Mesh(new T.IcosahedronGeometry(a[3] * s, 1), leaf);
+            c.position.set(a[0] * s, a[1] * s, a[2] * s); c.castShadow = true; g.add(c);
+          });
+          g.position.set(x, 0, z);
+          world.add(g);
+        };
+        [[-9, 6, 1.1], [-10, -3, 1.3], [-8, -7, 1], [9.5, -6, 1.2], [10.5, 5.5, 0.9], [-12.5, 12, 1.4], [14, 12, 1.2], [-18, -4, 1.5], [18, -2, 1.4]].forEach(a => tree(a[0], a[1], a[2]));
+        [[-6.5, 4.6], [-1.5, 4.5], [1.6, 4.5], [-8, 4.5]].forEach(a => {
+          const b = new T.Mesh(new T.IcosahedronGeometry(0.55, 1), leaf);
+          b.position.set(a[0], 0.45, a[1]); b.castShadow = true; world.add(b);
+        });
+
+        // Voiture dans l'allée
+        const car = new T.Group();
+        const carBody = new T.Mesh(new T.BoxGeometry(2.0, 0.6, 4.2), mat(0x1d4ed8, 0.25, 0.7));
+        carBody.position.y = 0.62; carBody.castShadow = true; car.add(carBody);
+        const carCab = new T.Mesh(new T.BoxGeometry(1.7, 0.55, 2.1), mat(0x0f172a, 0.1, 0.8));
+        carCab.position.set(0, 1.15, -0.2); carCab.castShadow = true; car.add(carCab);
+        [[-0.95, 1.3], [0.95, 1.3], [-0.95, -1.3], [0.95, -1.3]].forEach(w => {
+          const wh = new T.Mesh(new T.CylinderGeometry(0.38, 0.38, 0.28, 20), mat(0x111111, 0.8, 0));
+          wh.rotation.z = Math.PI / 2; wh.position.set(w[0], 0.38, w[1]); car.add(wh);
+        });
+        car.position.set(5.2, 0, 6.2);
+        car.rotation.y = 0.12;
+        world.add(car);
+
+        // Anneau radar au sol (périmètre surveillé)
+        const radar = new T.Mesh(new T.RingGeometry(15.4, 15.65, 96), new T.MeshBasicMaterial({ color: 0x38bdf8, side: T.DoubleSide, transparent: true, opacity: 0.55 }));
+        radar.rotation.x = -Math.PI / 2; radar.position.y = 0.14; world.add(radar);
+
+        // ---------- Équipements de sécurité ----------
+        const white = mat(0xf8fafc, 0.25, 0.3);
+        const camNodes = [];
+        const makeCam = (x, y, z, rotY) => {
+          const g = new T.Group();
+          g.position.set(x, y, z);
+          g.rotation.y = rotY;
+          const body = new T.Mesh(new T.CylinderGeometry(0.13, 0.13, 0.5, 18), white);
+          body.rotation.x = Math.PI / 2; body.castShadow = true; g.add(body);
+          const lens = new T.Mesh(new T.SphereGeometry(0.1, 14, 14), new T.MeshBasicMaterial({ color: 0x38bdf8 }));
+          lens.position.z = 0.27; g.add(lens);
+          const coneMat = new T.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.16, side: T.DoubleSide, depthWrite: false });
+          const cone = new T.Mesh(new T.ConeGeometry(2.4, 6.5, 28, 1, true), coneMat);
+          cone.rotation.x = -Math.PI / 2; cone.position.z = 3.4;
+          const pivot = new T.Group(); pivot.rotation.x = 0.28; pivot.add(cone); g.add(pivot);
+          world.add(g);
+          camNodes.push({ g, base: rotY, lens });
+        };
+        makeCam(-5.6, 3.0, 3.55, 0.25);
+        makeCam(7.7, 2.85, 3.5, -0.25);
+        makeCam(-5.6, 3.0, -3.55, Math.PI - 0.25);
+        makeCam(7.7, 2.85, -2.8, Math.PI + 0.25);
+
+        // Sirène flash
+        const sirenM = new T.MeshStandardMaterial({ color: 0xdc2626, emissive: 0xef4444, emissiveIntensity: 0.9 });
+        box(0.55, 0.38, 0.22, sirenM, -1.0, 5.5, 2.6, world, false);
+        const strobe = new T.PointLight(0xef4444, 0, 14);
+        strobe.position.set(-1.0, 5.5, 3.2);
+        world.add(strobe);
+
+        // Digicode sur le pilier du portail
+        box(0.24, 0.34, 0.06, new T.MeshStandardMaterial({ color: 0x0b1220, emissive: 0x10b981, emissiveIntensity: 0.9 }), 2.2, 1.3, 9.33, world, false);
+
+        // Dôme PTZ sur le toit
+        const ptzPole = new T.Mesh(new T.CylinderGeometry(0.06, 0.06, 0.6, 10), white);
+        ptzPole.position.set(-5.6, 6.7, 2.0); world.add(ptzPole);
+        const ptzDome = new T.Mesh(new T.SphereGeometry(0.3, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.6), mat(0xffffff, 0.2, 0.2));
+        ptzDome.position.set(-5.6, 7.05, 2.0); world.add(ptzDome);
+        const ptzGlow = new T.Mesh(new T.TorusGeometry(0.31, 0.03, 10, 28), new T.MeshBasicMaterial({ color: 0xa855f7 }));
+        ptzGlow.rotation.x = Math.PI / 2; ptzGlow.position.set(-5.6, 7.05, 2.0); world.add(ptzGlow);
+
+        // Coffret PoE / alimentation côté garage
+        const poeBox = box(0.18, 0.85, 0.65, mat(0x475569, 0.4, 0.6), 8.1, 1.4, 0.5, world, false);
+        for (let i = 0; i < 4; i++) {
+          const led = new T.Mesh(new T.SphereGeometry(0.035, 8, 8), new T.MeshBasicMaterial({ color: i % 2 ? 0x22c55e : 0x3b82f6 }));
+          led.position.set(8.21, 1.6 - i * 0.12, 0.35); world.add(led);
+        }
+
+        // ---------- Pastilles interactives 3D ----------
+        const zones3d = {
+          cameras:   { pos: [-5.6, 3.0, 3.55], az: 0.55, R: 13 },
+          alarm:     { pos: [-1.0, 5.5, 2.6],  az: 0.35, R: 12 },
+          digicode:  { pos: [2.2, 1.3, 9.3],   az: 0.6,  R: 11 },
+          wifi_ptz:  { pos: [-5.6, 7.0, 2.0],  az: 0.75, R: 13 },
+          xvr_hdd:   { pos: [-3.5, 1.6, 1.8],  az: 0.15, R: 12 },
+          power_poe: { pos: [8.1, 1.4, 0.5],   az: 1.4,  R: 11 }
+        };
+        const makePin = (icon, color) => {
+          const c = document.createElement("canvas");
+          c.width = 128; c.height = 128;
+          const g = c.getContext("2d");
+          g.beginPath(); g.arc(64, 64, 56, 0, Math.PI * 2);
+          g.fillStyle = "rgba(2,6,23,0.88)"; g.fill();
+          g.lineWidth = 8; g.strokeStyle = color; g.stroke();
+          g.font = "62px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+          g.fillText(icon, 64, 70);
+          const tex = new T.CanvasTexture(c);
+          if (T.sRGBEncoding) tex.encoding = T.sRGBEncoding;
+          const sp = new T.Sprite(new T.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+          sp.renderOrder = 10;
+          return sp;
+        };
+        const pins = [];
+        Object.values(zones).forEach(z => {
+          const z3 = zones3d[z.id];
+          if (!z3) return;
+          const sp = makePin(z.icon, z.color);
+          sp.position.set(z3.pos[0], z3.pos[1] + 1.3, z3.pos[2]);
+          sp.userData = { zoneId: z.id };
+          world.add(sp);
+          const lineGeo = new T.BufferGeometry().setFromPoints([new T.Vector3(z3.pos[0], z3.pos[1], z3.pos[2]), new T.Vector3(z3.pos[0], z3.pos[1] + 1.1, z3.pos[2])]);
+          const line = new T.Line(lineGeo, new T.LineBasicMaterial({ color: new T.Color(z.color), transparent: true, opacity: 0.9, depthTest: false }));
+          line.renderOrder = 9;
+          world.add(line);
+          pins.push({ sp, id: z.id });
+        });
+
+        // ---------- Jour / nuit ----------
+        let nightApplied = null;
+        const applyNight = (night) => {
+          nightApplied = night;
+          const sky = night ? 0x050b16 : 0x8fb9e6;
+          scene.background = new T.Color(sky);
+          scene.fog = new T.Fog(sky, night ? 40 : 70, night ? 120 : 190);
+          hemi.intensity = night ? 0.28 : 0.6;
+          sun.intensity = night ? 0.18 : 1.0;
+          glassM.emissiveIntensity = night ? 0.9 : 0.05;
+          lampM.emissiveIntensity = night ? 2.2 : 0.9;
+        };
+        applyNight(!!st.nightVision);
+
+        // ---------- Caméra orbitale ----------
+        const DEF = { az: 0.6, el: 0.42, R: 27, tx: 0, ty: 2.4, tz: 0.8 };
+        const orb = {
+          az: 0.6, el: 0.55, R: 40, tAz: 0.6, tEl: 0.42, tR: DEF.R,
+          target: new T.Vector3(DEF.tx, DEF.ty, DEF.tz), tTarget: new T.Vector3(DEF.tx, DEF.ty, DEF.tz)
+        };
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const touchNow = () => { st.lastInteract = performance.now(); };
+
+        ctlRef.current = {
+          zoom: (f) => { orb.tR = clamp(orb.tR * f, 5, 48); touchNow(); },
+          tilt: (d) => { orb.tEl = clamp(orb.tEl + d, 0.06, 1.5); touchNow(); },
+          reset: () => {
+            orb.tTarget.set(DEF.tx, DEF.ty, DEF.tz); orb.tR = DEF.R; orb.tEl = DEF.el; touchNow();
+          }
+        };
+
+        let dragging = false, moved = 0, lastX = 0, lastY = 0, velAz = 0, velEl = 0, pinchD = 0, touchMode = "";
+        const dist2 = (e) => Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+
+        const raycaster = new T.Raycaster();
+        const mv = new T.Vector2();
+        const hit = (cx, cy) => {
+          const r = el.getBoundingClientRect();
+          mv.x = ((cx - r.left) / r.width) * 2 - 1;
+          mv.y = -((cy - r.top) / r.height) * 2 + 1;
+          raycaster.setFromCamera(mv, camera);
+          const res = raycaster.intersectObjects(pins.map(p => p.sp), false);
+          if (res.length) { selectZone(res[0].object.userData.zoneId); return true; }
+          return false;
+        };
+
+        const onDown = (e) => {
+          touchNow();
+          if (e.touches && e.touches.length === 2) { pinchD = dist2(e); touchMode = "pinch"; dragging = false; return; }
+          const pt = e.touches ? e.touches[0] : e;
+          dragging = true; moved = 0; lastX = pt.clientX; lastY = pt.clientY; velAz = 0; velEl = 0; touchMode = "";
+        };
+        const onMove = (e) => {
+          if (e.touches && e.touches.length === 2 && touchMode === "pinch") {
+            const d = dist2(e);
+            if (pinchD > 0) orb.tR = clamp(orb.tR * (pinchD / d), 5, 48);
+            pinchD = d; touchNow();
+            return;
+          }
+          if (!dragging) return;
+          const pt = e.touches ? e.touches[0] : e;
+          const dx = pt.clientX - lastX, dy = pt.clientY - lastY;
+          lastX = pt.clientX; lastY = pt.clientY;
+          moved += Math.abs(dx) + Math.abs(dy);
+          if (e.touches) {
+            // Sur téléphone : geste horizontal = on tourne autour de la villa, geste vertical = la page défile
+            if (touchMode === "") {
+              if (moved > 8) touchMode = Math.abs(dx) >= Math.abs(dy) ? "orbit" : "scroll";
+            }
+            if (touchMode === "scroll") { dragging = false; return; }
+            if (touchMode !== "orbit") return;
+            orb.tAz -= dx * 0.0065; velAz = -dx * 0.0065; velEl = 0;
+          } else {
+            orb.tAz -= dx * 0.0055; velAz = -dx * 0.0055;
+            orb.tEl = clamp(orb.tEl + dy * 0.004, 0.06, 1.5); velEl = dy * 0.004;
+          }
+          touchNow();
+        };
+        const onUp = (e) => {
+          if (dragging && moved < 6) {
+            const pt = e.changedTouches ? e.changedTouches[0] : e;
+            if (pt) hit(pt.clientX, pt.clientY);
+          }
+          dragging = false; pinchD = 0; touchMode = "";
+          touchNow();
+        };
+        const onWheel = (e) => {
+          e.preventDefault();
+          orb.tR = clamp(orb.tR * (1 + e.deltaY * 0.0012), 5, 48);
+          touchNow();
+        };
+        el.addEventListener("mousedown", onDown);
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+        el.addEventListener("touchstart", onDown, { passive: true });
+        window.addEventListener("touchmove", onMove, { passive: true });
+        window.addEventListener("touchend", onUp, { passive: true });
+        el.addEventListener("wheel", onWheel, { passive: false });
+        const onResize = () => {
+          camera.aspect = W() / H();
+          camera.updateProjectionMatrix();
+          renderer.setSize(W(), H());
+        };
+        window.addEventListener("resize", onResize);
+
+        // ---------- Boucle de rendu ----------
+        let raf = null;
+        let visible = true;
+        let seenNonce = st.focusNonce || 0;
+        let prevAuto = st.autoRotate;
+        const clock = new T.Clock();
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(en => {
+            visible = en.isIntersecting;
+            if (visible && !raf) { clock.getDelta(); raf = requestAnimationFrame(animate); }
+          });
+        }, { threshold: 0.02 });
+        io.observe(el);
+
+        const animate = () => {
+          if (!visible) { raf = null; return; }
+          const dt = Math.min(clock.getDelta(), 0.05);
+          const t = clock.elapsedTime;
+
+          if (nightApplied !== !!st.nightVision) applyNight(!!st.nightVision);
+
+          // Un clic sur un équipement : la caméra vole vers lui
+          if ((st.focusNonce || 0) !== seenNonce) {
+            seenNonce = st.focusNonce || 0;
+            const z3 = zones3d[st.activeZone];
+            if (z3) {
+              orb.tTarget.set(z3.pos[0], z3.pos[1], z3.pos[2]);
+              const k = Math.round((orb.tAz - z3.az) / (Math.PI * 2));
+              orb.tAz = z3.az + k * Math.PI * 2;
+              orb.tR = z3.R; orb.tEl = 0.3;
+            }
+          }
+          // Bouton « Tour 360° Auto » : retour à la vue d'ensemble puis orbite
+          if (st.autoRotate && !prevAuto) {
+            orb.tTarget.set(DEF.tx, DEF.ty, DEF.tz); orb.tR = DEF.R; orb.tEl = DEF.el;
+          }
+          prevAuto = st.autoRotate;
+
+          // Orbite automatique douce (comme une visite Google Earth), reprise 3 s après le dernier geste
+          if (st.autoRotate && !dragging && performance.now() - (st.lastInteract || 0) > 3000) {
+            orb.tAz += 0.22 * dt;
+          }
+          // Inertie après un glisser
+          if (!dragging) {
+            if (Math.abs(velAz) > 0.00005) { orb.tAz += velAz; velAz *= 0.93; }
+            if (Math.abs(velEl) > 0.00005) { orb.tEl = clamp(orb.tEl + velEl, 0.06, 1.5); velEl *= 0.93; }
+          }
+
+          const k = Math.min(1, dt * 5);
+          orb.az += (orb.tAz - orb.az) * k;
+          orb.el += (orb.tEl - orb.el) * k;
+          orb.R += (orb.tR - orb.R) * k;
+          orb.target.lerp(orb.tTarget, k);
+
+          const ce = Math.cos(orb.el);
+          camera.position.set(
+            orb.target.x + orb.R * ce * Math.sin(orb.az),
+            Math.max(0.6, orb.target.y + orb.R * Math.sin(orb.el)),
+            orb.target.z + orb.R * ce * Math.cos(orb.az)
+          );
+          camera.lookAt(orb.target);
+
+          // Animations des équipements
+          camNodes.forEach((c, i) => { c.g.rotation.y = c.base + Math.sin(t * 0.9 + i * 1.7) * 0.22; });
+          radar.scale.setScalar(1 + (Math.sin(t * 1.4) * 0.5 + 0.5) * 0.05);
+          radar.material.opacity = 0.35 + (Math.sin(t * 2.0) * 0.5 + 0.5) * 0.35;
+          const flash = st.activeZone === "alarm" || st.nightVision;
+          strobe.intensity = flash && Math.sin(t * 12) > 0 ? 3.2 : 0;
+          ptzGlow.rotation.z = t * 2;
+          xvrBox.material.emissiveIntensity = 0.4 + (Math.sin(t * 3) * 0.5 + 0.5) * 0.6;
+          pins.forEach(p => {
+            const sel = st.activeZone === p.id;
+            const base = sel ? 2.2 : 1.7;
+            const dsc = clamp(camera.position.distanceTo(p.sp.position) / 24, 0.26, 1.15);
+            const s = base * dsc * (1 + Math.sin(t * 4 + p.sp.position.x) * (sel ? 0.1 : 0.06));
+            p.sp.scale.set(s, s, 1);
+          });
+
+          renderer.render(scene, camera);
+          raf = requestAnimationFrame(animate);
+        };
+        animate();
+
+        return () => {
+          if (raf) cancelAnimationFrame(raf);
+          io.disconnect();
+          ctlRef.current = null;
+          el.removeEventListener("mousedown", onDown);
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+          el.removeEventListener("touchstart", onDown);
+          window.removeEventListener("touchmove", onMove);
+          window.removeEventListener("touchend", onUp);
+          el.removeEventListener("wheel", onWheel);
+          window.removeEventListener("resize", onResize);
+          renderer.dispose();
+        };
       }, [viewMode]);
 
       return (
@@ -4270,6 +4712,14 @@ if (typeof window !== "undefined") {
                 title="Basculer le mode vision nocturne infrarouge"
               >
                 <span>{nightVision ? "🌙 Nuit IR" : "☀️ Crépuscule"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode(v => (v === "orbit3d" ? "photo360" : "orbit3d"))}
+                className="px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 text-slate-300 hover:text-white hover:bg-white/10"
+                title="Changer de mode d'affichage"
+              >
+                <span>{viewMode === "orbit3d" ? "📷 Photo 4K" : "🛰️ Orbite 3D"}</span>
               </button>
             </div>
           </div>
@@ -4319,13 +4769,31 @@ if (typeof window !== "undefined") {
                     <span>Zone Ciblée 360° : <strong className="text-cyan-300">{curZone.shortLabel}</strong></span>
                   </div>
                   <div className="px-3 py-1 sm:py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/15 text-[10px] sm:text-[11px] text-slate-300 font-semibold shadow-lg">
-                    <span className="hidden sm:inline">🖱️ Glissez 360° • Cliquez sur une pastille</span>
-                    <span className="sm:hidden text-cyan-300 font-bold">👆 Glissez ↔ 360° • ↕ défiler</span>
+                    <span className="hidden sm:inline">{viewMode === "orbit3d" ? "🖱️ Glissez pour tourner autour • Molette = zoom • Cliquez une pastille" : "🖱️ Glissez 360° • Cliquez sur une pastille"}</span>
+                    <span className="sm:hidden text-cyan-300 font-bold">{viewMode === "orbit3d" ? "👆 Glissez ↔ pour tourner • 2 doigts = zoom" : "👆 Glissez ↔ 360° • ↕ défiler"}</span>
                   </div>
                 </div>
 
+                {/* Commandes façon Google Earth : zoom, inclinaison, recentrage */}
+                {viewMode === "orbit3d" && (
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5">
+                    {[
+                      { l: "＋", t: "Zoom avant", f: () => ctlRef.current && ctlRef.current.zoom(0.8) },
+                      { l: "－", t: "Zoom arrière", f: () => ctlRef.current && ctlRef.current.zoom(1.25) },
+                      { l: "⤒", t: "Vue du dessus", f: () => ctlRef.current && ctlRef.current.tilt(0.25) },
+                      { l: "⤓", t: "Vue de face", f: () => ctlRef.current && ctlRef.current.tilt(-0.25) },
+                      { l: "🧭", t: "Recentrer la villa", f: () => { setAutoRotate(true); ctlRef.current && ctlRef.current.reset(); } }
+                    ].map(b => (
+                      <button key={b.t} type="button" title={b.t} aria-label={b.t} onClick={b.f}
+                        className="w-10 h-10 rounded-xl bg-slate-950/85 backdrop-blur-md border border-white/20 text-white text-lg font-black shadow-lg active:scale-90 hover:bg-white/15 flex items-center justify-center">
+                        {b.l}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Réticule de ciblage au centre */}
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10 opacity-70">
+                <div className={`absolute inset-0 pointer-events-none flex items-center justify-center z-10 opacity-70 ${viewMode === "orbit3d" ? "hidden" : ""}`}>
                   <div className="w-16 h-16 rounded-full border border-dashed border-cyan-400/50 flex items-center justify-center animate-spin-slow">
                     <div className="w-2 h-2 rounded-full bg-cyan-400/80"></div>
                   </div>
