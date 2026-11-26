@@ -574,7 +574,8 @@ class LoginView(APIView):
                     prof = CustomerProfile.objects.filter(desktop_client_id=int(clean_id)).first()
 
             if prof and prof.user:
-                if (prof.desktop_code_web and (prof.desktop_code_web.strip().upper() == password.strip().upper() or prof.desktop_code_web.strip().upper() == username.strip().upper())) or prof.user.check_password(password):
+                p_code = getattr(prof, "desktop_code_web", "") or ""
+                if (p_code and (p_code.strip().upper() == password.strip().upper() or p_code.strip().upper() == username.strip().upper())) or prof.user.check_password(password):
                     user = prof.user
 
         if not user:
