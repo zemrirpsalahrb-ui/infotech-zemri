@@ -568,8 +568,6 @@ class LoginView(APIView):
                 prof = CustomerProfile.objects.filter(phone__icontains=clean_phone).first()
             if not prof:
                 prof = CustomerProfile.objects.filter(desktop_client_name__iexact=username).first()
-            if not prof:
-                prof = CustomerProfile.objects.filter(desktop_code_web__iexact=username).first()
             if not prof and username.upper().startswith("CL") and username[2:].isdigit():
                 try:
                     c_id = int(username[2:])
@@ -583,9 +581,8 @@ class LoginView(APIView):
                 except Exception:
                     pass
 
-            if prof and prof.user:
-                if (prof.desktop_code_web and prof.desktop_code_web.strip().upper() == password.strip().upper()) or prof.user.check_password(password):
-                    user = prof.user
+            if prof and prof.user and prof.user.check_password(password):
+                user = prof.user
 
         if not user:
             return Response({"error": "Identifiants ou code secret incorrect."}, status=status.HTTP_401_UNAUTHORIZED)
@@ -1133,45 +1130,79 @@ class DesktopSyncMetricsView(APIView):
 
         # Synchronisation automatique des comptes clients (Tarif Installateur + Accès Crédit Web)
         clients_data = data.get("clients") or data.get("top_debtors") or []
-        for c_item in clients_data:
-            ide = c_item.get("ide")
-            nom = str(c_item.get("nom") or "").strip()
-            tel = str(c_item.get("tel") or "").strip()
-            solde = to_dec(c_item.get("solde"))
-            code_web = str(c_item.get("code_web") or "").strip()
-            last_inv = str(c_item.get("derniere_facture") or "").strip()
-            if not nom or not code_web:
-                continue
+        if clients_data:
+            existing_users = {u.username: u for u in User.objects.filter(username__startswith="cl_")}
+            existing_profs = {p.desktop_client_id: p for p in CustomerProfile.objects.filter(desktop_client_id__isnull=False).select_related("user")}
 
-            uname = f"cl_{ide}" if ide else f"cl_{nom[:20].lower().replace(' ', '_')}"
-            u_obj, _ = User.objects.get_or_create(
-                username=uname,
-                defaults={"first_name": nom[:30], "is_staff": False}
-            )
+            users_to_create = []
+            profs_to_create = []
+            profs_to_update = []
 
-            prof, _ = CustomerProfile.objects.get_or_create(
-                user=u_obj,
-                defaults={
-                    "account_type": "INSTALLER",
-                    "approval_status": "APPROVED",
-                    "desktop_client_name": nom,
-                    "desktop_client_id": ide,
-                    "desktop_balance": solde,
-                    "desktop_code_web": code_web,
-                    "last_invoice": last_inv,
-                }
-            )
-            prof.account_type = "INSTALLER"
-            prof.requested_type = "INSTALLER"
-            prof.approval_status = "APPROVED"
-            prof.desktop_client_name = nom
-            prof.desktop_client_id = ide
-            prof.desktop_balance = solde
-            prof.desktop_code_web = code_web
-            prof.last_invoice = last_inv
-            if tel and tel != "/":
-                prof.phone = tel
-            prof.save()
+            for c_item in clients_data:
+                ide = c_item.get("ide")
+                nom = str(c_item.get("nom") or "").strip()
+                code_web = str(c_item.get("code_web") or "").strip()
+                if not nom or not code_web or not ide:
+                    continue
+
+                uname = f"cl_{ide}"
+                if uname not in existing_users:
+                    users_to_create.append(User(username=uname, first_name=nom[:30], is_staff=False))
+
+            if users_to_create:
+                User.objects.bulk_create(users_to_create, ignore_conflicts=True)
+                existing_users = {u.username: u for u in User.objects.filter(username__startswith="cl_")}
+
+            for c_item in clients_data:
+                ide = c_item.get("ide")
+                nom = str(c_item.get("nom") or "").strip()
+                tel = str(c_item.get("tel") or "").strip()
+                solde = to_dec(c_item.get("solde"))
+                code_web = str(c_item.get("code_web") or "").strip()
+                last_inv = str(c_item.get("derniere_facture") or "").strip()
+                if not nom or not code_web or not ide:
+                    continue
+
+                uname = f"cl_{ide}"
+                u_obj = existing_users.get(uname)
+                if not u_obj or not u_obj.id:
+                    continue
+
+                prof = existing_profs.get(ide)
+                if not prof:
+                    prof = CustomerProfile(
+                        user=u_obj,
+                        account_type="INSTALLER",
+                        requested_type="INSTALLER",
+                        approval_status="APPROVED",
+                        desktop_client_name=nom,
+                        desktop_client_id=ide,
+                        desktop_balance=solde,
+                        desktop_code_web=code_web,
+                        last_invoice=last_inv,
+                        phone=tel if (tel and tel != "/") else "",
+                    )
+                    profs_to_create.append(prof)
+                    existing_profs[ide] = prof
+                else:
+                    prof.account_type = "INSTALLER"
+                    prof.approval_status = "APPROVED"
+                    prof.desktop_client_name = nom
+                    prof.desktop_balance = solde
+                    prof.desktop_code_web = code_web
+                    prof.last_invoice = last_inv
+                    if tel and tel != "/":
+                        prof.phone = tel
+                    profs_to_update.append(prof)
+
+            if profs_to_create:
+                CustomerProfile.objects.bulk_create(profs_to_create, ignore_conflicts=True)
+            if profs_to_update:
+                CustomerProfile.objects.bulk_update(
+                    profs_to_update,
+                    ["account_type", "approval_status", "desktop_client_name", "desktop_balance", "desktop_code_web", "last_invoice", "phone"],
+                    batch_size=100
+                )
 
         if "history_7_days" in data:
             snapshot.history_7_days = data.get("history_7_days") or []
