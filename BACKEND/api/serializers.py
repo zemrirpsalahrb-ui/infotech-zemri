@@ -58,6 +58,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             "desktop_client_name",
             "desktop_client_id",
             "desktop_balance",
+            "desktop_code_web",
             "last_invoice",
             "created_at",
         ]

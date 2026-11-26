@@ -561,13 +561,15 @@ class LoginView(APIView):
                 user = authenticate(request, username=u_by_email.username, password=password)
 
         if not user:
-            # Recherche client par téléphone, nom de client ou identifiant CLXXXX
+            # Recherche client par téléphone, nom de client, identifiant CLXXXX ou code_web direct
             clean_phone = "".join(c for c in username if c.isdigit())
             prof = None
             if len(clean_phone) >= 8:
                 prof = CustomerProfile.objects.filter(phone__icontains=clean_phone).first()
             if not prof:
                 prof = CustomerProfile.objects.filter(desktop_client_name__iexact=username).first()
+            if not prof:
+                prof = CustomerProfile.objects.filter(desktop_code_web__iexact=username).first()
             if not prof and username.upper().startswith("CL") and username[2:].isdigit():
                 try:
                     c_id = int(username[2:])
@@ -581,8 +583,9 @@ class LoginView(APIView):
                 except Exception:
                     pass
 
-            if prof and prof.user and prof.user.check_password(password):
-                user = prof.user
+            if prof and prof.user:
+                if (prof.desktop_code_web and prof.desktop_code_web.strip() == password.strip()) or prof.user.check_password(password):
+                    user = prof.user
 
         if not user:
             return Response({"error": "Identifiants ou code secret incorrect."}, status=status.HTTP_401_UNAUTHORIZED)
@@ -1145,8 +1148,6 @@ class DesktopSyncMetricsView(APIView):
                 username=uname,
                 defaults={"first_name": nom[:30], "is_staff": False}
             )
-            u_obj.set_password(code_web)
-            u_obj.save()
 
             prof, _ = CustomerProfile.objects.get_or_create(user=u_obj)
             prof.account_type = "INSTALLER"
@@ -1155,6 +1156,7 @@ class DesktopSyncMetricsView(APIView):
             prof.desktop_client_name = nom
             prof.desktop_client_id = ide
             prof.desktop_balance = solde
+            prof.desktop_code_web = code_web
             prof.last_invoice = last_inv
             if tel and tel != "/":
                 prof.phone = tel
