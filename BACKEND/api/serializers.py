@@ -56,6 +56,9 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             "professional_justification",
             "admin_notes",
             "desktop_client_name",
+            "desktop_client_id",
+            "desktop_balance",
+            "last_invoice",
             "created_at",
         ]
 

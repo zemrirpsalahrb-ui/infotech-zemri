@@ -34,6 +34,9 @@ class CustomerProfile(models.Model):
     professional_justification = models.TextField(blank=True, default="", db_column="prof_justification")
     admin_notes = models.TextField(blank=True, default="")
     desktop_client_name = models.CharField(max_length=100, blank=True, default="")
+    desktop_client_id = models.IntegerField(null=True, blank=True, db_index=True)
+    desktop_balance = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    last_invoice = models.CharField(max_length=100, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -394,6 +397,7 @@ class DesktopStoreSnapshot(models.Model):
 
     # Soldes globaux
     total_creances_client = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    total_on_leur_doit = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     total_dettes_fournisseur = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     articles_en_alerte_count = models.IntegerField(default=0)
     articles_en_rupture_count = models.IntegerField(default=0)

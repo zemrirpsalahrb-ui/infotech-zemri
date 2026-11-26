@@ -820,14 +820,15 @@
                     className="card p-3.5 sm:p-4 border-l-4 border-l-red-500 bg-red-50/20 shadow-sm cursor-pointer hover:bg-red-50/40 transition"
                   >
                     <div className="text-[11px] font-bold text-red-700 uppercase tracking-wider flex items-center justify-between">
-                      <span>Crédits à Encaisser</span>
+                      <span>Ils nous doivent (-2000)</span>
                       <span>👥</span>
                     </div>
                     <div className="text-xl sm:text-2xl font-black text-red-600 mt-1 font-mono">
                       {fmtMoney(storeMetrics?.total_creances_client)}
                     </div>
-                    <div className="text-[11px] text-red-600 font-bold mt-1 flex items-center gap-1">
-                      <span>Voir les débiteurs →</span>
+                    <div className="text-[11px] text-slate-500 font-medium mt-1 flex items-center justify-between">
+                      <span>On leur doit : <strong className="text-emerald-700 font-mono font-bold">{fmtMoney(storeMetrics?.total_on_leur_doit)}</strong></span>
+                      <span className="text-red-600 font-bold">Voir →</span>
                     </div>
                   </div>
                 </div>
@@ -1018,13 +1019,13 @@
                       onClick={() => setDebtFilter("debiteurs")}
                       className={`px-3 py-1 rounded-lg text-xs font-extrabold transition shrink-0 ${debtFilter === "debiteurs" ? "bg-red-600 text-white" : "bg-red-50 text-red-700"}`}
                     >
-                      🔴 Il nous doit ({storeMetrics?.top_debtors?.filter(x => Number(x.solde) > 0).length || 0})
+                      🔴 Il nous doit (-2000) ({storeMetrics?.top_debtors?.filter(x => Number(x.solde) < -0.009).length || 0})
                     </button>
                     <button
                       onClick={() => setDebtFilter("crediteurs")}
                       className={`px-3 py-1 rounded-lg text-xs font-extrabold transition shrink-0 ${debtFilter === "crediteurs" ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-700"}`}
                     >
-                      🟢 On lui doit ({storeMetrics?.top_debtors?.filter(x => Number(x.solde) < 0).length || 0})
+                      🟢 On lui doit (+2000) ({storeMetrics?.top_debtors?.filter(x => Number(x.solde) > 0.009).length || 0})
                     </button>
                   </div>
                 </div>
@@ -1032,11 +1033,14 @@
                 <div className="space-y-2.5">
                   {(() => {
                     const list = (storeMetrics?.top_debtors || []).filter(c => {
-                      if (debtFilter === "debiteurs" && Number(c.solde) <= 0) return false;
-                      if (debtFilter === "crediteurs" && Number(c.solde) >= 0) return false;
+                      const s = Number(c.solde || 0);
+                      if (debtFilter === "debiteurs" && s >= -0.009) return false;
+                      if (debtFilter === "crediteurs" && s <= 0.009) return false;
                       if (!debtSearch) return true;
                       const q = debtSearch.toLowerCase();
-                      return (c.nom && c.nom.toLowerCase().includes(q)) || (c.tel && c.tel.includes(q));
+                      return (c.nom && c.nom.toLowerCase().includes(q))
+                        || (c.tel && c.tel.includes(q))
+                        || (c.code_web && c.code_web.toLowerCase().includes(q));
                     });
 
                     if (list.length === 0) {
@@ -1050,12 +1054,19 @@
 
                     return list.map((c, i) => {
                       const soldeNum = Number(c.solde || 0);
-                      const estDebiteur = soldeNum > 0;
+                      const ilNousDoit = soldeNum < -0.009;
+                      const onLuiDoit = soldeNum > 0.009;
                       return (
                         <div key={c.ide || i} className="card p-3.5 bg-white border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="font-extrabold text-sm sm:text-base text-slate-900 truncate">{c.nom}</span>
+                              {c.code_web && (
+                                <span className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                  <span>🔑 Code Web :</span>
+                                  <strong className="text-indigo-900">{c.code_web}</strong>
+                                </span>
+                              )}
                               {c.derniere_facture && (
                                 <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
                                   Bon #{c.derniere_facture}
@@ -1069,14 +1080,24 @@
 
                           <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                             <div className="text-left sm:text-right">
-                              <span className={`inline-block px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black font-mono ${
-                                estDebiteur ? "bg-red-100 text-red-700 border border-red-200" : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              }`}>
-                                {estDebiteur ? `Il nous doit : ${fmtMoney(soldeNum)}` : `On lui doit : ${fmtMoney(Math.abs(soldeNum))}`}
-                              </span>
+                              {ilNousDoit && (
+                                <span className="inline-block px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black font-mono bg-red-100 text-red-700 border border-red-200">
+                                  🔴 Il nous doit : {fmtMoney(-soldeNum)}
+                                </span>
+                              )}
+                              {onLuiDoit && (
+                                <span className="inline-block px-2.5 py-1 rounded-xl text-xs sm:text-sm font-black font-mono bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  🟢 On lui doit : {fmtMoney(soldeNum)}
+                                </span>
+                              )}
+                              {!ilNousDoit && !onLuiDoit && (
+                                <span className="inline-block px-2.5 py-1 rounded-xl text-xs sm:text-sm font-bold font-mono bg-slate-100 text-slate-600 border border-slate-200">
+                                  ✓ Soldé (0 DA)
+                                </span>
+                              )}
                             </div>
 
-                            {c.tel && (
+                            {c.tel && c.tel !== "/" && (
                               <a
                                 href={`tel:${c.tel.replace(/[^0-9+]/g, '')}`}
                                 className="btn-touch px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm shrink-0"

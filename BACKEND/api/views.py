@@ -561,7 +561,31 @@ class LoginView(APIView):
                 user = authenticate(request, username=u_by_email.username, password=password)
 
         if not user:
-            return Response({"error": "Identifiants incorrects."}, status=status.HTTP_401_UNAUTHORIZED)
+            # Recherche client par téléphone, nom de client ou identifiant CLXXXX
+            clean_phone = "".join(c for c in username if c.isdigit())
+            prof = None
+            if len(clean_phone) >= 8:
+                prof = CustomerProfile.objects.filter(phone__icontains=clean_phone).first()
+            if not prof:
+                prof = CustomerProfile.objects.filter(desktop_client_name__iexact=username).first()
+            if not prof and username.upper().startswith("CL") and username[2:].isdigit():
+                try:
+                    c_id = int(username[2:])
+                    prof = CustomerProfile.objects.filter(desktop_client_id=c_id).first()
+                except Exception:
+                    pass
+            if not prof and username.lower().startswith("cl_") and username[3:].isdigit():
+                try:
+                    c_id = int(username[3:])
+                    prof = CustomerProfile.objects.filter(desktop_client_id=c_id).first()
+                except Exception:
+                    pass
+
+            if prof and prof.user and prof.user.check_password(password):
+                user = prof.user
+
+        if not user:
+            return Response({"error": "Identifiants ou code secret incorrect."}, status=status.HTTP_401_UNAUTHORIZED)
 
         profile, _ = CustomerProfile.objects.get_or_create(
             user=user,
@@ -1099,9 +1123,42 @@ class DesktopSyncMetricsView(APIView):
         snapshot.nbr_bons_jour = int(data.get("nbr_bons_jour") or 0)
 
         snapshot.total_creances_client = to_dec(data.get("total_creances_client"))
+        snapshot.total_on_leur_doit = to_dec(data.get("total_on_leur_doit"))
         snapshot.total_dettes_fournisseur = to_dec(data.get("total_dettes_fournisseur"))
         snapshot.articles_en_alerte_count = int(data.get("articles_en_alerte_count") or 0)
         snapshot.articles_en_rupture_count = int(data.get("articles_en_rupture_count") or 0)
+
+        # Synchronisation automatique des comptes clients (Tarif Installateur + Accès Crédit Web)
+        clients_data = data.get("clients") or data.get("top_debtors") or []
+        for c_item in clients_data:
+            ide = c_item.get("ide")
+            nom = str(c_item.get("nom") or "").strip()
+            tel = str(c_item.get("tel") or "").strip()
+            solde = to_dec(c_item.get("solde"))
+            code_web = str(c_item.get("code_web") or "").strip()
+            last_inv = str(c_item.get("derniere_facture") or "").strip()
+            if not nom or not code_web:
+                continue
+
+            uname = f"cl_{ide}" if ide else f"cl_{nom[:20].lower().replace(' ', '_')}"
+            u_obj, _ = User.objects.get_or_create(
+                username=uname,
+                defaults={"first_name": nom[:30], "is_staff": False}
+            )
+            u_obj.set_password(code_web)
+            u_obj.save()
+
+            prof, _ = CustomerProfile.objects.get_or_create(user=u_obj)
+            prof.account_type = "INSTALLER"
+            prof.requested_type = "INSTALLER"
+            prof.approval_status = "APPROVED"
+            prof.desktop_client_name = nom
+            prof.desktop_client_id = ide
+            prof.desktop_balance = solde
+            prof.last_invoice = last_inv
+            if tel and tel != "/":
+                prof.phone = tel
+            prof.save()
 
         if "history_7_days" in data:
             snapshot.history_7_days = data.get("history_7_days") or []
