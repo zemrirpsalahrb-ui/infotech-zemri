@@ -371,3 +371,42 @@ class SyncLog(models.Model):
 
     def __str__(self):
         return f"[{self.created_at}] {self.direction} {self.event_type}: {self.status}"
+
+
+class DesktopStoreSnapshot(models.Model):
+    """
+    Instantané temps réel de l'activité du magasin physique (chiffre du jour, caisse, bénéfice,
+    créances clients, dettes fournisseurs, dernières ventes et alertes stock).
+    Synchronisé automatiquement et de façon sécurisée depuis le logiciel de caisse Java Swing.
+    """
+    synced_at = models.DateTimeField(auto_now=True)
+    today_date = models.DateField(null=True, blank=True)
+    
+    # Recette & Bénéfice
+    chiffre_jour = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    benefice_jour = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    chiffre_mois = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    benefice_mois = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    chiffre_annee = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    benefice_annee = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    caisse_espece = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    nbr_bons_jour = models.IntegerField(default=0)
+
+    # Soldes globaux
+    total_creances_client = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    total_dettes_fournisseur = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    articles_en_alerte_count = models.IntegerField(default=0)
+    articles_en_rupture_count = models.IntegerField(default=0)
+
+    # Collections détaillées (JSON)
+    history_7_days = models.JSONField(default=list, blank=True)
+    top_debtors = models.JSONField(default=list, blank=True)
+    recent_sales = models.JSONField(default=list, blank=True)
+    recent_purchases = models.JSONField(default=list, blank=True)
+    low_stock_items = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ["-synced_at"]
+
+    def __str__(self):
+        return f"Snapshot Magasin du {self.today_date or self.synced_at:%Y-%m-%d %H:%M} (CA: {self.chiffre_jour} DA)"

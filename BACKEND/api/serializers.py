@@ -12,6 +12,7 @@ from .models import (
     OnlineOrder,
     OnlineOrderItem,
     SyncLog,
+    DesktopStoreSnapshot,
 )
 
 
@@ -335,5 +336,11 @@ class OnlineOrderSerializer(serializers.ModelSerializer):
 class SyncLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = SyncLog
+        fields = "__all__"
+
+
+class DesktopStoreSnapshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DesktopStoreSnapshot
         fields = "__all__"
 

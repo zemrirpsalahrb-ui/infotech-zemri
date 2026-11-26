@@ -30,6 +30,7 @@ from .models import (
     OnlineOrder,
     OnlineOrderItem,
     SyncLog,
+    DesktopStoreSnapshot,
 )
 from .permissions import IsAdminOrStaff, HasDesktopApiKey
 from .serializers import (
@@ -44,6 +45,7 @@ from .serializers import (
     ReviewSerializer,
     OnlineOrderSerializer,
     SyncLogSerializer,
+    DesktopStoreSnapshotSerializer,
 )
 
 
@@ -1072,6 +1074,62 @@ class DesktopOrderConvertPosView(APIView):
         })
 
 
+class DesktopSyncMetricsView(APIView):
+    """
+    Reçoit les indicateurs de caisse et les données du magasin physique (LOGISZ Java Swing)
+    pour consultation sécurisée en temps réel sur le smartphone du propriétaire.
+    """
+    permission_classes = [HasDesktopApiKey]
+
+    @transaction.atomic
+    def post(self, request):
+        data = request.data or {}
+        now = timezone.now()
+
+        snapshot, _ = DesktopStoreSnapshot.objects.get_or_create(id=1)
+
+        snapshot.today_date = data.get("today_date") or now.date()
+        snapshot.chiffre_jour = to_dec(data.get("chiffre_jour"))
+        snapshot.benefice_jour = to_dec(data.get("benefice_jour"))
+        snapshot.chiffre_mois = to_dec(data.get("chiffre_mois"))
+        snapshot.benefice_mois = to_dec(data.get("benefice_mois"))
+        snapshot.chiffre_annee = to_dec(data.get("chiffre_annee"))
+        snapshot.benefice_annee = to_dec(data.get("benefice_annee"))
+        snapshot.caisse_espece = to_dec(data.get("caisse_espece"))
+        snapshot.nbr_bons_jour = int(data.get("nbr_bons_jour") or 0)
+
+        snapshot.total_creances_client = to_dec(data.get("total_creances_client"))
+        snapshot.total_dettes_fournisseur = to_dec(data.get("total_dettes_fournisseur"))
+        snapshot.articles_en_alerte_count = int(data.get("articles_en_alerte_count") or 0)
+        snapshot.articles_en_rupture_count = int(data.get("articles_en_rupture_count") or 0)
+
+        if "history_7_days" in data:
+            snapshot.history_7_days = data.get("history_7_days") or []
+        if "top_debtors" in data:
+            snapshot.top_debtors = data.get("top_debtors") or []
+        if "recent_sales" in data:
+            snapshot.recent_sales = data.get("recent_sales") or []
+        if "recent_purchases" in data:
+            snapshot.recent_purchases = data.get("recent_purchases") or []
+        if "low_stock_items" in data:
+            snapshot.low_stock_items = data.get("low_stock_items") or []
+
+        snapshot.save()
+
+        SyncLog.objects.create(
+            direction="DESKTOP_TO_WEB",
+            event_type="STORE_METRICS_SYNC",
+            status="SUCCESS",
+            summary=f"Métriques magasin reçues: CA jour={snapshot.chiffre_jour} DA, Caisse={snapshot.caisse_espece} DA, Créances={snapshot.total_creances_client} DA",
+        )
+
+        return Response({
+            "status": "SUCCESS",
+            "message": "Métriques magasin synchronisées avec succès.",
+            "synced_at": snapshot.synced_at.isoformat(),
+        })
+
+
 # ============================================================================
 # 6. WEBSITE ADMINISTRATION DASHBOARD ENDPOINTS
 # ============================================================================
@@ -1120,6 +1178,25 @@ class AdminDashboardStatsView(APIView):
             "recent_orders": OnlineOrderSerializer(recent_orders, many=True).data,
             "recent_sync_logs": SyncLogSerializer(recent_syncs, many=True).data,
         })
+
+
+class AdminStoreMetricsView(APIView):
+    """
+    Renvoie les indicateurs et soldes du magasin physique au smartphone du propriétaire
+    (authentifié par son code secret / JWT admin).
+    """
+    permission_classes = [IsAdminOrStaff]
+
+    def get(self, request):
+        snapshot = DesktopStoreSnapshot.objects.first()
+        if not snapshot:
+            return Response({
+                "has_data": False,
+                "message": "Aucune synchronisation magasin reçue pour le moment."
+            })
+        data = DesktopStoreSnapshotSerializer(snapshot).data
+        data["has_data"] = True
+        return Response(data)
 
 
 class AdminProductManageView(APIView):

@@ -16,7 +16,9 @@ from .views import (
     DesktopOrdersListView,
     DesktopOrderStatusUpdateView,
     DesktopOrderConvertPosView,
+    DesktopSyncMetricsView,
     AdminDashboardStatsView,
+    AdminStoreMetricsView,
     AdminProductManageView,
     AdminProductImageManageView,
     AdminAccountModerationView,
@@ -63,12 +65,14 @@ urlpatterns = [
 
     # Desktop Software Outbound Synchronization API (X-Desktop-API-Key)
     path("desktop/sync-products/", DesktopSyncProductsView.as_view(), name="desktop-sync-products"),
+    path("desktop/sync-metrics/", DesktopSyncMetricsView.as_view(), name="desktop-sync-metrics"),
     path("desktop/orders/", DesktopOrdersListView.as_view(), name="desktop-orders-list"),
     path("desktop/orders/<str:order_uid>/status/", DesktopOrderStatusUpdateView.as_view(), name="desktop-order-status"),
     path("desktop/orders/<str:order_uid>/convert-pos/", DesktopOrderConvertPosView.as_view(), name="desktop-order-convert-pos"),
 
     # Website Administration Dashboard API
     path("admin/dashboard/", AdminDashboardStatsView.as_view(), name="admin-dashboard"),
+    path("admin/store-metrics/", AdminStoreMetricsView.as_view(), name="admin-store-metrics"),
     path("admin/products/", AdminProductManageView.as_view(), name="admin-products"),
     path("admin/products/<int:pk>/", AdminProductManageView.as_view(), name="admin-product-detail"),
     path("admin/products/<int:product_id>/images/", AdminProductImageManageView.as_view(), name="admin-product-images"),
