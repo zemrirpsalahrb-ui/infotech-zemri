@@ -561,7 +561,7 @@ class LoginView(APIView):
                 user = authenticate(request, username=u_by_email.username, password=password)
 
         if not user:
-            # Recherche client par téléphone, nom de client, identifiant CLXXXX ou code_web direct
+            # Recherche client par téléphone, nom de client ou identifiant CLXXXX
             clean_phone = "".join(c for c in username if c.isdigit())
             prof = None
             if len(clean_phone) >= 8:
@@ -584,7 +584,7 @@ class LoginView(APIView):
                     pass
 
             if prof and prof.user:
-                if (prof.desktop_code_web and prof.desktop_code_web.strip() == password.strip()) or prof.user.check_password(password):
+                if (prof.desktop_code_web and prof.desktop_code_web.strip().upper() == password.strip().upper()) or prof.user.check_password(password):
                     user = prof.user
 
         if not user:
@@ -1149,7 +1149,18 @@ class DesktopSyncMetricsView(APIView):
                 defaults={"first_name": nom[:30], "is_staff": False}
             )
 
-            prof, _ = CustomerProfile.objects.get_or_create(user=u_obj)
+            prof, _ = CustomerProfile.objects.get_or_create(
+                user=u_obj,
+                defaults={
+                    "account_type": "INSTALLER",
+                    "approval_status": "APPROVED",
+                    "desktop_client_name": nom,
+                    "desktop_client_id": ide,
+                    "desktop_balance": solde,
+                    "desktop_code_web": code_web,
+                    "last_invoice": last_inv,
+                }
+            )
             prof.account_type = "INSTALLER"
             prof.requested_type = "INSTALLER"
             prof.approval_status = "APPROVED"
