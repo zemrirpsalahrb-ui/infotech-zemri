@@ -561,28 +561,91 @@ class LoginView(APIView):
                 user = authenticate(request, username=u_by_email.username, password=password)
 
         if not user:
-            # Recherche client par téléphone, nom de client ou identifiant CLXXXX
+            # Recherche client dans les profils existants
             clean_phone = "".join(c for c in username if c.isdigit())
             prof = None
             if len(clean_phone) >= 8:
                 prof = CustomerProfile.objects.filter(phone__icontains=clean_phone).first()
             if not prof:
                 prof = CustomerProfile.objects.filter(desktop_client_name__iexact=username).first()
-            if not prof and username.upper().startswith("CL") and username[2:].isdigit():
-                try:
-                    c_id = int(username[2:])
-                    prof = CustomerProfile.objects.filter(desktop_client_id=c_id).first()
-                except Exception:
-                    pass
-            if not prof and username.lower().startswith("cl_") and username[3:].isdigit():
-                try:
-                    c_id = int(username[3:])
-                    prof = CustomerProfile.objects.filter(desktop_client_id=c_id).first()
-                except Exception:
-                    pass
+            if not prof and (username.upper().startswith("CL") or username.upper().startswith("CL_")):
+                clean_id = "".join(c for c in username if c.isdigit())
+                if clean_id:
+                    prof = CustomerProfile.objects.filter(desktop_client_id=int(clean_id)).first()
 
-            if prof and prof.user and prof.user.check_password(password):
-                user = prof.user
+            if prof and prof.user:
+                if (prof.desktop_code_web and (prof.desktop_code_web.strip().upper() == password.strip().upper() or prof.desktop_code_web.strip().upper() == username.strip().upper())) or prof.user.check_password(password):
+                    user = prof.user
+
+        if not user:
+            # Recherche JIT (Just-In-Time) dans le snapshot synchronisé du magasin
+            snap = DesktopStoreSnapshot.objects.first()
+            if snap and snap.top_debtors:
+                u_norm = username.strip().upper()
+                p_norm = password.strip().upper()
+                clean_phone = "".join(c for c in username if c.isdigit())
+                matched_client = None
+                for c_item in snap.top_debtors:
+                    c_code = str(c_item.get("code_web") or "").strip().upper()
+                    c_tel = "".join(c for c in str(c_item.get("tel") or "") if c.isdigit())
+                    c_nom = str(c_item.get("nom") or "").strip().upper()
+                    c_ide = str(c_item.get("ide") or "")
+
+                    # Correspondance code direct (CLXXXX)
+                    if c_code and (u_norm == c_code or p_norm == c_code):
+                        matched_client = c_item
+                        break
+                    # Correspondance par téléphone + code
+                    if c_code and clean_phone and len(clean_phone) >= 8 and c_tel and clean_phone in c_tel:
+                        if p_norm == c_code or not p_norm:
+                            matched_client = c_item
+                            break
+                    # Correspondance par nom exact + code
+                    if c_code and u_norm == c_nom and p_norm == c_code:
+                        matched_client = c_item
+                        break
+
+                if matched_client:
+                    ide = matched_client.get("ide")
+                    nom = str(matched_client.get("nom") or "").strip()
+                    tel = str(matched_client.get("tel") or "").strip()
+                    solde = to_dec(matched_client.get("solde"))
+                    code_web = str(matched_client.get("code_web") or "").strip()
+                    last_inv = str(matched_client.get("derniere_facture") or "").strip()
+
+                    uname = f"cl_{ide}" if ide else f"cl_{code_web.lower()}"
+                    user, _ = User.objects.get_or_create(
+                        username=uname,
+                        defaults={"first_name": nom[:30], "is_staff": False}
+                    )
+                    user.set_password(code_web)
+                    user.save()
+
+                    prof, _ = CustomerProfile.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            "account_type": "INSTALLER",
+                            "requested_type": "INSTALLER",
+                            "approval_status": "APPROVED",
+                            "desktop_client_name": nom,
+                            "desktop_client_id": ide,
+                            "desktop_balance": solde,
+                            "desktop_code_web": code_web,
+                            "last_invoice": last_inv,
+                            "phone": tel if (tel and tel != "/") else "",
+                        }
+                    )
+                    prof.account_type = "INSTALLER"
+                    prof.requested_type = "INSTALLER"
+                    prof.approval_status = "APPROVED"
+                    prof.desktop_client_name = nom
+                    prof.desktop_client_id = ide
+                    prof.desktop_balance = solde
+                    prof.desktop_code_web = code_web
+                    prof.last_invoice = last_inv
+                    if tel and tel != "/":
+                        prof.phone = tel
+                    prof.save()
 
         if not user:
             return Response({"error": "Identifiants ou code secret incorrect."}, status=status.HTTP_401_UNAUTHORIZED)
@@ -1128,81 +1191,10 @@ class DesktopSyncMetricsView(APIView):
         snapshot.articles_en_alerte_count = int(data.get("articles_en_alerte_count") or 0)
         snapshot.articles_en_rupture_count = int(data.get("articles_en_rupture_count") or 0)
 
-        # Synchronisation automatique des comptes clients (Tarif Installateur + Accès Crédit Web)
+        # Synchronisation instantanée du snapshot clients (Stocké en JSON haute vitesse)
         clients_data = data.get("clients") or data.get("top_debtors") or []
         if clients_data:
-            existing_users = {u.username: u for u in User.objects.filter(username__startswith="cl_")}
-            existing_profs = {p.desktop_client_id: p for p in CustomerProfile.objects.filter(desktop_client_id__isnull=False).select_related("user")}
-
-            users_to_create = []
-            profs_to_create = []
-            profs_to_update = []
-
-            for c_item in clients_data:
-                ide = c_item.get("ide")
-                nom = str(c_item.get("nom") or "").strip()
-                code_web = str(c_item.get("code_web") or "").strip()
-                if not nom or not code_web or not ide:
-                    continue
-
-                uname = f"cl_{ide}"
-                if uname not in existing_users:
-                    users_to_create.append(User(username=uname, first_name=nom[:30], is_staff=False))
-
-            if users_to_create:
-                User.objects.bulk_create(users_to_create, ignore_conflicts=True)
-                existing_users = {u.username: u for u in User.objects.filter(username__startswith="cl_")}
-
-            for c_item in clients_data:
-                ide = c_item.get("ide")
-                nom = str(c_item.get("nom") or "").strip()
-                tel = str(c_item.get("tel") or "").strip()
-                solde = to_dec(c_item.get("solde"))
-                code_web = str(c_item.get("code_web") or "").strip()
-                last_inv = str(c_item.get("derniere_facture") or "").strip()
-                if not nom or not code_web or not ide:
-                    continue
-
-                uname = f"cl_{ide}"
-                u_obj = existing_users.get(uname)
-                if not u_obj or not u_obj.id:
-                    continue
-
-                prof = existing_profs.get(ide)
-                if not prof:
-                    prof = CustomerProfile(
-                        user=u_obj,
-                        account_type="INSTALLER",
-                        requested_type="INSTALLER",
-                        approval_status="APPROVED",
-                        desktop_client_name=nom,
-                        desktop_client_id=ide,
-                        desktop_balance=solde,
-                        desktop_code_web=code_web,
-                        last_invoice=last_inv,
-                        phone=tel if (tel and tel != "/") else "",
-                    )
-                    profs_to_create.append(prof)
-                    existing_profs[ide] = prof
-                else:
-                    prof.account_type = "INSTALLER"
-                    prof.approval_status = "APPROVED"
-                    prof.desktop_client_name = nom
-                    prof.desktop_balance = solde
-                    prof.desktop_code_web = code_web
-                    prof.last_invoice = last_inv
-                    if tel and tel != "/":
-                        prof.phone = tel
-                    profs_to_update.append(prof)
-
-            if profs_to_create:
-                CustomerProfile.objects.bulk_create(profs_to_create, ignore_conflicts=True)
-            if profs_to_update:
-                CustomerProfile.objects.bulk_update(
-                    profs_to_update,
-                    ["account_type", "approval_status", "desktop_client_name", "desktop_balance", "desktop_code_web", "last_invoice", "phone"],
-                    batch_size=100
-                )
+            snapshot.top_debtors = clients_data
 
         if "history_7_days" in data:
             snapshot.history_7_days = data.get("history_7_days") or []
