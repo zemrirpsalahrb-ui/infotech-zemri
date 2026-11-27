@@ -37,6 +37,7 @@ class CustomerProfile(models.Model):
     desktop_client_id = models.IntegerField(null=True, blank=True, db_index=True)
     desktop_balance = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     desktop_code_web = models.CharField(max_length=60, blank=True, default="")
+    desktop_history = models.JSONField(default=list, blank=True)
     last_invoice = models.CharField(max_length=100, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

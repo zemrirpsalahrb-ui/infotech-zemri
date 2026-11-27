@@ -546,6 +546,72 @@ class LoginRateThrottle(AnonRateThrottle):
 DEFAULT_OWNER_CODES = ("admin123", "pro12345", "gros12345")
 
 
+def sync_client_profile_from_snapshot(profile):
+    """
+    Synchronise dynamiquement le solde en magasin, le dernier bon et l'historique d'achats
+    depuis le snapshot temps-réel envoyé par l'application LOGISZ.
+    """
+    if not profile or not profile.user:
+        return
+    # Ne pas toucher aux comptes admin/staff
+    if profile.user.is_staff or profile.user.is_superuser or profile.account_type == "ADMIN":
+        return
+
+    snap = DesktopStoreSnapshot.objects.first()
+    if not snap or not snap.top_debtors:
+        return
+
+    matched = None
+    c_id = profile.desktop_client_id
+    c_code = getattr(profile, "desktop_code_web", "") or ""
+    c_name = (profile.desktop_client_name or "").strip().upper()
+    c_phone = "".join(c for c in (profile.phone or "") if c.isdigit())
+
+    for c in snap.top_debtors:
+        if c_id and c.get("ide") == c_id:
+            matched = c
+            break
+        if c_code and str(c.get("code_web") or "").strip().upper() == c_code.upper():
+            matched = c
+            break
+        if c_name and str(c.get("nom") or "").strip().upper() == c_name:
+            matched = c
+            break
+        if len(c_phone) >= 8:
+            snap_tel = "".join(c for c in str(c.get("tel") or "") if c.isdigit())
+            if snap_tel and c_phone in snap_tel:
+                matched = c
+                break
+
+    if matched:
+        dirty = False
+        new_bal = to_dec(matched.get("solde"))
+        new_inv = str(matched.get("derniere_facture") or "").strip()
+        new_hist = matched.get("historique") or []
+        new_code = str(matched.get("code_web") or "").strip()
+
+        if profile.desktop_balance != new_bal:
+            profile.desktop_balance = new_bal
+            dirty = True
+        if profile.last_invoice != new_inv:
+            profile.last_invoice = new_inv
+            dirty = True
+        if hasattr(profile, "desktop_history") and profile.desktop_history != new_hist:
+            profile.desktop_history = new_hist
+            dirty = True
+        if hasattr(profile, "desktop_code_web") and new_code and getattr(profile, "desktop_code_web", "") != new_code:
+            profile.desktop_code_web = new_code
+            dirty = True
+        if profile.approval_status != "APPROVED":
+            profile.approval_status = "APPROVED"
+            dirty = True
+        if profile.account_type != "INSTALLER":
+            profile.account_type = "INSTALLER"
+            dirty = True
+        if dirty:
+            profile.save()
+
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [LoginRateThrottle]
@@ -632,6 +698,7 @@ class LoginView(APIView):
                             "desktop_client_id": ide,
                             "desktop_balance": solde,
                             "desktop_code_web": code_web,
+                            "desktop_history": matched_client.get("historique") or [],
                             "last_invoice": last_inv,
                             "phone": tel if (tel and tel != "/") else "",
                         }
@@ -643,6 +710,7 @@ class LoginView(APIView):
                     prof.desktop_client_id = ide
                     prof.desktop_balance = solde
                     prof.desktop_code_web = code_web
+                    prof.desktop_history = matched_client.get("historique") or []
                     prof.last_invoice = last_inv
                     if tel and tel != "/":
                         prof.phone = tel
@@ -658,6 +726,7 @@ class LoginView(APIView):
                 "approval_status": "APPROVED" if (user.is_staff or user.is_superuser) else "NONE",
             },
         )
+        sync_client_profile_from_snapshot(profile)
         if profile.approval_status == "SUSPENDED":
             return Response({"error": "Ce compte a été suspendu par l'administrateur."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -695,6 +764,7 @@ class MeView(APIView):
 
     def get(self, request):
         profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
+        sync_client_profile_from_snapshot(profile)
         orders = OnlineOrder.objects.filter(user=request.user).prefetch_related("items")[:30]
         return Response({
             "profile": CustomerProfileSerializer(profile).data,

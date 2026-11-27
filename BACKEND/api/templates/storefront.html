@@ -2421,19 +2421,101 @@ if (typeof window !== "undefined") {
                 <div className="card-light p-6 rounded-2xl space-y-5">
                   {profile ? (
                     <div className="space-y-4">
-                      <h2 className="text-2xl font-extrabold text-slate-900">Mon Compte : {profile.username}</h2>
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-sm">
-                        <div>Catégorie : <strong>{profile.requested_type}</strong></div>
-                        <div>Statut : <strong className="text-blue-600">{profile.approval_status}</strong></div>
-                        <div>Tarif Actif : <strong className="text-emerald-600">{profile.effective_tier}</strong></div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs uppercase font-extrabold text-blue-600 tracking-wider">Espace Client Pro</span>
+                          <h2 className="text-2xl font-black text-slate-900">{profile.desktop_client_name || profile.first_name || profile.username}</h2>
+                        </div>
+                        <span className="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold border border-emerald-300">
+                          Tarif {profile.effective_tier}
+                        </span>
                       </div>
-                      <div className="flex gap-3">
+
+                      {/* CARTE CREDIT / SOLDE MAGASIN */}
+                      {profile.desktop_balance !== undefined && profile.desktop_balance !== null && (
+                        <div>
+                          {parseFloat(profile.desktop_balance) < -0.009 ? (
+                            <div className="p-5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-100/80 border-2 border-red-300 shadow-sm space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-red-700 uppercase tracking-wider">Solde Compte Magasin</span>
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-600 text-white font-extrabold">🔴 Créance</span>
+                              </div>
+                              <div className="text-3xl font-black text-red-700 font-mono tracking-tight pt-1">
+                                Vous devez : {fmtMoney(Math.abs(profile.desktop_balance))}
+                              </div>
+                              <p className="text-xs text-red-600 font-medium">
+                                Montant débiteur à régulariser lors de votre prochain passage au magasin ou livraison.
+                              </p>
+                              {profile.last_invoice && (
+                                <div className="text-xs text-slate-600 pt-1 border-t border-red-200/60 flex items-center justify-between">
+                                  <span>Dernier Bon / Facture :</span>
+                                  <strong className="font-mono text-slate-800">N° {profile.last_invoice}</strong>
+                                </div>
+                              )}
+                            </div>
+                          ) : parseFloat(profile.desktop_balance) > 0.009 ? (
+                            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-100/80 border-2 border-emerald-300 shadow-sm space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Solde Compte Magasin</span>
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-600 text-white font-extrabold">🟢 Avoir disponible</span>
+                              </div>
+                              <div className="text-3xl font-black text-emerald-700 font-mono tracking-tight pt-1">
+                                Le magasin vous doit : {fmtMoney(profile.desktop_balance)}
+                              </div>
+                              <p className="text-xs text-emerald-700 font-medium">
+                                Vous disposez d'un avoir en votre faveur déductible sur vos prochains achats.
+                              </p>
+                              {profile.last_invoice && (
+                                <div className="text-xs text-slate-600 pt-1 border-t border-emerald-200/60 flex items-center justify-between">
+                                  <span>Dernier Bon / Facture :</span>
+                                  <strong className="font-mono text-slate-800">N° {profile.last_invoice}</strong>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-300 shadow-sm space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Solde Compte Magasin</span>
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold">✓ Soldé</span>
+                              </div>
+                              <div className="text-2xl font-black text-slate-800 font-mono">
+                                0.00 DA
+                              </div>
+                              <p className="text-xs text-slate-500">Aucune dette ni avoir en attente.</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Identifiant :</span>
+                          <strong className="font-mono">{profile.username}</strong>
+                        </div>
+                        {profile.desktop_code_web && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Code d'accès secret :</span>
+                            <strong className="font-mono text-blue-600">{profile.desktop_code_web}</strong>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Catégorie tarifaire :</span>
+                          <strong className="text-blue-600">{profile.effective_tier === "INSTALLER" ? "Installateur Professionnel" : profile.effective_tier}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Statut d'approbation :</span>
+                          <strong className="text-emerald-600">{profile.approval_status === "APPROVED" ? "Actif & Validé ✓" : profile.approval_status}</strong>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3 pt-2">
                         {isAdmin && (
-                          <a href="/mon-dashboard/" className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">
-                            ⚙ Ouvrir Mon Dashboard Privé
+                          <a href="/mon-dashboard/" className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow transition flex items-center gap-2">
+                            <span>⚙</span>
+                            <span>Ouvrir Mon Dashboard Privé</span>
                           </a>
                         )}
-                        <button onClick={() => { localStorage.removeItem("cctv_jwt"); setToken(""); setProfile(null); }} className="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-bold">
+                        <button onClick={() => { localStorage.removeItem("cctv_jwt"); setToken(""); setProfile(null); }} className="px-5 py-2.5 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-sm font-bold transition">
                           {tr("auth_logout")}
                         </button>
                       </div>
@@ -2446,9 +2528,18 @@ if (typeof window !== "undefined") {
                       </div>
                       {authMode === "login" ? (
                         <form onSubmit={handleLogin} className="space-y-4">
-                          <input required placeholder={tr("auth_username")} value={loginForm.username} onChange={e => setLoginForm({ ...loginForm, username: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                          <input required type="password" placeholder={tr("auth_password")} value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
-                          <button type="submit" className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-sm">{tr("auth_submit_login")}</button>
+                          <div className="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200 text-xs text-blue-800 space-y-1">
+                            <div className="font-bold flex items-center gap-1.5">
+                              <span>🔑</span>
+                              <span>Client du magasin ?</span>
+                            </div>
+                            <p className="text-[11px] text-blue-700 leading-relaxed">
+                              Saisissez votre <strong>Code Web</strong> (ex : <code>CL0011</code>) comme identifiant et mot de passe pour consulter votre crédit, votre historique d'achats et commander au <strong>Tarif Installateur</strong>.
+                            </p>
+                          </div>
+                          <input required placeholder="Code d'accès (ex: CL0011) ou Téléphone" value={loginForm.username} onChange={e => setLoginForm({ ...loginForm, username: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500" />
+                          <input required type="password" placeholder="Mot de passe ou Code secret" value={loginForm.password} onChange={e => setLoginForm({ ...loginForm, password: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500" />
+                          <button type="submit" className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow transition">{tr("auth_submit_login")}</button>
                         </form>
                       ) : (
                         <form onSubmit={handleRegister} className="space-y-3">
@@ -2465,29 +2556,106 @@ if (typeof window !== "undefined") {
                             <input required type="tel" inputMode="tel" placeholder={`${tr("cust_phone")} *`} value={regForm.phone} onChange={e => setRegForm({ ...regForm, phone: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                             <input placeholder="Entreprise" value={regForm.company_name} onChange={e => setRegForm({ ...regForm, company_name: e.target.value })} className="px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
                           </div>
-                          <button type="submit" className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-sm">{tr("auth_submit_register")}</button>
+                          <button type="submit" className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition">{tr("auth_submit_register")}</button>
                         </form>
                       )}
                     </>
                   )}
                 </div>
 
+                {/* COLONNE DROITE : HISTORIQUE DES ACHATS OU INFOS NIVEAUX TARIFAIRES */}
                 <div className="card-light p-6 rounded-2xl space-y-4">
-                  <h3 className="text-xl font-bold text-slate-900">Niveaux Tarifaires</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <div className="font-bold text-slate-900">1. Client Public</div>
-                      <p className="text-xs text-slate-500 mt-1">Accès libre et commande immédiate sans inscription.</p>
+                  {profile ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">📜</span>
+                          <div>
+                            <h3 className="text-lg font-black text-slate-900 leading-tight">Historique de vos Achats</h3>
+                            <p className="text-xs text-slate-500">Détail des bons et articles pris en magasin</p>
+                          </div>
+                        </div>
+                        {profile.desktop_history && profile.desktop_history.length > 0 && (
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-extrabold font-mono">
+                            {profile.desktop_history.length} bons récents
+                          </span>
+                        )}
+                      </div>
+
+                      {profile.desktop_history && profile.desktop_history.length > 0 ? (
+                        <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+                          {profile.desktop_history.map((h, idx) => (
+                            <div key={idx} className="p-4 rounded-xl bg-slate-50/70 border border-slate-200 hover:border-blue-400 hover:bg-blue-50/20 transition space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-white text-blue-700 border border-slate-200 font-mono">
+                                    Bon N° {h.bon || "-"}
+                                  </span>
+                                  <span className="text-xs text-slate-500 font-medium">
+                                    🗓 {h.date || "-"}
+                                  </span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm font-black text-slate-900 font-mono">
+                                    {fmtMoney(h.total)}
+                                  </div>
+                                  {parseFloat(h.verse) > 0 && (
+                                    <div className="text-[10px] text-emerald-600 font-bold">
+                                      Versé : {fmtMoney(h.verse)}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Articles pris */}
+                              <div className="bg-white p-2.5 rounded-lg border border-slate-200/80">
+                                <div className="text-[11px] font-bold text-slate-600 flex items-center gap-1 mb-1">
+                                  <span>📦</span>
+                                  <span>Articles pris :</span>
+                                </div>
+                                <div className="text-xs text-slate-900 font-medium leading-relaxed">
+                                  {h.articles || "Articles divers"}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500 border-t border-slate-100">
+                                <span>Solde après bon :</span>
+                                <span className={`font-mono font-bold ${parseFloat(h.solde) < -0.009 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                  {parseFloat(h.solde) < -0.009 ? `🔴 Il doit : ${fmtMoney(Math.abs(h.solde))}` : `🟢 On lui doit : ${fmtMoney(h.solde)}`}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 rounded-xl bg-slate-50 border border-dashed border-slate-300 text-center space-y-2">
+                          <span className="text-3xl">📦</span>
+                          <div className="text-sm font-bold text-slate-700">Aucun historique d'achat enregistré</div>
+                          <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                            Vos prochains achats et bons effectués au magasin apparaîtront automatiquement ici dès la prochaine synchronisation.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200">
-                      <div className="font-bold text-blue-800">2. Installateur Professionnel</div>
-                      <p className="text-xs text-blue-700 mt-1">Tarifs préférentiels activés après approbation administrateur.</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200">
-                      <div className="font-bold text-emerald-800">3. Revendeur / Grossiste</div>
-                      <p className="text-xs text-emerald-700 mt-1">Prix de gros synchronisés depuis LOGISZ après validation.</p>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <h3 className="text-xl font-bold text-slate-900">Niveaux Tarifaires</h3>
+                      <div className="space-y-3 text-sm">
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                          <div className="font-bold text-slate-900">1. Client Public</div>
+                          <p className="text-xs text-slate-500 mt-1">Accès libre et commande immédiate sans inscription.</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200">
+                          <div className="font-bold text-blue-800">2. Installateur Professionnel</div>
+                          <p className="text-xs text-blue-700 mt-1">Tarifs préférentiels activés immédiatement avec le code web magasin.</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                          <div className="font-bold text-emerald-800">3. Revendeur / Grossiste</div>
+                          <p className="text-xs text-emerald-700 mt-1">Prix de gros synchronisés depuis LOGISZ après validation.</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
