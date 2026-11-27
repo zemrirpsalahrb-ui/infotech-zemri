@@ -2621,7 +2621,7 @@ if (typeof window !== "undefined") {
                               <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500 border-t border-slate-100">
                                 <span>Solde après bon :</span>
                                 <span className={`font-mono font-bold ${parseFloat(h.solde) < -0.009 ? 'text-red-600' : 'text-emerald-700'}`}>
-                                  {parseFloat(h.solde) < -0.009 ? `🔴 Il doit : ${fmtMoney(Math.abs(h.solde))}` : `🟢 On lui doit : ${fmtMoney(h.solde)}`}
+                                  {parseFloat(h.solde) < -0.009 ? `🔴 Vous devez : ${fmtMoney(Math.abs(h.solde))}` : `🟢 Le magasin vous doit : ${fmtMoney(h.solde)}`}
                                 </span>
                               </div>
                             </div>
