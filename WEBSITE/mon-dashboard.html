@@ -266,6 +266,10 @@
           const payload = {
             customer_name: posClient.nom || "Passager",
             customer_phone: posClient.tel || "",
+            client_id: posClient.ide || null,
+            code_web: posClient.code_web || "",
+            ancien_solde: Number(posClient.solde || 0),
+            nouveau_solde: posNouveauSolde,
             payment_method: posPaymentMethod,
             amount_paid: posPaidVal,
             notes: posNotes,
@@ -896,6 +900,15 @@
                           <h3 className="font-extrabold text-base sm:text-lg">Vente Validée avec Succès !</h3>
                           <p className="text-xs text-emerald-300">
                             Bon N° <strong className="text-white font-mono text-sm">{posLastSuccess.bon_number}</strong> | Total : <strong className="text-white font-mono">{fmtMoney(posLastSuccess.total_amount)}</strong> | Versé : <strong className="text-white font-mono">{fmtMoney(posLastSuccess.amount_paid)}</strong>
+                            {Number(posLastSuccess.credit_bon || 0) > 0.009 && (
+                              <span className="text-amber-300 font-bold ml-1.5">| Crédit de ce bon : <strong className="text-white font-mono">{fmtMoney(posLastSuccess.credit_bon)}</strong></span>
+                            )}
+                            {Number(posLastSuccess.nouveau_solde || 0) < -0.009 && (
+                              <span className="text-red-300 font-bold ml-1.5">| Solde Client : <strong className="text-red-200 font-mono">🔴 Il nous doit {fmtMoney(Math.abs(posLastSuccess.nouveau_solde))}</strong></span>
+                            )}
+                            {Number(posLastSuccess.nouveau_solde || 0) > 0.009 && (
+                              <span className="text-emerald-300 font-bold ml-1.5">| Solde Client : <strong className="text-white font-mono">🟢 Avoir {fmtMoney(posLastSuccess.nouveau_solde)}</strong></span>
+                            )}
                           </p>
                         </div>
                       </div>

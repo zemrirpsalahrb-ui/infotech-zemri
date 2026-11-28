@@ -1,4 +1,5 @@
 from . import noest_client
+import json
 import base64
 import os
 import uuid
@@ -1847,15 +1848,38 @@ class BonPdfDownloadView(APIView):
                     "prix": float(it.applied_unit_price),
                     "total": float(it.line_total),
                 })
+            # Récupération des métadonnées financières (versement, ancien/nouveau solde, crédit du bon)
+            verse_val = float(order.total_amount)
+            ancien_val = 0.0
+            solde_val = 0.0
+            if order.notes and "<!--FINANCIAL_META:" in order.notes:
+                try:
+                    raw_meta = order.notes.split("<!--FINANCIAL_META:")[1].split("-->")[0]
+                    fmeta = json.loads(raw_meta)
+                    verse_val = float(fmeta.get("amount_paid", verse_val))
+                    ancien_val = float(fmeta.get("ancien_solde", 0.0))
+                    solde_val = float(fmeta.get("nouveau_solde", 0.0))
+                except Exception:
+                    pass
+            else:
+                snap = DesktopStoreSnapshot.objects.first()
+                if snap:
+                    for s in (snap.recent_sales or []):
+                        if str(s.get("bon", "")).strip() == clean_bon:
+                            verse_val = float(s.get("verse", verse_val))
+                            ancien_val = float(s.get("ancien", 0.0))
+                            solde_val = float(s.get("solde", 0.0))
+                            break
+
             bon_data = {
                 "bon": order.pos_bon_number or order.order_uid,
                 "date": order.created_at.strftime("%Y-%m-%d"),
                 "nom_de_client": order.customer_name,
                 "tel_client": order.customer_phone,
                 "total": float(order.total_amount),
-                "verse": float(order.total_amount),
-                "ancien": 0.0,
-                "solde": 0.0,
+                "verse": verse_val,
+                "ancien": ancien_val,
+                "solde": solde_val,
                 "lignes": lignes,
             }
 
@@ -1931,7 +1955,9 @@ class AdminCreateSaleView(APIView):
     @transaction.atomic
     def post(self, request):
         data = request.data or {}
-        customer_name = str(data.get("customer_name") or "Client Comptoir").strip()
+        client_id = data.get("client_id")
+        code_web = str(data.get("code_web") or "").strip()
+        customer_name = str(data.get("customer_name") or "Passager").strip()
         customer_phone = str(data.get("customer_phone") or "").strip()
         payment_method = str(data.get("payment_method") or "PAY_AT_STORE").strip()
         amount_paid = to_dec(data.get("amount_paid", 0))
@@ -2015,49 +2041,99 @@ class AdminCreateSaleView(APIView):
                 line_total=oi["line_total"],
             )
 
-        prof = None
-        if customer_name and customer_name.lower() != "passager":
-            prof = CustomerProfile.objects.filter(desktop_client_name__iexact=customer_name).first()
-            if not prof and customer_phone:
-                clean_phone = "".join(c for c in customer_phone if c.isdigit())
-                if len(clean_phone) >= 8:
-                    prof = CustomerProfile.objects.filter(phone__icontains=clean_phone).first()
+        snap = DesktopStoreSnapshot.objects.first()
+        matched_debtor = None
+        is_passager = customer_name.lower() in ("passager", "client comptoir", "")
 
         ancien_solde = Decimal("0.00")
-        nouveau_solde = Decimal("0.00")
-        if prof:
-            ancien_solde = prof.desktop_balance or Decimal("0.00")
-            diff = amount_paid - subtotal
-            nouveau_solde = ancien_solde + diff
-            prof.desktop_balance = nouveau_solde
-            prof.last_invoice = bon_num
+        if snap and snap.top_debtors and not is_passager:
+            for c_item in snap.top_debtors:
+                if client_id and c_item.get("ide") == client_id:
+                    matched_debtor = c_item
+                    break
+                if code_web and str(c_item.get("code_web") or "").strip().upper() == code_web.upper():
+                    matched_debtor = c_item
+                    break
+                if customer_name and str(c_item.get("nom") or "").strip().upper() == customer_name.upper():
+                    matched_debtor = c_item
+                    break
 
-            art_str = ", ".join(f"{oi['quantity']}x {oi['product_name']}" for oi in order_items_to_create)
-            new_hist_item = {
+        if matched_debtor:
+            ancien_solde = Decimal(str(matched_debtor.get("solde", 0)))
+        elif data.get("ancien_solde") is not None and not is_passager:
+            ancien_solde = to_dec(data.get("ancien_solde", 0))
+
+        diff = amount_paid - subtotal
+        nouveau_solde = Decimal("0.00") if is_passager else (ancien_solde + diff)
+        credit_bon = max(Decimal("0.00"), subtotal - amount_paid)
+
+        bon_lines = [
+            {
+                "ref": oi["product_reference"],
+                "designation": oi["product_name"],
+                "qte": str(oi["quantity"]),
+                "prix": float(oi["applied_unit_price"]),
+                "total": float(oi["line_total"]),
+            }
+            for oi in order_items_to_create
+        ]
+
+        if matched_debtor:
+            matched_debtor["solde"] = float(nouveau_solde)
+            matched_debtor["derniere_facture"] = bon_num
+            hist_item = {
                 "bon": bon_num,
                 "date": timezone.now().strftime("%Y-%m-%d"),
                 "total": float(subtotal),
                 "verse": float(amount_paid),
                 "ancien": float(ancien_solde),
                 "solde": float(nouveau_solde),
-                "articles": art_str,
-                "lignes": [
-                    {
-                        "ref": oi["product_reference"],
-                        "designation": oi["product_name"],
-                        "qte": str(oi["quantity"]),
-                        "prix": float(oi["applied_unit_price"]),
-                        "total": float(oi["line_total"]),
-                    }
-                    for oi in order_items_to_create
-                ]
+                "credit_bon": float(credit_bon),
+                "articles": ", ".join(f"{oi['quantity']}x {oi['product_name']}" for oi in order_items_to_create),
+                "lignes": bon_lines,
             }
-            hist = prof.desktop_history or []
-            hist.insert(0, new_hist_item)
-            prof.desktop_history = hist[:30]
-            prof.save()
+            c_hist = matched_debtor.get("historique") or []
+            matched_debtor["historique"] = [hist_item] + c_hist[:29]
 
-        snap = DesktopStoreSnapshot.objects.first()
+        financial_meta = {
+            "amount_paid": float(amount_paid),
+            "ancien_solde": float(ancien_solde),
+            "nouveau_solde": float(nouveau_solde),
+            "credit_bon": float(credit_bon),
+            "client_name": customer_name,
+            "client_phone": customer_phone,
+        }
+        meta_tag = f"<!--FINANCIAL_META:{json.dumps(financial_meta)}-->"
+        combined_notes = f"{meta_tag}\n{notes}" if notes else meta_tag
+        order.notes = combined_notes
+        order.save(update_fields=["notes"])
+
+        # Mise à jour compte profil utilisateur si existant
+        prof = None
+        if not is_passager:
+            prof = CustomerProfile.objects.filter(desktop_client_name__iexact=customer_name).first()
+            if not prof and customer_phone:
+                clean_phone = "".join(c for c in customer_phone if c.isdigit())
+                if len(clean_phone) >= 8:
+                    prof = CustomerProfile.objects.filter(phone__icontains=clean_phone).first()
+
+            if prof:
+                prof.desktop_balance = nouveau_solde
+                prof.last_invoice = bon_num
+                u_hist = prof.desktop_history or []
+                prof.desktop_history = [{
+                    "bon": bon_num,
+                    "date": timezone.now().strftime("%Y-%m-%d"),
+                    "total": float(subtotal),
+                    "verse": float(amount_paid),
+                    "ancien": float(ancien_solde),
+                    "solde": float(nouveau_solde),
+                    "credit_bon": float(credit_bon),
+                    "articles": ", ".join(f"{oi['quantity']}x {oi['product_name']}" for oi in order_items_to_create),
+                    "lignes": bon_lines,
+                }] + u_hist[:29]
+                prof.save()
+
         if snap:
             recent = snap.recent_sales or []
             recent.insert(0, {
@@ -2066,9 +2142,12 @@ class AdminCreateSaleView(APIView):
                 "client": customer_name,
                 "total": float(subtotal),
                 "verse": float(amount_paid),
+                "ancien": float(ancien_solde),
                 "solde": float(nouveau_solde),
+                "credit_bon": float(credit_bon),
                 "caissier": request.user.username,
                 "articles": ", ".join(f"{oi['quantity']}x {oi['product_name']}" for oi in order_items_to_create),
+                "lignes": bon_lines,
             })
             snap.recent_sales = recent[:30]
             snap.chiffre_jour = (snap.chiffre_jour or Decimal("0.00")) + subtotal
@@ -2082,6 +2161,8 @@ class AdminCreateSaleView(APIView):
             "bon_number": bon_num,
             "total_amount": str(subtotal),
             "amount_paid": str(amount_paid),
+            "credit_bon": str(credit_bon),
+            "ancien_solde": str(ancien_solde),
             "nouveau_solde": str(nouveau_solde),
             "pdf_url": f"/api/v1/auth/bon-pdf/{bon_num}/",
             "message": f"Vente enregistrée avec succès ! Bon N° {bon_num}"

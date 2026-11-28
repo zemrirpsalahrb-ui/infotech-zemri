@@ -314,41 +314,84 @@ def generate_bon_pdf(bon_data, store_info=None):
     story.append(Spacer(1, 3 * mm))
 
     # ==========================================
-    # 3. TOTAUX & SOLDE
+    # 3. TOTAUX & SOLDE (En bas à droite)
     # ==========================================
-    total_bon = bon_data.get("total") or bon_data.get("total_amount") or 0
-    verse = bon_data.get("verse") or bon_data.get("versement") or 0
-    ancien = bon_data.get("ancien") or bon_data.get("ancien_solde") or 0
-    nouveau = bon_data.get("solde") or bon_data.get("nouveau_solde") or 0
+    total_bon = Decimal(str(bon_data.get("total") or bon_data.get("total_amount") or 0))
+    verse = Decimal(str(bon_data.get("verse") if bon_data.get("verse") is not None else (bon_data.get("versement") or 0)))
+    ancien = Decimal(str(bon_data.get("ancien") if bon_data.get("ancien") is not None else (bon_data.get("ancien_solde") or 0)))
+    nouveau = Decimal(str(bon_data.get("solde") if bon_data.get("solde") is not None else (bon_data.get("nouveau_solde") or 0)))
+    credit_bon = max(Decimal("0.00"), total_bon - verse)
+    nom_c = (bon_data.get("nom_de_client") or "").strip().lower()
+    is_passager = nom_c in ("passager", "client comptoir", "")
 
     totaux_rows = [
         [Paragraph("Total du bon :", totaux_label), Paragraph(fmt_currency(total_bon), totaux_val)],
         [Paragraph("Montant versé :", totaux_label), Paragraph(fmt_currency(verse), totaux_val)],
     ]
 
-    try:
-        if Decimal(str(ancien or 0)) != 0:
-            totaux_rows.append(
-                [Paragraph("Ancien solde :", totaux_label), Paragraph(fmt_currency(ancien), totaux_val)]
-            )
-    except Exception:
-        pass
-
-    try:
-        n_dec = Decimal(str(nouveau or 0))
-        solde_color = colors.HexColor("#dc2626") if n_dec < -Decimal("0.009") else colors.HexColor("#16a34a")
-        solde_label = "Solde restant (Il nous doit) :" if n_dec < -Decimal("0.009") else "Nouveau solde (Avoir client) :"
-        p_solde_val = ParagraphStyle(
-            "SoldeVal",
+    # Crédit accordé sur ce bon (si non réglé en totalité)
+    if credit_bon > Decimal("0.009"):
+        p_credit_bon = ParagraphStyle(
+            "CreditBonVal",
             parent=totaux_val,
-            textColor=solde_color,
-            fontSize=9.5,
+            textColor=colors.HexColor("#dc2626"),  # Rouge
+            fontName="Helvetica-Bold",
         )
         totaux_rows.append(
-            [Paragraph(solde_label, totaux_label), Paragraph(fmt_currency(abs(n_dec)), p_solde_val)]
+            [Paragraph("Crédit de ce bon :", totaux_label), Paragraph(fmt_currency(credit_bon), p_credit_bon)]
         )
-    except Exception:
-        pass
+
+    # Ancien Solde du client (affiché si client enregistré ou ancien != 0)
+    if not is_passager or ancien != Decimal("0.00"):
+        if ancien < -Decimal("0.009"):
+            p_anc_val = ParagraphStyle("AncVal", parent=totaux_val, textColor=colors.HexColor("#dc2626"))
+            totaux_rows.append(
+                [Paragraph("Ancien solde (Dette) :", totaux_label), Paragraph(fmt_currency(abs(ancien)), p_anc_val)]
+            )
+        elif ancien > Decimal("0.009"):
+            p_anc_val = ParagraphStyle("AncVal", parent=totaux_val, textColor=colors.HexColor("#16a34a"))
+            totaux_rows.append(
+                [Paragraph("Ancien solde (Avoir) :", totaux_label), Paragraph(fmt_currency(ancien), p_anc_val)]
+            )
+        else:
+            totaux_rows.append(
+                [Paragraph("Ancien solde :", totaux_label), Paragraph("0,00 DA", totaux_val)]
+            )
+
+    # Nouveau Solde du client (affiché si client enregistré ou nouveau != 0)
+    if not is_passager or nouveau != Decimal("0.00"):
+        if nouveau < -Decimal("0.009"):
+            p_nouv_val = ParagraphStyle(
+                "NouvDetteVal",
+                parent=totaux_val,
+                textColor=colors.HexColor("#dc2626"),
+                fontName="Helvetica-Bold",
+                fontSize=9.5,
+            )
+            totaux_rows.append(
+                [Paragraph("Nouveau solde (Il nous doit) :", totaux_label), Paragraph(fmt_currency(abs(nouveau)), p_nouv_val)]
+            )
+        elif nouveau > Decimal("0.009"):
+            p_nouv_val = ParagraphStyle(
+                "NouvAvoirVal",
+                parent=totaux_val,
+                textColor=colors.HexColor("#16a34a"),
+                fontName="Helvetica-Bold",
+                fontSize=9.5,
+            )
+            totaux_rows.append(
+                [Paragraph("Nouveau solde (Avoir client) :", totaux_label), Paragraph(fmt_currency(nouveau), p_nouv_val)]
+            )
+        else:
+            p_nouv_val = ParagraphStyle(
+                "NouvSoldeOk",
+                parent=totaux_val,
+                textColor=colors.HexColor("#334155"),
+                fontName="Helvetica-Bold",
+            )
+            totaux_rows.append(
+                [Paragraph("Nouveau solde :", totaux_label), Paragraph("0,00 DA (Réglé)", p_nouv_val)]
+            )
 
     table_totaux = Table(
         totaux_rows,
