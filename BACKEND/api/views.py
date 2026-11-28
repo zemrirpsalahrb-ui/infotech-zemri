@@ -1770,3 +1770,320 @@ class AdminOrderValidateNoestView(APIView):
             return Response({"message": "Commande validée pour la collecte logistique NOEST !"})
         else:
             return Response({"error": str(res.get("error", "Erreur validation"))}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================================
+# 8. BON DE VENTE PDF & HEALTH CHECK & VENTE DEPUIS LE DASHBOARD
+# ============================================================================
+
+from django.http import HttpResponse, Http404
+from .pdf_service import generate_bon_pdf
+
+
+class HealthCheckView(APIView):
+    """Vérification de santé ultra-légère pour bot keep-alive (maintient Render éveillé 24h/24)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({
+            "status": "ok",
+            "service": "LOGISZ Cloud API",
+            "version": "2.0",
+            "timestamp": timezone.now().isoformat(),
+        })
+
+
+class BonPdfDownloadView(APIView):
+    """
+    Génère et télécharge le Bon de Vente au format PDF (A4 compact / demi-feuille)
+    exactement identique à la sortie imprimée du logiciel de caisse LOGISZ PC.
+    Accessible par le client connecté (pour ses propres bons) ou par l'administrateur.
+    Supporte l'authentification par Header Bearer ou par query param ?token=... (pour affichage direct navigateur).
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, n_bon):
+        clean_bon = str(n_bon).strip()
+        if not clean_bon:
+            return Response({"error": "Numéro de bon manquant."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+        if request.user and request.user.is_authenticated:
+            user = request.user
+        else:
+            token_str = request.GET.get("token") or ""
+            if token_str:
+                try:
+                    from rest_framework_simplejwt.tokens import AccessToken
+                    val_token = AccessToken(token_str)
+                    user_id = val_token["user_id"]
+                    user = User.objects.filter(id=user_id).first()
+                except Exception:
+                    pass
+
+        is_admin = bool(user and (user.is_staff or user.is_superuser))
+        client_name = ""
+        if user and not is_admin:
+            prof = getattr(user, "customerprofile", None)
+            if prof:
+                client_name = (prof.desktop_client_name or "").strip().upper()
+
+        bon_data = None
+
+        # 1. Recherche dans les commandes en ligne et ventes dashboard
+        order = OnlineOrder.objects.filter(Q(pos_bon_number=clean_bon) | Q(order_uid__iexact=clean_bon)).prefetch_related("items").first()
+        if order:
+            if not is_admin and user:
+                if order.user and order.user != user:
+                    if client_name and order.customer_name.strip().upper() != client_name:
+                        return Response({"error": "Vous n'êtes pas autorisé à consulter ce bon."}, status=status.HTTP_403_FORBIDDEN)
+
+            lignes = []
+            for it in order.items.all():
+                lignes.append({
+                    "ref": it.product_reference,
+                    "designation": it.product_name,
+                    "qte": str(it.quantity),
+                    "prix": float(it.applied_unit_price),
+                    "total": float(it.line_total),
+                })
+            bon_data = {
+                "bon": order.pos_bon_number or order.order_uid,
+                "date": order.created_at.strftime("%Y-%m-%d"),
+                "nom_de_client": order.customer_name,
+                "tel_client": order.customer_phone,
+                "total": float(order.total_amount),
+                "verse": float(order.total_amount),
+                "ancien": 0.0,
+                "solde": 0.0,
+                "lignes": lignes,
+            }
+
+        # 2. Si pas trouvé dans OnlineOrder, recherche dans DesktopStoreSnapshot (top_debtors et recent_sales)
+        if not bon_data:
+            snap = DesktopStoreSnapshot.objects.first()
+            if snap:
+                for s in (snap.recent_sales or []):
+                    if str(s.get("bon", "")).strip() == clean_bon:
+                        bon_data = {
+                            "bon": clean_bon,
+                            "date": str(s.get("date", "-")),
+                            "nom_de_client": s.get("client", "Passager"),
+                            "tel_client": "",
+                            "total": float(s.get("total", 0)),
+                            "verse": float(s.get("verse", 0)),
+                            "ancien": float(s.get("ancien", 0)),
+                            "solde": float(s.get("solde", 0)),
+                            "articles": s.get("articles", ""),
+                            "lignes": s.get("lignes", []),
+                        }
+                        break
+
+                if not bon_data and snap.top_debtors:
+                    for c_item in snap.top_debtors:
+                        h_list = c_item.get("historique") or []
+                        for h in h_list:
+                            if str(h.get("bon", "")).strip() == clean_bon:
+                                bon_data = {
+                                    "bon": clean_bon,
+                                    "date": str(h.get("date", "-")),
+                                    "nom_de_client": c_item.get("nom", "Client"),
+                                    "tel_client": c_item.get("tel", ""),
+                                    "total": float(h.get("total", 0)),
+                                    "verse": float(h.get("verse", 0)),
+                                    "ancien": float(h.get("ancien", 0)),
+                                    "solde": float(h.get("solde", 0)),
+                                    "articles": h.get("articles", ""),
+                                    "lignes": h.get("lignes", []),
+                                }
+                                break
+                        if bon_data:
+                            break
+
+        if not bon_data:
+            return Response({"error": f"Le bon N° {clean_bon} est introuvable."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not is_admin and client_name and bon_data.get("nom_de_client"):
+            b_nom = bon_data["nom_de_client"].strip().upper()
+            if b_nom != client_name and "PASSAGER" not in b_nom and client_name not in b_nom and b_nom not in client_name:
+                return Response({"error": "Vous n'êtes pas autorisé à consulter ce bon."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            pdf_buf = generate_bon_pdf(bon_data)
+            response = HttpResponse(pdf_buf.getvalue(), content_type="application/pdf")
+            response["Content-Disposition"] = f'inline; filename="Bon_{clean_bon}.pdf"'
+            return response
+        except Exception as e:
+            return Response({"error": f"Erreur génération PDF : {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminCreateSaleView(APIView):
+    """
+    Enregistre une nouvelle vente comptoir directement depuis le Dashboard Propriétaire :
+    - Déduit le stock disponible en temps réel dans le catalogue
+    - Enregistre la vente avec son bon officiel
+    - Met à jour le solde du client et son historique
+    - Permet au logiciel de caisse LOGISZ PC de la convertir/synchroniser
+    - Retourne l'URL de téléchargement direct du Bon PDF
+    """
+    permission_classes = [IsAdminOrStaff]
+
+    @transaction.atomic
+    def post(self, request):
+        data = request.data or {}
+        customer_name = str(data.get("customer_name") or "Client Comptoir").strip()
+        customer_phone = str(data.get("customer_phone") or "").strip()
+        payment_method = str(data.get("payment_method") or "PAY_AT_STORE").strip()
+        amount_paid = to_dec(data.get("amount_paid", 0))
+        items_data = data.get("items") or []
+        notes = str(data.get("notes") or "").strip()
+
+        if not items_data:
+            return Response({"error": "Veuillez ajouter au moins un produit à la vente."}, status=status.HTTP_400_BAD_REQUEST)
+
+        import random
+        random_suffix = random.randint(100000, 999999)
+        bon_num = f"{random_suffix}"
+        order_uid = f"POS-{bon_num}"
+
+        subtotal = Decimal("0.00")
+        order_items_to_create = []
+
+        for it in items_data:
+            prod_id = it.get("product_id")
+            ref = str(it.get("reference") or "").strip()
+            name = str(it.get("name") or "").strip()
+            qty = to_dec(it.get("quantity", 1))
+            unit_price = to_dec(it.get("unit_price", 0))
+            if qty <= 0:
+                continue
+
+            product = None
+            if prod_id:
+                product = Product.objects.filter(id=prod_id).first()
+            if not product and ref:
+                product = Product.objects.filter(reference__iexact=ref).first()
+
+            if product:
+                product.physical_stock = max(Decimal("0.00"), (product.physical_stock or Decimal("0.00")) - qty)
+                product.save(update_fields=["physical_stock", "updated_at"])
+                if not name:
+                    name = product.name
+                if not ref:
+                    ref = product.reference
+
+            line_tot = (qty * unit_price).quantize(Decimal("0.01"))
+            subtotal += line_tot
+            order_items_to_create.append({
+                "product": product,
+                "desktop_ide": product.desktop_ide if product else None,
+                "product_reference": ref or "REF-GEN",
+                "product_name": name or "Article comptoir",
+                "quantity": qty,
+                "applied_unit_price": unit_price,
+                "public_unit_price_snapshot": unit_price,
+                "line_total": line_tot,
+            })
+
+        if not order_items_to_create:
+            return Response({"error": "Aucun produit valide dans le panier."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = OnlineOrder.objects.create(
+            order_uid=order_uid,
+            customer_name=customer_name,
+            customer_phone=customer_phone,
+            delivery_method="PICKUP",
+            payment_method=payment_method if payment_method in ["PAY_AT_STORE", "CASH_ON_DELIVERY", "BANK_TRANSFER"] else "PAY_AT_STORE",
+            status="CONFIRMED",
+            subtotal=subtotal,
+            total_amount=subtotal,
+            pos_converted=False,
+            pos_bon_number=bon_num,
+            notes=notes,
+        )
+
+        for oi in order_items_to_create:
+            OnlineOrderItem.objects.create(
+                order=order,
+                product=oi["product"],
+                desktop_ide=oi["desktop_ide"],
+                product_reference=oi["product_reference"],
+                product_name=oi["product_name"],
+                quantity=oi["quantity"],
+                applied_unit_price=oi["applied_unit_price"],
+                public_unit_price_snapshot=oi["public_unit_price_snapshot"],
+                line_total=oi["line_total"],
+            )
+
+        prof = None
+        if customer_name and customer_name.lower() != "passager":
+            prof = CustomerProfile.objects.filter(desktop_client_name__iexact=customer_name).first()
+            if not prof and customer_phone:
+                clean_phone = "".join(c for c in customer_phone if c.isdigit())
+                if len(clean_phone) >= 8:
+                    prof = CustomerProfile.objects.filter(phone__icontains=clean_phone).first()
+
+        ancien_solde = Decimal("0.00")
+        nouveau_solde = Decimal("0.00")
+        if prof:
+            ancien_solde = prof.desktop_balance or Decimal("0.00")
+            diff = amount_paid - subtotal
+            nouveau_solde = ancien_solde + diff
+            prof.desktop_balance = nouveau_solde
+            prof.last_invoice = bon_num
+
+            art_str = ", ".join(f"{oi['quantity']}x {oi['product_name']}" for oi in order_items_to_create)
+            new_hist_item = {
+                "bon": bon_num,
+                "date": timezone.now().strftime("%Y-%m-%d"),
+                "total": float(subtotal),
+                "verse": float(amount_paid),
+                "ancien": float(ancien_solde),
+                "solde": float(nouveau_solde),
+                "articles": art_str,
+                "lignes": [
+                    {
+                        "ref": oi["product_reference"],
+                        "designation": oi["product_name"],
+                        "qte": str(oi["quantity"]),
+                        "prix": float(oi["applied_unit_price"]),
+                        "total": float(oi["line_total"]),
+                    }
+                    for oi in order_items_to_create
+                ]
+            }
+            hist = prof.desktop_history or []
+            hist.insert(0, new_hist_item)
+            prof.desktop_history = hist[:30]
+            prof.save()
+
+        snap = DesktopStoreSnapshot.objects.first()
+        if snap:
+            recent = snap.recent_sales or []
+            recent.insert(0, {
+                "bon": bon_num,
+                "date": timezone.now().strftime("%Y-%m-%d"),
+                "client": customer_name,
+                "total": float(subtotal),
+                "verse": float(amount_paid),
+                "solde": float(nouveau_solde),
+                "caissier": request.user.username,
+                "articles": ", ".join(f"{oi['quantity']}x {oi['product_name']}" for oi in order_items_to_create),
+            })
+            snap.recent_sales = recent[:30]
+            snap.chiffre_jour = (snap.chiffre_jour or Decimal("0.00")) + subtotal
+            snap.caisse_espece = (snap.caisse_espece or Decimal("0.00")) + amount_paid
+            snap.nbr_bons_jour = (snap.nbr_bons_jour or 0) + 1
+            snap.save()
+
+        return Response({
+            "success": True,
+            "order_uid": order.order_uid,
+            "bon_number": bon_num,
+            "total_amount": str(subtotal),
+            "amount_paid": str(amount_paid),
+            "nouveau_solde": str(nouveau_solde),
+            "pdf_url": f"/api/v1/auth/bon-pdf/{bon_num}/",
+            "message": f"Vente enregistrée avec succès ! Bon N° {bon_num}"
+        }, status=status.HTTP_201_CREATED)
+

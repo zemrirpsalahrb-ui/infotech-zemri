@@ -2588,9 +2588,16 @@ if (typeof window !== "undefined") {
                             <div key={idx} className="p-4 rounded-xl bg-slate-50/70 border border-slate-200 hover:border-blue-400 hover:bg-blue-50/20 transition space-y-2">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-white text-blue-700 border border-slate-200 font-mono">
-                                    Bon N° {h.bon || "-"}
-                                  </span>
+                                  <a
+                                    href={`/api/v1/auth/bon-pdf/${encodeURIComponent(h.bon || '')}/?token=${encodeURIComponent(token || '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs font-bold px-2.5 py-1 rounded bg-white text-blue-700 border border-slate-300 font-mono hover:bg-blue-50 transition flex items-center gap-1 shadow-xs"
+                                    title="Cliquer pour ouvrir le Bon en PDF"
+                                  >
+                                    <span>📄 Bon N° {h.bon || "-"}</span>
+                                    <span className="text-[10px] text-blue-500 font-sans">↗ PDF</span>
+                                  </a>
                                   <span className="text-xs text-slate-500 font-medium">
                                     🗓 {h.date || "-"}
                                   </span>
@@ -2618,11 +2625,23 @@ if (typeof window !== "undefined") {
                                 </div>
                               </div>
 
-                              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500 border-t border-slate-100">
-                                <span>Solde après bon :</span>
-                                <span className={`font-mono font-bold ${parseFloat(h.solde) < -0.009 ? 'text-red-600' : 'text-emerald-700'}`}>
-                                  {parseFloat(h.solde) < -0.009 ? `🔴 Vous devez : ${fmtMoney(Math.abs(h.solde))}` : `🟢 Le magasin vous doit : ${fmtMoney(h.solde)}`}
-                                </span>
+                              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px] text-slate-500 border-t border-slate-100">
+                                <div>
+                                  <span>Solde après bon : </span>
+                                  <span className={`font-mono font-bold ${parseFloat(h.solde) < -0.009 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                    {parseFloat(h.solde) < -0.009 ? `🔴 Vous devez : ${fmtMoney(Math.abs(h.solde))}` : `🟢 Le magasin vous doit : ${fmtMoney(h.solde)}`}
+                                  </span>
+                                </div>
+                                <a
+                                  href={`/api/v1/auth/bon-pdf/${encodeURIComponent(h.bon || '')}/?token=${encodeURIComponent(token || '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 ml-auto shrink-0"
+                                  title="Ouvrir le Bon en PDF officiel"
+                                >
+                                  <span>📄</span>
+                                  <span>Ouvrir le Bon (PDF)</span>
+                                </a>
                               </div>
                             </div>
                           ))}

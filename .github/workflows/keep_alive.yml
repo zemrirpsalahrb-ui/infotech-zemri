@@ -1,0 +1,23 @@
+name: Keep-Alive Bot Render 24/7
+
+on:
+  schedule:
+    # Déclenchement automatique toutes les 10 minutes (évite la mise en veille des 15 minutes sur Render)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Render Cloud Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          echo "Pinging Render website..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 https://infotech-zemri-backend.onrender.com/api/v1/health/)
+          echo "HTTP Status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "Le serveur Render est actif et réveillé !"
+          else
+            echo "Serveur en phase de réveil ou retour HTTP $STATUS"
+          fi

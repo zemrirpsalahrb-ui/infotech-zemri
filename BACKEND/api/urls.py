@@ -31,6 +31,9 @@ from .views import (
     DeliveryTrackView,
     AdminOrderSendNoestView,
     AdminOrderValidateNoestView,
+    HealthCheckView,
+    BonPdfDownloadView,
+    AdminCreateSaleView,
 )
 
 urlpatterns = [
@@ -82,6 +85,13 @@ urlpatterns = [
     path("admin/reviews/", AdminReviewModerationView.as_view(), name="admin-reviews"),
     path("admin/reviews/<int:review_id>/moderate/", AdminReviewModerationView.as_view(), name="admin-review-moderate"),
     path("admin/resources/<str:resource_type>/", AdminCategoryBannerManageView.as_view(), name="admin-resources"),
+    path("admin/sales/create/", AdminCreateSaleView.as_view(), name="admin-sales-create"),
+
+    # Keep-alive Health Check
+    path("health/", HealthCheckView.as_view(), name="health-check"),
+
+    # Bon de Vente PDF (Clients & Admin)
+    path("auth/bon-pdf/<str:n_bon>/", BonPdfDownloadView.as_view(), name="auth-bon-pdf"),
 ]
 
 
